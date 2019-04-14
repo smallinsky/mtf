@@ -4,4 +4,4 @@ CREATE TABLE `happy_table` (
   PRIMARY KEY (`question`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO `sort_code` VALUES ("foo", "bar");
+INSERT INTO `happy_table` VALUES ("foo", "bar");

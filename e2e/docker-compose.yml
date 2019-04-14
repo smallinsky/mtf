@@ -25,7 +25,9 @@ services:
      - "8085:8085"
 
   sut:
-    image: echo-server:30d3646
-    ports:
-     - "8080:8080"
-    entrypoint: ["sh", "-c","until nc -z migrate 5551; do sleep 0.5; done; ./echo-server"]
+      build:
+        context: ./
+        dockerfile: Dockerfile
+      restart: always
+      ports:
+        - 8001:8001
