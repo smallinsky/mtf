@@ -69,7 +69,7 @@ func NewServer(i interface{}, port string, opts ...PortOpt) *PortIn {
 }
 
 func (p *PortIn) Receive(i interface{}, opts ...Opt) {
-	options := defaultRcvOptions
+	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
 	}
@@ -86,8 +86,8 @@ func (p *PortIn) Receive(i interface{}, opts ...Opt) {
 	}
 }
 
-func (p *PortIn) Send(msg interface{}, opts ...Opt) {
-	options := defaultRcvOptions
+func (p *PortIn) Send(msg interface{}, opts ...PortOpt) {
+	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
 	}

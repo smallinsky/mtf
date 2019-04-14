@@ -83,8 +83,8 @@ func (p *ClientPort) Send(msg interface{}) {
 	rv.Elem().Set(reflect.ValueOf(out))
 }
 
-func (p *ClientPort) Receive(msg interface{}, opts ...Opt) {
-	options := defaultRcvOptions
+func (p *ClientPort) Receive(msg interface{}, opts ...PortOpt) {
+	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
 	}

@@ -1,28 +1,50 @@
-package main
+package pubsub
 
 import (
 	"context"
-	"fmt"
+	"os"
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/any"
+	log "github.com/sirupsen/logrus"
+
+	pb "github.com/smallinsky/grpc-echo/proto"
 )
 
 const (
 	queueSize = 100
+	projectID = "boring-cloud"
 )
+
+func timeNow() string {
+	return time.Now().Format("15:04:05:0000")
+}
 
 func NewPubsub() *Pubsub {
 	ps := &Pubsub{
-		messages: make(chan *pubsub.Message, queueSize),
+		messages: make(chan proto.Message, queueSize),
 	}
 	ctx := context.Background()
-	conn, err := pubsub.NewClient(ctx, "ingird-local_test")
+	conn, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
 		panic(err)
 	}
 
 	ps.topic = conn.Topic("first-topic")
+	exists, err := ps.topic.Exists(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	if !exists {
+		ps.topic, err = conn.CreateTopic(ctx, "first-topic")
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	sub := conn.Subscription("sub1")
 	ok, err := sub.Exists(ctx)
@@ -39,46 +61,124 @@ func NewPubsub() *Pubsub {
 			panic(err)
 		}
 	}
-	sub.ReceiveSettings.Synchronous = true
+	//	sub.ReceiveSettings.Synchronous = true
 	go func() {
 		err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-			ps.messages <- msg
+			m := any.Any{}
+			err := proto.Unmarshal(msg.Data, &m)
+			if err != nil {
+				log.Info("recived messge ID: %v Data:%v\n", time.Now().Format("15:04:05.000000"), msg.ID, string(msg.Data))
+				panic(err)
+			}
+
+			dynAny := ptypes.DynamicAny{}
+			if err := ptypes.UnmarshalAny(&m, &dynAny); err != nil {
+				panic(err)
+			}
 			msg.Ack()
+			ps.messages <- dynAny.Message
+
 		})
 		if err != nil {
 			panic(err)
 		}
 	}()
 	return ps
-
 }
 
 type Pubsub struct {
-	messages chan *pubsub.Message
+	messages chan proto.Message
+	queue    []proto.Message
 	topic    *pubsub.Topic
 }
 
 func (p *Pubsub) Receive(i interface{}) {
-	select {
-	case msg := <-p.messages:
-		fmt.Println("Got message: ", string(msg.Data))
-	case <-time.Tick(time.Second * 5):
-		panic("timout during pubsub.receive")
+	expected, ok := i.(proto.Message)
+	if !ok {
+		panic("message is not a proto.Message")
+	}
+	for _, m := range p.queue {
+		if proto.Equal(expected, m) {
+			log.Info("Got expected message in queue")
+			return
+		}
+	}
+
+	deadlineC := time.Tick(time.Second * 30)
+	for {
+		select {
+		case msg := <-p.messages:
+			if proto.MessageName(msg) != proto.MessageName(expected) {
+				log.Debug("messge don't eq queueing message")
+				p.queue = append(p.queue, msg)
+				continue
+			}
+
+			if proto.Equal(expected, msg) {
+				log.Info("Message eq")
+				return
+			}
+
+		case <-deadlineC:
+			panic("timout during pubsub.receive")
+		}
 	}
 }
 
 func (p *Pubsub) Send(i interface{}) {
-	ctx := context.Background()
-	msg := &pubsub.Message{
-		Data: []byte("ala ma kota"),
+	msg, ok := i.(proto.Message)
+	if !ok {
+		panic("message is not a proto.Message")
 	}
 
-	if _, err := p.topic.Publish(ctx, msg).Get(ctx); err != nil {
+	ctx := context.Background()
+	anyMsg, err := ptypes.MarshalAny(msg)
+	if err != nil {
+		panic(err)
+	}
+
+	buf, err := proto.Marshal(anyMsg)
+	if err != nil {
+		panic(err)
+	}
+
+	m := &pubsub.Message{
+		Data: buf,
+	}
+
+	if _, err := p.topic.Publish(ctx, m).Get(ctx); err != nil {
 		panic(err)
 	}
 }
 
-func main() {
-	p := NewPubsub()
-	p.Send(nil)
-}
+//func main() {
+//	log.SetFormatter(&log.TextFormatter{
+//		FullTimestamp:   true,
+//		TimestampFormat: "15:04:05.000",
+//	})
+//	log.SetOutput(os.Stdout)
+//
+//	p := NewPubsub()
+//	a := ""
+//	cancel := make(chan struct{})
+//	go func() {
+//		for {
+//			for {
+//				select {
+//				case <-cancel:
+//					return
+//				default:
+//					p.Send(&pb.EchoReq{Name: a})
+//					time.Sleep(time.Second * 1)
+//					a += "a"
+//				}
+//			}
+//		}
+//	}()
+//
+//	p.Receive(&pb.EchoReq{Name: "aaaaaa"})
+//	log.Info("Recived echo message")
+//	log.Debug("ala mako ta")
+//	time.Sleep(time.Second)
+//	close(cancel)
+//}

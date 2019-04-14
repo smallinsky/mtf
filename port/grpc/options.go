@@ -4,16 +4,16 @@ import (
 	"time"
 )
 
-type Opt func(*options)
+type Opt func(*portOpts)
 
 func WithError(err error) Opt {
-	return func(o *options) {
+	return func(o *portOpts) {
 		o.err = err
 	}
 }
 
 func WithTimeout(timout time.Duration) Opt {
-	return func(o *options) {
+	return func(o *portOpts) {
 		o.timeout = timout
 	}
 }
@@ -25,6 +25,8 @@ type portOpts struct {
 	serverKeyPath  string
 
 	pkgName string
+	err     error
+	timeout time.Duration
 }
 
 type PortOpt func(*portOpts)
@@ -50,5 +52,5 @@ func WithPkgName(name string) PortOpt {
 
 var defaultPortOpts = portOpts{
 	// TODO: build dynamically base on proto package name.
-	pkgName: "custom.service",
+	pkgName: "echo",
 }
