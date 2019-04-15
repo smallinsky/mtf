@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"reflect"
 	"strings"
@@ -31,12 +32,20 @@ func NewClient(i interface{}, target string, opts ...PortOpt) ClientPort {
 	for _, m := range d.methodsDesc {
 		p.emd[m.InType] = EndpointRespTypePair{
 			RespType: m.OutType,
-			Endpoint: strings.Join([]string{options.pkgName, d.Name}, ".") + "/" + m.Name,
+			Endpoint: buildPrefix(options.pkgName, d.Name) + "/" + m.Name,
 		}
 		log.Printf("Endpoint url: %s\n", p.emd[m.InType].Endpoint)
 	}
 	p.connect(target, options.clientCertPath)
 	return p
+}
+
+// TODO: Build prefix idepended on dir name.
+func buildPrefix(pkgName, name string) string {
+	if pkgName != "" {
+		return strings.Join([]string{pkgName, name}, ".")
+	}
+	return name
 }
 
 type ClientPort struct {
@@ -68,19 +77,23 @@ func (p *ClientPort) Close() {
 }
 
 func (p *ClientPort) Send(msg interface{}) {
-	v, ok := p.emd[reflect.TypeOf(msg)]
-	if !ok {
-		log.Fatalln("Failed to map type %T to endpoint url")
-	}
+	go func() {
+		v, ok := p.emd[reflect.TypeOf(msg)]
+		if !ok {
+			log.Fatalln("Failed to map type %T to endpoint url")
+		}
 
-	out := reflect.New(v.RespType.Elem()).Interface()
-	if err := p.conn.Invoke(context.Background(), v.Endpoint, msg, out); err != nil {
-		log.Fatalf("Failed to invoke: %v", err)
-	}
+		out := reflect.New(v.RespType.Elem()).Interface()
+		fmt.Println("Invoking: ", v.Endpoint)
+		if err := p.conn.Invoke(context.Background(), v.Endpoint, msg, out); err != nil {
+			log.Fatalf("Failed to invoke: %v", err)
+		}
+		fmt.Println("Got response from: ", v.Endpoint)
 
-	rv := reflect.ValueOf(&p.resp)
-	rv.Elem().Set(reflect.New(v.RespType))
-	rv.Elem().Set(reflect.ValueOf(out))
+		rv := reflect.ValueOf(&p.resp)
+		rv.Elem().Set(reflect.New(v.RespType))
+		rv.Elem().Set(reflect.ValueOf(out))
+	}()
 }
 
 func (p *ClientPort) Receive(msg interface{}, opts ...PortOpt) {

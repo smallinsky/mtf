@@ -39,8 +39,14 @@ func NewServer(i interface{}, port string, opts ...PortOpt) *PortIn {
 	}
 
 	fn := func(i interface{}) (interface{}, error) {
-		p.rC <- i
+		go func() {
+			fmt.Printf("got messge type: %T\n", i)
+			p.rC <- i
+			fmt.Println("message send to queue")
+		}()
+		fmt.Println("server: waiting for receving value")
 		retV := <-p.sC
+		fmt.Println("server: got receving value")
 		return retV.msg, retV.err
 	}
 
@@ -74,16 +80,19 @@ func (p *PortIn) Receive(i interface{}, opts ...Opt) {
 		o(&options)
 	}
 
+	fmt.Printf("SERVER PORT waiting for %T \n", i)
 	// TODO handle messages by type and add erro on unexpected msg recived
 	select {
 	case v := <-p.rC:
 		//TODO Use template pattern matching
+		fmt.Println("server port received: ", v)
 		if err := deep.Equal(v, i); err != nil {
 			log.Fatalf("Struct not eq: %v", err)
 		}
 	case <-time.NewTimer(options.timeout).C:
 		log.Println("Timeout, expected message %T not received\n", reflect.TypeOf(i).Kind())
 	}
+	fmt.Printf("SERVER Recive end for %T\n", i)
 }
 
 func (p *PortIn) Send(msg interface{}, opts ...PortOpt) {
@@ -118,7 +127,14 @@ func registerInterface(s *grpc.Server, i interface{}, procCall processFunc, opts
 		z.Elem().FieldByName("MethodName").SetString(mdesc.Name)
 		z.Elem().FieldByName("Handler").Set(reflect.ValueOf(fn))
 
-		serverName := strings.Join([]string{opts.pkgName, mdesc.Name}, ".")
+		serverName := ""
+		// TODO: pkgName is probably not needed during server registartion, check it
+		if opts.pkgName != "" {
+			serverName = strings.Join([]string{opts.pkgName, mdesc.Name}, ".")
+		} else {
+			serverName = mdesc.Name
+		}
+		fmt.Println("Register: ", serverName)
 		mv.Elem().SetMapIndex(reflect.ValueOf(serverName), z)
 	}
 

@@ -29,11 +29,7 @@ func getGrpcDetails(s interface{}) serverDesc {
 		name = strings.TrimSuffix(name, suffix)
 	}
 	// TODO Get full pacakge name with protobuf prefix like example.Server.NameOfServer
-	if false {
-		desc.Name = ps[len(ps)-1] + "." + name
-	}
-
-	desc.Name = name
+	desc.Name = ps[len(ps)-1] + "." + name
 
 	for i := 0; i < t.NumMethod(); i++ {
 		// TODO: distinguish stream methods
@@ -44,6 +40,6 @@ func getGrpcDetails(s interface{}) serverDesc {
 			OutType: m.Type.Out(0),
 		})
 	}
-	fmt.Println(desc)
+	fmt.Println("COOL ", desc)
 	return desc
 }
