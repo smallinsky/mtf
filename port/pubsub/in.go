@@ -2,7 +2,6 @@ package pubsub
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -10,8 +9,6 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	log "github.com/sirupsen/logrus"
-
-	pb "github.com/smallinsky/grpc-echo/proto"
 )
 
 const (
@@ -67,7 +64,7 @@ func NewPubsub() *Pubsub {
 			m := any.Any{}
 			err := proto.Unmarshal(msg.Data, &m)
 			if err != nil {
-				log.Info("recived messge ID: %v Data:%v\n", time.Now().Format("15:04:05.000000"), msg.ID, string(msg.Data))
+				log.Infof("recived messge ID: %v Data:%v\n", msg.ID, string(msg.Data))
 				panic(err)
 			}
 
@@ -150,35 +147,3 @@ func (p *Pubsub) Send(i interface{}) {
 		panic(err)
 	}
 }
-
-//func main() {
-//	log.SetFormatter(&log.TextFormatter{
-//		FullTimestamp:   true,
-//		TimestampFormat: "15:04:05.000",
-//	})
-//	log.SetOutput(os.Stdout)
-//
-//	p := NewPubsub()
-//	a := ""
-//	cancel := make(chan struct{})
-//	go func() {
-//		for {
-//			for {
-//				select {
-//				case <-cancel:
-//					return
-//				default:
-//					p.Send(&pb.EchoReq{Name: a})
-//					time.Sleep(time.Second * 1)
-//					a += "a"
-//				}
-//			}
-//		}
-//	}()
-//
-//	p.Receive(&pb.EchoReq{Name: "aaaaaa"})
-//	log.Info("Recived echo message")
-//	log.Debug("ala mako ta")
-//	time.Sleep(time.Second)
-//	close(cancel)
-//}

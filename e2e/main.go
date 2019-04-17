@@ -10,47 +10,28 @@ import (
 )
 
 func main() {
-	grpcOracle := grpc.NewServer((*pbo.OracleServer)(nil), ":8002")
 	grpcEcho := grpc.NewClient((*pb.EchoClient)(nil), "localhost:8001")
+	grpcOracle := grpc.NewServer((*pbo.OracleServer)(nil), ":8002")
 
-	if false {
-		go func() {
-			for {
-				grpcOracle.Receive(&pbo.AskDeepThroughRequest{
-					Data: "alamakota",
-				})
+	// Wait for sut connection to grpc oracle server port.
+	// TODO: Prabably condition if test can be start can be deduce based on grpc connection state (status).
+	time.Sleep(time.Second * 2)
 
-				grpcOracle.Send(&pbo.AskDeepThroughRespnse{
-					Data: "42",
-				})
-			}
-		}()
-	}
-	time.Sleep(time.Second * 3)
-
-	fmt.Println("---> send echo.AskOracleRequest")
 	grpcEcho.Send(&pb.AskOracleRequest{
-		Data: "ala ma kota",
+		Data: "Get answer for ultimate question of life the universe and everything",
 	})
 
-	fmt.Println("<--- receive oracle.AskDeepThroughRequest")
 	grpcOracle.Receive(&pbo.AskDeepThroughRequest{
-		Data: "ala ma kota",
+		Data: "Get answer for ultimate question of life the universe and everything",
 	})
 
-	fmt.Println("---> send oracle.AskDeepThroughResponse")
+	fmt.Println("---> send echo.AskDeepThroughRespnse")
 	grpcOracle.Send(&pbo.AskDeepThroughRespnse{
 		Data: "42",
 	})
 
 	fmt.Println("<--- receive echo.AskOracleResponse")
-
 	grpcEcho.Receive(&pb.AskOracleResponse{
 		Data: "42",
 	})
-
-	time.Sleep(time.Second * 20)
-
-	fmt.Println("vim-go")
-	time.Sleep(time.Second * 2)
 }

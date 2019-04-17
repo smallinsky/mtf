@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"reflect"
@@ -40,13 +39,9 @@ func NewServer(i interface{}, port string, opts ...PortOpt) *PortIn {
 
 	fn := func(i interface{}) (interface{}, error) {
 		go func() {
-			fmt.Printf("got messge type: %T\n", i)
 			p.rC <- i
-			fmt.Println("message send to queue")
 		}()
-		fmt.Println("server: waiting for receving value")
 		retV := <-p.sC
-		fmt.Println("server: got receving value")
 		return retV.msg, retV.err
 	}
 
@@ -80,19 +75,16 @@ func (p *PortIn) Receive(i interface{}, opts ...Opt) {
 		o(&options)
 	}
 
-	fmt.Printf("SERVER PORT waiting for %T \n", i)
 	// TODO handle messages by type and add erro on unexpected msg recived
 	select {
 	case v := <-p.rC:
 		//TODO Use template pattern matching
-		fmt.Println("server port received: ", v)
 		if err := deep.Equal(v, i); err != nil {
 			log.Fatalf("Struct not eq: %v", err)
 		}
 	case <-time.NewTimer(options.timeout).C:
-		log.Println("Timeout, expected message %T not received\n", reflect.TypeOf(i).Kind())
+		log.Printf("Timeout, expected message %T not received\n", i)
 	}
-	fmt.Printf("SERVER Recive end for %T\n", i)
 }
 
 func (p *PortIn) Send(msg interface{}, opts ...PortOpt) {
@@ -134,7 +126,6 @@ func registerInterface(s *grpc.Server, i interface{}, procCall processFunc, opts
 		} else {
 			serverName = mdesc.Name
 		}
-		fmt.Println("Register: ", serverName)
 		mv.Elem().SetMapIndex(reflect.ValueOf(serverName), z)
 	}
 
@@ -159,8 +150,6 @@ func getServerDesc(s interface{}) (name string, methods []string) {
 	for i := 0; i < t.NumMethod(); i++ {
 		// TODO: distinguish stream methods
 		methods = append(methods, t.Method(i).Name)
-		fmt.Println(t.Method(i).Type.In(1))
-		fmt.Println(t.Method(i).Type.Out(0))
 	}
 	return
 }

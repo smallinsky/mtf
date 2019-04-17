@@ -1,17 +1,14 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net"
-	"time"
 
 	"github.com/kelseyhightower/envconfig"
 	"google.golang.org/grpc"
 
 	pb "github.com/smallinsky/mtf/e2e/proto/echo"
 	"github.com/smallinsky/mtf/e2e/proto/oracle"
-	pbo "github.com/smallinsky/mtf/e2e/proto/oracle"
 )
 
 type config struct {
@@ -35,19 +32,6 @@ func main() {
 	}
 
 	oracleCli := oracleClient(cfg)
-	if false {
-		go func() {
-			for {
-				time.Sleep(time.Second * 1)
-				_, err = oracleCli.AskDeepThrough(context.Background(), &pbo.AskDeepThroughRequest{Data: "alamakota"})
-				if err != nil {
-					log.Println("go error during call: ", err)
-					continue
-				}
-				log.Println("loop sucessfull call AskDeepThrought")
-			}
-		}()
-	}
 	s := grpc.NewServer()
 	pb.RegisterEchoServer(s, &server{
 		Client: oracleCli,

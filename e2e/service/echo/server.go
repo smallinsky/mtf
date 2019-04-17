@@ -47,10 +47,10 @@ func (s *server) AskOracle(ctx context.Context, req *pb.AskOracleRequest) (*pb.A
 	resp, err := s.Client.AskDeepThrough(context.Background(), &pbo.AskDeepThroughRequest{
 		Data: req.GetData(),
 	})
-	log.Println("AskOracel enpoint called with err: ", err, " resp: ", resp)
 	if err != nil {
 		return nil, err
 	}
+
 	return &pb.AskOracleResponse{
 		Data: resp.GetData(),
 	}, nil

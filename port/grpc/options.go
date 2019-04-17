@@ -53,5 +53,5 @@ func WithPkgName(name string) PortOpt {
 var defaultPortOpts = portOpts{
 	// TODO: build dynamically base on proto package name.
 	pkgName: "",
-	timeout: time.Second * 10,
+	timeout: time.Second * 5,
 }
