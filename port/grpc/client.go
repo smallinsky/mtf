@@ -86,8 +86,7 @@ func (p *ClientPort) Close() {
 }
 
 func (p *ClientPort) Send(msg interface{}) {
-	// TODO: queue and order async call.
-
+	startSync.Wait()
 	go func() {
 		done := make(chan struct{})
 		go func() {

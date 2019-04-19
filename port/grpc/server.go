@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 	"log"
-	"net"
 	"reflect"
 	"strings"
 	"time"
@@ -46,7 +45,7 @@ func NewServer(i interface{}, port string, opts ...PortOpt) *PortIn {
 	}
 
 	// TODO Add tls support
-	lis, err := net.Listen("tcp", port)
+	lis, err := listen("tcp", port)
 	if err != nil {
 		log.Fatalf("Failed to listen %v", err)
 	}
@@ -61,6 +60,9 @@ func NewServer(i interface{}, port string, opts ...PortOpt) *PortIn {
 	}
 
 	s := registerInterface(grpc.NewServer(grpcOpts...), i, fn, options)
+
+	startSync.Add(1)
+
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("Failed to server %v", err)

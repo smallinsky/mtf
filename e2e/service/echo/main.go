@@ -49,6 +49,5 @@ func oracleClient(cfg config) oracle.OracleClient {
 		log.Fatalf("Faield to dial oracle service")
 		return nil
 	}
-
 	return oracle.NewOracleClient(conn)
 }

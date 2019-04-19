@@ -81,30 +81,11 @@ func TestGRPCServerStart(t *testing.T) {
 			t.Fatal("fialed to dial echo addres: ", err)
 		}
 
-		done := make(chan struct{})
-		defer close(done)
-		go func() {
-			prevousState := ""
-			for {
-				select {
-				case <-done:
-					return
-				default:
-					currState := conn.GetState().String()
-					if currState != prevousState {
-						t.Logf("%v Diff curr: '%v'", time.Now(), currState)
-						prevousState = currState
-						continue
-					}
-					time.Sleep(time.Microsecond * 100)
-				}
-			}
-		}()
 		defer conn.Close()
 		client := oracle.NewOracleClient(conn)
 
 		// Value 1s are causing causes client grpc.Dial error call.
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 1)
 		svr := NewServer((*oracle.OracleServer)(nil), ":9991")
 		go func() {
 			svr.Receive(&oracle.AskDeepThroughRequest{
@@ -116,7 +97,6 @@ func TestGRPCServerStart(t *testing.T) {
 			})
 		}()
 
-		time.Sleep(time.Second)
 		resp, err := client.AskDeepThrough(context.Background(), &oracle.AskDeepThroughRequest{
 			Data: "Ultimate question",
 		})
@@ -127,6 +107,5 @@ func TestGRPCServerStart(t *testing.T) {
 		if got, exp := resp.GetData(), "42"; got != exp {
 			t.Fatalf("Got: '%v' Expected: '%v'", got, exp)
 		}
-
 	})
 }
