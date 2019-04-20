@@ -80,14 +80,15 @@ func (m *HTTPPort) Handle(w http.ResponseWriter, r *http.Request) {
 
 func (m *HTTPPort) Receive(r HttpRequest, opts ...Opt) {
 	log.Println("Start reciving")
-	options := defaultRcvOptions
+	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
 	}
+
 	select {
 	case m.req <- r:
 		return
-	case <-time.NewTimer(options.timeout).C:
+	case <-time.Tick(options.timeout):
 		log.Fatalf("Timeout, expected message %T not received\n", r)
 	}
 }
