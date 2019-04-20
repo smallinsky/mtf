@@ -1,4 +1,4 @@
-package grpc
+package port
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 )
 
 func TestGRPCServer(t *testing.T) {
-	svr := NewServer((*oracle.OracleServer)(nil), ":9999")
+	svr := NewGRPCServer((*oracle.OracleServer)(nil), ":9999")
 	conn, err := grpc.Dial("localhost:9999", grpc.WithInsecure())
 	if err != nil {
 		t.Fatal("fialed to dial echo addres: ", err)
@@ -86,7 +86,7 @@ func TestGRPCServerStart(t *testing.T) {
 
 		// Value 1s are causing causes client grpc.Dial error call.
 		time.Sleep(time.Second * 1)
-		svr := NewServer((*oracle.OracleServer)(nil), ":9991")
+		svr := NewGRPCServer((*oracle.OracleServer)(nil), ":9991")
 		go func() {
 			svr.Receive(&oracle.AskDeepThroughRequest{
 				Data: "Ultimate question",

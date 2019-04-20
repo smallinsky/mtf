@@ -1,4 +1,4 @@
-package grpc
+package port
 
 import (
 	"context"
@@ -25,7 +25,7 @@ type PortIn struct {
 	sC chan outValues
 }
 
-func NewServer(i interface{}, port string, opts ...PortOpt) *PortIn {
+func NewGRPCServer(i interface{}, port string, opts ...PortOpt) *PortIn {
 	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)

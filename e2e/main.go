@@ -5,12 +5,12 @@ import (
 
 	pb "github.com/smallinsky/mtf/e2e/proto/echo"
 	pbo "github.com/smallinsky/mtf/e2e/proto/oracle"
-	"github.com/smallinsky/mtf/port/grpc"
+	"github.com/smallinsky/mtf/port"
 )
 
 func main() {
-	grpcOracle := grpc.NewServer((*pbo.OracleServer)(nil), ":8002")
-	grpcEcho := grpc.NewClient((*pb.EchoClient)(nil), "localhost:8001")
+	grpcOracle := port.NewGRPCServer((*pbo.OracleServer)(nil), ":8002")
+	grpcEcho := port.NewGRPCClient((*pb.EchoClient)(nil), "localhost:8001")
 
 	grpcEcho.Send(&pb.AskOracleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",

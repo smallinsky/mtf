@@ -1,4 +1,4 @@
-package grpc
+package port
 
 import (
 	"context"
@@ -20,7 +20,7 @@ type EndpointRespTypePair struct {
 
 type MsgTypeMap map[reflect.Type]EndpointRespTypePair
 
-func NewClient(i interface{}, target string, opts ...PortOpt) ClientPort {
+func NewGRPCClient(i interface{}, target string, opts ...PortOpt) ClientPort {
 	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
