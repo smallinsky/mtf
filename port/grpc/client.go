@@ -66,14 +66,14 @@ type ClientPort struct {
 func (p *ClientPort) connect(addr, certfile string) {
 	options := []grpc.DialOption{grpc.WithInsecure()}
 	if certfile != "" {
-		creds, err := credentials.NewClientTLSFromFile(certfile, "service-labels") //strings.Split(addr, ":")[0])
+		// TODO: set dynamic authority header file.
+		creds, err := credentials.NewClientTLSFromFile(certfile, strings.Split(addr, ":")[0])
 		if err != nil {
 			log.Fatalf("Failed to load credentials: %s", err)
 		}
 		options[0] = grpc.WithTransportCredentials(creds)
 	}
 	var err error
-	log.Println("dial: ", addr)
 	p.conn, err = grpc.Dial(addr, options...)
 	if err != nil {
 		log.Fatal("Failed to dial target address: ", err)
@@ -132,13 +132,11 @@ func (p *ClientPort) Receive(msg interface{}, opts ...PortOpt) {
 
 	select {
 	case <-deadlineC:
-		log.Fatalf("Deadline durintg receving %T message", msg)
+		log.Fatalf("Deadline during receving %T message", msg)
 	case m := <-p.out:
 		//TODO Use template pattern matching
 		if err := deep.Equal(msg, m); err != nil {
 			log.Fatalf("Struct not eq: %v", err)
 		}
-
 	}
-
 }

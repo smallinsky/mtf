@@ -1,7 +1,6 @@
 package grpc
 
 import (
-	"log"
 	"net"
 	"sync"
 )
@@ -38,8 +37,6 @@ func (l *listener) Accept() (net.Conn, error) {
 	}
 
 	startSync.Done()
-
-	log.Print("server accept called end")
 	return conn, err
 }
 

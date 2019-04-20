@@ -1,7 +1,6 @@
 package grpc
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 )
@@ -40,6 +39,5 @@ func getGrpcDetails(s interface{}) serverDesc {
 			OutType: m.Type.Out(0),
 		})
 	}
-	fmt.Println("COOL ", desc)
 	return desc
 }
