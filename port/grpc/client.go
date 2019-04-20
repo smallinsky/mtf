@@ -34,20 +34,12 @@ func NewClient(i interface{}, target string, opts ...PortOpt) ClientPort {
 	for _, m := range d.methodsDesc {
 		p.emd[m.InType] = EndpointRespTypePair{
 			RespType: m.OutType,
-			Endpoint: buildPrefix(options.pkgName, d.Name) + "/" + m.Name,
+			Endpoint: d.Name + "/" + m.Name,
 		}
 		log.Printf("Endpoint url: %s\n", p.emd[m.InType].Endpoint)
 	}
 	p.connect(target, options.clientCertPath)
 	return p
-}
-
-// TODO: Build prefix idepended on dir name.
-func buildPrefix(pkgName, name string) string {
-	if pkgName != "" {
-		return strings.Join([]string{pkgName, name}, ".")
-	}
-	return name
 }
 
 type connection interface {
