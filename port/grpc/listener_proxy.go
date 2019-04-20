@@ -5,12 +5,15 @@ import (
 	"sync"
 )
 
-var startSync sync.WaitGroup
-
 // Custom proxy around net.Listen interface that allow to
 // observe when client connection is enstablished.
 // Current GRPC transport impementation does retry with exponencial backoff
 // and when connection is not in READY state whole GRPC call fails with error.
+
+var _ net.Listener = &listener{}
+
+var startSync sync.WaitGroup
+
 func listen(network, address string) (net.Listener, error) {
 	l, err := net.Listen(network, address)
 	if err != nil {
@@ -18,16 +21,14 @@ func listen(network, address string) (net.Listener, error) {
 	}
 
 	lProxy := &listener{
-		l:    l,
-		read: make(chan struct{}),
+		l: l,
 	}
 
 	return lProxy, err
 }
 
 type listener struct {
-	l    net.Listener
-	read chan struct{}
+	l net.Listener
 }
 
 func (l *listener) Accept() (net.Conn, error) {
@@ -38,10 +39,6 @@ func (l *listener) Accept() (net.Conn, error) {
 
 	startSync.Done()
 	return conn, err
-}
-
-func (l *listener) WaitTillRead() chan struct{} {
-	return l.read
 }
 
 func (l *listener) Close() error {
