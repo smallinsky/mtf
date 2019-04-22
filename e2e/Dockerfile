@@ -1,3 +1,9 @@
 FROM alpine:3.7
-COPY service/echo/echo echo
-CMD ["/echo"]
+
+RUN apk --update --no-cache add iptables
+
+COPY service/echo/echo sut
+COPY forward.sh  forward.sh
+RUN chmod +x forward.sh
+
+CMD ["./forward.sh"]
