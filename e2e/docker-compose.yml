@@ -1,33 +1,38 @@
 version: '3.2'
 
 services:
-  mysql:
-    image: mysql
-    environment:
-        - MYSQL_ROOT_PASSWORD=test
-        - MYSQL_DATABASE=test_db
-    command: --default-authentication-plugin=mysql_native_password
-    restart: "no"
-    ports:
-    - "3306:3306"
+    # mysql:
+    #   image: mysql
+    #   environment:
+    #       - MYSQL_ROOT_PASSWORD=test
+    #       - MYSQL_DATABASE=test_db
+    #   command: --default-authentication-plugin=mysql_native_password
+    #   restart: "no"
+    #   ports:
+    #   - "3306:3306"
 
-  migrate:
-    image: migrate/migrate
-    entrypoint: ["sh", "-c", "until /migrate -path /migrations -database 'mysql://root:test@tcp(mysql:3306)/test_db' up 2> /dev/null; do sleep 0.5; done; echo 'MySQL Ready'; until nc -z pubsub 8085; do sleep 0.5; done; echo 'PubSub Read'; nc -lp 5551"]
-    volumes:
-      - ./migrations:/migrations
-    expose:
-        ["5551"]
+    # migrate:
+    #   image: migrate/migrate
+    #   entrypoint: ["sh", "-c", "until /migrate -path /migrations -database 'mysql://root:test@tcp(mysql:3306)/test_db' up 2> /dev/null; do sleep 0.5; done; echo 'MySQL Ready'; until nc -z pubsub 8085; do sleep 0.5; done; echo 'PubSub Read'; nc -lp 5551"]
+    #   volumes:
+    #     - ./migrations:/migrations
+    #   expose:
+    #       ["5551"]
 
-  pubsub:
-    image: adilsoncarvalho/gcloud-pubsub-emulator
-    ports:
-     - "8085:8085"
+    # pubsub:
+    #   image: adilsoncarvalho/gcloud-pubsub-emulator
+    #   ports:
+    #    - "8085:8085"
 
   sut:
       build:
         context: ./
         dockerfile: Dockerfile
+      environment:
+        - ORACLE_ADDR=host.docker.internal:8002
       restart: always
+      cap_add:
+        - NET_ADMIN
+        - NET_RAW
       ports:
         - 8001:8001

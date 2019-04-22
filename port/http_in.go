@@ -1,6 +1,7 @@
 package port
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -28,8 +29,10 @@ type HttpRequest struct {
 
 func Match(l *HttpRequest, r *http.Request) {
 	//TODO add patter matching
-	if l.URL != "*" && l.URL != r.URL.String() {
-		log.Fatalf("URL matcher failed, expected: %s, got: %s\n", l.URL, r.URL.String())
+	url := fmt.Sprintf("http://%s%s", r.Host, r.URL.String())
+
+	if l.URL != "*" && l.URL != url {
+		log.Fatalf("URL matcher failed, expected: %s, got: %s\n", l.URL, url)
 	}
 
 	if l.Method != "*" && l.Method != r.Method {
@@ -88,7 +91,7 @@ func (m *HTTPPort) Receive(r HttpRequest, opts ...Opt) {
 	select {
 	case m.req <- r:
 		return
-	case <-time.Tick(options.timeout):
+	case <-time.Tick(time.Hour):
 		log.Fatalf("Timeout, expected message %T not received\n", r)
 	}
 }

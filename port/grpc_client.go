@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-test/deep"
+	"github.com/smallinsky/mtf/pkg"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -66,11 +67,13 @@ func (p *ClientPort) connect(addr, certfile string) {
 		options[0] = grpc.WithTransportCredentials(creds)
 	}
 	var err error
-	p.conn, err = grpc.Dial(addr, options...)
+	c, err := grpc.Dial(addr, options...)
+	p.conn = c
 	if err != nil {
 		log.Fatal("Failed to dial target address: ", err)
 		p.Close()
 	}
+	pkg.StartMonitor(c)
 }
 
 func (p *ClientPort) Close() {
@@ -104,7 +107,7 @@ func (p *ClientPort) Send(msg interface{}) {
 			p.out <- resp
 		}()
 
-		deadline := time.Tick(time.Second * 2)
+		deadline := time.Tick(time.Second * 10)
 		select {
 		case <-deadline:
 			log.Fatalf("Failed to send %T message deadline exeeded", msg)

@@ -9,6 +9,7 @@ import (
 
 	pb "github.com/smallinsky/mtf/e2e/proto/echo"
 	"github.com/smallinsky/mtf/e2e/proto/oracle"
+	"github.com/smallinsky/mtf/pkg"
 )
 
 type config struct {
@@ -37,7 +38,6 @@ func main() {
 		Client: oracleCli,
 	})
 
-	log.Println("Starting Echo Server")
 	if err := s.Serve(l); err != nil {
 		log.Fatalf("Error during grpc.Server: %v", err)
 	}
@@ -49,5 +49,6 @@ func oracleClient(cfg config) oracle.OracleClient {
 		log.Fatalf("Faield to dial oracle service")
 		return nil
 	}
+	pkg.StartMonitor(conn)
 	return oracle.NewOracleClient(conn)
 }
