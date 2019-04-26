@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -18,6 +19,7 @@ import (
 
 type server struct {
 	Client pbo.OracleClient
+	DB     *sql.DB
 }
 
 func (s *server) Repeat(ctx context.Context, req *pb.RepeatRequest) (*pb.RepeatResponse, error) {
@@ -72,7 +74,17 @@ func (s *server) AskGoogle(ctx context.Context, req *pb.AskGoogleRequest) (*pb.A
 }
 
 func (s *server) AskDB(ctx context.Context, req *pb.AskDBRequest) (*pb.AskDBResponse, error) {
-	return nil, status.New(codes.Unimplemented, "unimplemented").Err()
+	var punchline string
+	err := s.DB.QueryRowContext(ctx, "SELECT punchline FROM happy_table WHERE query=?", req.GetData()).Scan(&punchline)
+	if err == sql.ErrNoRows {
+		return nil, status.New(codes.NotFound, "no punchline").Err()
+	} else if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch from db, err: %v", err)
+	}
+
+	return &pb.AskDBResponse{
+		Data: punchline,
+	}, nil
 }
 
 func (s *server) AskRedis(ctx context.Context, req *pb.AskRedisRequest) (*pb.AskRedisResponse, error) {

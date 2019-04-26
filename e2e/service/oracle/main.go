@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/kelseyhightower/envconfig"
 	"google.golang.org/grpc"
 

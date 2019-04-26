@@ -43,4 +43,14 @@ func main() {
 	})
 
 	fmt.Println("PASS: Handling HTTP trafic from SUT")
+
+	grpcEcho.Send(&pb.AskDBRequest{
+		Data: "the dirty fork",
+	})
+
+	grpcEcho.Receive(&pb.AskDBResponse{
+		Data: "Lucky we didn't say anything about the dirty knife",
+	})
+
+	fmt.Println("PASS: DB integration")
 }
