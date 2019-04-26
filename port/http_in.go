@@ -41,7 +41,14 @@ func Match(l *HttpRequest, r *http.Request) {
 }
 
 type HttpResponse struct {
-	Body string
+	Body   string
+	Status int
+}
+
+func (resp *HttpResponse) setDefaults() {
+	if resp.Status == 0 {
+		resp.Status = http.StatusOK
+	}
 }
 
 type HTTPPort struct {
@@ -73,10 +80,9 @@ func (m *HTTPPort) Stop() {
 func (m *HTTPPort) Handle(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Got http request URL: %s \n", r.URL.String())
 	mr := <-m.req
-	mr = mr
 	Match(&mr, r)
 	msgS := <-m.resp
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(msgS.Status)
 	w.Write([]byte(msgS.Body))
 	m.sync <- struct{}{}
 }
@@ -96,9 +102,10 @@ func (m *HTTPPort) Receive(r HttpRequest, opts ...Opt) {
 	}
 }
 
-func (m *HTTPPort) Send(r HttpResponse, opts ...Opt) {
+func (m *HTTPPort) Send(resp HttpResponse, opts ...Opt) {
+	resp.setDefaults()
 	go func() {
-		m.resp <- r
+		m.resp <- resp
 	}()
 	<-m.sync
 	time.Sleep(time.Millisecond * 100)
