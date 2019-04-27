@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-redis/redis"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -18,8 +19,9 @@ import (
 )
 
 type server struct {
-	Client pbo.OracleClient
-	DB     *sql.DB
+	OracleClient pbo.OracleClient
+	DB           *sql.DB
+	RedisClient  *redis.Client
 }
 
 func (s *server) Repeat(ctx context.Context, req *pb.RepeatRequest) (*pb.RepeatResponse, error) {
@@ -88,12 +90,21 @@ func (s *server) AskDB(ctx context.Context, req *pb.AskDBRequest) (*pb.AskDBResp
 }
 
 func (s *server) AskRedis(ctx context.Context, req *pb.AskRedisRequest) (*pb.AskRedisResponse, error) {
-	return nil, status.New(codes.Unimplemented, "unimplemented").Err()
+	resp, err := s.RedisClient.Get(req.GetData()).Result()
+	if err == redis.Nil {
+		return nil, status.Errorf(codes.NotFound, "key '%v' not found", req.GetData())
+	} else if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get key value from redis, err %v", err)
+	}
+
+	return &pb.AskRedisResponse{
+		Data: resp,
+	}, nil
 }
 
 func (s *server) AskOracle(ctx context.Context, req *pb.AskOracleRequest) (*pb.AskOracleResponse, error) {
 	log.Println("AskOrace ongoing....")
-	resp, err := s.Client.AskDeepThrough(context.Background(), &pbo.AskDeepThroughRequest{
+	resp, err := s.OracleClient.AskDeepThrough(context.Background(), &pbo.AskDeepThroughRequest{
 		Data: req.GetData(),
 	})
 	if err != nil {

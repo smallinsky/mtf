@@ -24,6 +24,13 @@ services:
     ports:
      - "8085:8085"
 
+  redis:
+    image: 'bitnami/redis:4.0'
+    environment:
+       - REDIS_PASSWORD=password123
+    ports:
+       - '6379:6379'
+
   sut:
       build:
         context: ./
