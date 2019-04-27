@@ -2,6 +2,7 @@ package port
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -13,14 +14,13 @@ import (
 
 const (
 	queueSize = 100
-	projectID = "boring-cloud"
 )
 
 func timeNow() string {
 	return time.Now().Format("15:04:05:0000")
 }
 
-func NewPubsub() *Pubsub {
+func NewPubsub(projectID, topicName string) *Pubsub {
 	ps := &Pubsub{
 		messages: make(chan proto.Message, queueSize),
 	}
@@ -30,27 +30,28 @@ func NewPubsub() *Pubsub {
 		panic(err)
 	}
 
-	ps.topic = conn.Topic("first-topic")
+	ps.topic = conn.Topic(topicName)
 	exists, err := ps.topic.Exists(ctx)
 	if err != nil {
 		panic(err)
 	}
 
 	if !exists {
-		ps.topic, err = conn.CreateTopic(ctx, "first-topic")
+		ps.topic, err = conn.CreateTopic(ctx, topicName)
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	sub := conn.Subscription("sub1")
+	subName := fmt.Sprintf("sub-%d", time.Now().Nanosecond()/100000)
+	sub := conn.Subscription(subName)
 	ok, err := sub.Exists(ctx)
 	if err != nil {
 		panic(err)
 	}
 
 	if !ok {
-		sub, err = conn.CreateSubscription(ctx, "sub1", pubsub.SubscriptionConfig{
+		sub, err = conn.CreateSubscription(ctx, subName, pubsub.SubscriptionConfig{
 			Topic:       ps.topic,
 			AckDeadline: time.Second * 10,
 		})
@@ -146,4 +147,6 @@ func (p *Pubsub) Send(i interface{}) {
 	if _, err := p.topic.Publish(ctx, m).Get(ctx); err != nil {
 		panic(err)
 	}
+
+	p.Receive(m)
 }
