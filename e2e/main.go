@@ -65,7 +65,6 @@ func testFetchDataDB(tc *TestComponent) {
 	tc.Echo.Send(&pb.AskDBRequest{
 		Data: "the dirty fork",
 	})
-
 	tc.Echo.Receive(&pb.AskDBResponse{
 		Data: "Lucky we didn't say anything about the dirty knife",
 	})
@@ -75,7 +74,6 @@ func testFetchDataFromRedis(tc *TestComponent) {
 	tc.Echo.Send(&pb.AskRedisRequest{
 		Data: "make me sandwitch",
 	})
-
 	tc.Echo.Receive(&pb.AskRedisResponse{
 		Data: "what? make it yourself",
 	})
@@ -83,7 +81,6 @@ func testFetchDataFromRedis(tc *TestComponent) {
 	tc.Echo.Send(&pb.AskRedisRequest{
 		Data: "sudo make me sandwitch",
 	})
-
 	tc.Echo.Receive(&pb.AskRedisResponse{
 		Data: "okey",
 	})

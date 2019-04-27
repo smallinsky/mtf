@@ -1,18 +1,8 @@
 #!/usr/bin/env sh
 
-
-usage() {
-	if [ $# -ne 2 ]
-	then
-		echo "$#"
-		echo "usage: wait_for_it host port "
-		exit -1
-	fi
-}
+set -eo
 
 wait_for_it() {
-	usage $@
-
 	local host=$1
 	local port=$2
 	local result
@@ -29,7 +19,5 @@ wait_for_it() {
 		sleep 1
 	done
 }
-
-
 
 wait_for_it $@ 

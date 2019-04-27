@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-set -e 
+set -eo
 
 DOCKER_HOST=$(nslookup host.docker.internal | grep Address | cut -d":" -f2 | tr -d " ")
 echo "Forwarding http and https traffic to ${DOCKER_HOST}"
