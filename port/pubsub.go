@@ -3,6 +3,7 @@ package port
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -16,11 +17,11 @@ const (
 	queueSize = 100
 )
 
-func timeNow() string {
-	return time.Now().Format("15:04:05:0000")
-}
+func NewPubsub(projectID, topicName string, addr string) *Pubsub {
+	if err := os.Setenv("PUBSUB_EMULATOR_HOST", addr); err != nil {
+		log.Fatal("failed to set env: %v", err)
+	}
 
-func NewPubsub(projectID, topicName string) *Pubsub {
 	ps := &Pubsub{
 		messages: make(chan proto.Message, queueSize),
 	}
@@ -59,7 +60,8 @@ func NewPubsub(projectID, topicName string) *Pubsub {
 			panic(err)
 		}
 	}
-	//	sub.ReceiveSettings.Synchronous = true
+
+	sub.ReceiveSettings.Synchronous = true
 	go func() {
 		err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 			m := any.Any{}
@@ -148,5 +150,17 @@ func (p *Pubsub) Send(i interface{}) {
 		panic(err)
 	}
 
-	p.Receive(m)
+	// TODO: stop other recivers
+	for {
+		select {
+		case f := <-p.messages:
+			if proto.Equal(f, msg) {
+				log.Info("queue to messages")
+				return
+			} else {
+				log.Info("messages not eq")
+			}
+			p.queue = append(p.queue, f)
+		}
+	}
 }
