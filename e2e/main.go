@@ -49,12 +49,11 @@ func testFetchDataFromExternalAPIViaHTTP(tc *TestComponent) {
 	tc.Echo.Send(&pb.AskGoogleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	tc.HTTP.Receive(port.HttpRequest{
+	tc.HTTP.Receive(&port.HTTPRequest{
 		Method: "GET",
-		URL:    "http://api.icndb.com/jokes/random?firstName=John&amp;lastName=Doe",
 	})
-	tc.HTTP.Send(port.HttpResponse{
-		Body: `{"value":{"joke":"42"}}`,
+	tc.HTTP.Send(&port.HTTPResponse{
+		Body: []byte(`{"value":{"joke":"42"}}`),
 	})
 	tc.Echo.Receive(&pb.AskGoogleResponse{
 		Data: "42",
