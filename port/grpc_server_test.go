@@ -77,7 +77,7 @@ func TestGRPCServer(t *testing.T) {
 		go func() {
 			svr.ReceiveMatch(
 				func(r *oracle.AskDeepThroughRequest) {
-					if r.Data == "Ultimate questionaa" {
+					if r.Data != "Ultimate question" {
 						t.Fatalf("unexpected payload: %v", r.Data)
 					}
 				},
@@ -88,7 +88,9 @@ func TestGRPCServer(t *testing.T) {
 			})
 		}()
 
-		resp, err := client.AskDeepThrough(context.Background(), &oracle.AskDeepThroughRequest{
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+		defer cancel()
+		resp, err := client.AskDeepThrough(ctx, &oracle.AskDeepThroughRequest{
 			Data: "Ultimate question",
 		})
 		if err != nil {

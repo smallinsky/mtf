@@ -2,7 +2,6 @@ package port
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"reflect"
 	"strings"
@@ -114,7 +113,6 @@ func (p *ClientPort) Send(msg interface{}) {
 			rv := reflect.ValueOf(&resp)
 			rv.Elem().Set(reflect.New(v.RespType))
 			rv.Elem().Set(reflect.ValueOf(out))
-			fmt.Println("received: ", resp)
 			p.callResultC <- callResult{
 				err:  nil,
 				resp: resp,
