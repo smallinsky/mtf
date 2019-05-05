@@ -92,7 +92,7 @@ type Pubsub struct {
 	topic    *pubsub.Topic
 }
 
-func (p *Pubsub) Receive(i interface{}) {
+func (p *Pubsub) Receive(i interface{}, opts ...Opt) {
 	expected, ok := i.(proto.Message)
 	if !ok {
 		panic("message is not a proto.Message")
