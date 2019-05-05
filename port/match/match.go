@@ -10,6 +10,26 @@ var (
 	ErrMatchFnInvalidArg = errors.New("match fn invalid arg")
 )
 
+type PayloadMatcher struct {
+	Msg interface{}
+}
+
+func Payload(message interface{}) PayloadMatcher {
+	return PayloadMatcher{
+		Msg: message,
+	}
+}
+
+type FnMatcher struct {
+	Calls []interface{}
+}
+
+func Fn(fn ...interface{}) FnMatcher {
+	return FnMatcher{
+		Calls: fn,
+	}
+}
+
 type MatchResult struct {
 	MatchFn MatchFn
 	ArgType reflect.Type
