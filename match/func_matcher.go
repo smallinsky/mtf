@@ -1,6 +1,7 @@
 package match
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/pkg/errors"
@@ -10,69 +11,51 @@ var (
 	ErrMatchFnInvalidArg = errors.New("match fn invalid arg")
 )
 
-type PayloadMatcher struct {
-	Msg interface{}
-}
-
-func Payload(message interface{}) PayloadMatcher {
-	return PayloadMatcher{
-		Msg: message,
-	}
-}
-
 type FnMatcher struct {
-	Calls []interface{}
+	Args []interface{}
 }
 
-func Fn(fn ...interface{}) FnMatcher {
-	return FnMatcher{
-		Calls: fn,
+func Fn(args ...interface{}) *FnMatcher {
+	return &FnMatcher{
+		Args: args,
 	}
 }
 
-type MatchResult struct {
-	MatchFn MatchFn
-	ArgType reflect.Type
-}
-
-type MatchFn func(err error, i interface{})
-
-func PayloadMatchFucs(args ...interface{}) (*MatchResult, error) {
-	if err := validate(args); err != nil {
-		return nil, err
-	}
-
+func (m *FnMatcher) Match(err error, got interface{}) error {
 	var matchFuncs []func(interface{})
 	vmfs := reflect.ValueOf(&matchFuncs)
 
-	res := &MatchResult{}
-	for _, arg := range args {
+	var ht reflect.Type
+	for _, arg := range m.Args {
 		v := reflect.ValueOf(arg)
-		if res.ArgType == nil {
-			res.ArgType = v.Type().In(0)
+		if ht == nil {
+			ht = v.Type().In(0)
 		}
 		fn := func(i interface{}) {
 			v.Call([]reflect.Value{reflect.ValueOf(i)})
 		}
 		vmfs.Elem().Set(reflect.Append(vmfs.Elem(), reflect.ValueOf(fn)))
 	}
-	res.MatchFn = func(err error, i interface{}) {
-		for _, fn := range matchFuncs {
-			fn(i)
-		}
+
+	if gt := reflect.TypeOf(got); gt != ht {
+		return fmt.Errorf("received '%v' message, but handler functions are defined for '%v'", gt, ht)
 	}
-	return res, nil
+	for _, fn := range matchFuncs {
+		fn(got)
+	}
+	return nil
 }
 
-func validate(args []interface{}) error {
-	if args == nil {
+// TODO refactor error messages
+func (m *FnMatcher) Validate() error {
+	if m.Args == nil {
 		return errors.Wrap(ErrMatchFnInvalidArg, "got nil argument")
 	}
 	var t reflect.Type
-	if len(args) == 0 {
+	if len(m.Args) == 0 {
 		return errors.Wrapf(ErrMatchFnInvalidArg, "0 arguments")
 	}
-	for _, arg := range args {
+	for _, arg := range m.Args {
 		v := reflect.ValueOf(arg)
 		if v.Type().Kind() != reflect.Func {
 			return errors.Wrapf(ErrMatchFnInvalidArg, "expected function but got '%v'", v.Type())

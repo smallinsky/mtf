@@ -14,7 +14,7 @@ type secondType struct {
 	Data string
 }
 
-func TestMatchArgs(t *testing.T) {
+func TestFuncValidate(t *testing.T) {
 	cases := []struct {
 		name string
 		args []interface{}
@@ -90,7 +90,8 @@ func TestMatchArgs(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := PayloadMatchFucs(tc.args...)
+			m := Fn(tc.args...)
+			err := m.Validate()
 			if err != nil && tc.err == nil {
 				t.Fatalf("got unexpected error '%v'", err)
 			}
@@ -102,12 +103,12 @@ func TestMatchArgs(t *testing.T) {
 	}
 }
 
-func TestMatchPayload(t *testing.T) {
+func TestFuncMatch(t *testing.T) {
 	data := "example data"
-	s := firstType{
+	s := &firstType{
 		Data: data,
 	}
-	r, err := PayloadMatchFucs(
+	m := Fn(
 		func(p *firstType) {
 			if got, exp := p.Data, data; got != exp {
 				t.Fatalf("got '%v', exp '%v'", got, exp)
@@ -119,8 +120,8 @@ func TestMatchPayload(t *testing.T) {
 			}
 		},
 	)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	if err := m.Validate(); err != nil {
+		t.Fatalf("unexpected error during validate call: %v", err)
 	}
-	r.MatchFn(nil, &s)
+	m.Match(nil, s)
 }
