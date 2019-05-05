@@ -11,6 +11,8 @@ import (
 	"github.com/go-test/deep"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
+	"github.com/smallinsky/mtf/port/match"
 )
 
 type processFunc func(i interface{}) (interface{}, error)
@@ -21,8 +23,8 @@ type outValues struct {
 }
 
 type PortIn struct {
-	rC chan interface{}
-	sC chan outValues
+	reqC  chan interface{}
+	respC chan outValues
 }
 
 func NewGRPCServer(i interface{}, port string, opts ...PortOpt) *PortIn {
@@ -32,15 +34,15 @@ func NewGRPCServer(i interface{}, port string, opts ...PortOpt) *PortIn {
 	}
 
 	p := &PortIn{
-		rC: make(chan interface{}),
-		sC: make(chan outValues),
+		reqC:  make(chan interface{}),
+		respC: make(chan outValues),
 	}
 
 	fn := func(i interface{}) (interface{}, error) {
 		go func() {
-			p.rC <- i
+			p.reqC <- i
 		}()
-		retV := <-p.sC
+		retV := <-p.respC
 		return retV.msg, retV.err
 	}
 
@@ -79,7 +81,7 @@ func (p *PortIn) Receive(i interface{}, opts ...Opt) {
 
 	// TODO handle messages by type and add erro on unexpected msg recived
 	select {
-	case v := <-p.rC:
+	case v := <-p.reqC:
 		//TODO Use template pattern matching
 		if err := deep.Equal(v, i); err != nil {
 			log.Fatalf("Struct not eq: %v", err)
@@ -89,13 +91,27 @@ func (p *PortIn) Receive(i interface{}, opts ...Opt) {
 	}
 }
 
+func (p *PortIn) ReceiveMatch(i ...interface{}) {
+	r, err := match.PayloadMatchFucs(i...)
+	if err != nil {
+		panic(err)
+	}
+
+	select {
+	case v := <-p.reqC:
+		r.MatchFn(nil, v)
+	case <-time.NewTimer(time.Second * 5).C:
+		log.Printf("Timeout, expected message %T not received\n", r.ArgType)
+	}
+}
+
 func (p *PortIn) Send(msg interface{}, opts ...PortOpt) {
 	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
 	}
 
-	p.sC <- outValues{
+	p.respC <- outValues{
 		msg: msg,
 		err: options.err,
 	}

@@ -72,6 +72,33 @@ func TestGRPCServer(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("ReciveMatchFn", func(t *testing.T) {
+		go func() {
+			svr.ReceiveMatch(
+				func(r *oracle.AskDeepThroughRequest) {
+					if r.Data == "Ultimate questionaa" {
+						t.Fatalf("unexpected payload: %v", r.Data)
+					}
+				},
+			)
+
+			svr.Send(&oracle.AskDeepThroughRespnse{
+				Data: "42",
+			})
+		}()
+
+		resp, err := client.AskDeepThrough(context.Background(), &oracle.AskDeepThroughRequest{
+			Data: "Ultimate question",
+		})
+		if err != nil {
+			t.Fatal("faield to ask deep through: ", err)
+		}
+
+		if got, exp := resp.GetData(), "42"; got != exp {
+			t.Fatalf("Got: '%v' Expected: '%v'", got, exp)
+		}
+	})
 }
 
 func TestGRPCServerStart(t *testing.T) {
