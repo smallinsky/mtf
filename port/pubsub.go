@@ -19,7 +19,7 @@ const (
 
 func NewPubsub(projectID, topicName string, addr string) *Pubsub {
 	if err := os.Setenv("PUBSUB_EMULATOR_HOST", addr); err != nil {
-		log.Fatal("failed to set env: %v", err)
+		log.Fatalf("failed to set env: %v", err)
 	}
 
 	ps := &Pubsub{

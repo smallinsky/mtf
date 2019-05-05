@@ -12,7 +12,6 @@ import (
 
 	pb "github.com/smallinsky/mtf/e2e/proto/echo"
 	"github.com/smallinsky/mtf/e2e/proto/oracle"
-	"github.com/smallinsky/mtf/pkg"
 )
 
 type config struct {
@@ -58,7 +57,6 @@ func oracleClient(cfg config) oracle.OracleClient {
 		log.Fatalf("Faield to dial oracle service")
 		return nil
 	}
-	pkg.StartMonitor(conn)
 	return oracle.NewOracleClient(conn)
 }
 
