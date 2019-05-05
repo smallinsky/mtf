@@ -2,6 +2,7 @@ package port
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"reflect"
 	"strings"
@@ -9,9 +10,10 @@ import (
 	"time"
 
 	"github.com/go-test/deep"
-	"github.com/smallinsky/mtf/pkg"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
+	"github.com/smallinsky/mtf/port/match"
 )
 
 type EndpointRespTypePair struct {
@@ -27,8 +29,8 @@ func NewGRPCClient(i interface{}, target string, opts ...PortOpt) ClientPort {
 		o(&options)
 	}
 	p := ClientPort{
-		emd: make(map[reflect.Type]EndpointRespTypePair),
-		out: make(chan interface{}, 1),
+		emd:         make(map[reflect.Type]EndpointRespTypePair),
+		callResultC: make(chan callResult, 1),
 	}
 
 	d := getGrpcDetails(i)
@@ -51,9 +53,14 @@ type connection interface {
 type ClientPort struct {
 	conn connection
 
-	emd     MsgTypeMap
-	out     chan interface{}
-	sendMtx sync.Mutex
+	emd         MsgTypeMap
+	sendMtx     sync.Mutex
+	callResultC chan callResult
+}
+
+type callResult struct {
+	resp interface{}
+	err  error
 }
 
 func (p *ClientPort) connect(addr, certfile string) {
@@ -73,7 +80,6 @@ func (p *ClientPort) connect(addr, certfile string) {
 		log.Fatal("Failed to dial target address: ", err)
 		p.Close()
 	}
-	pkg.StartMonitor(c)
 }
 
 func (p *ClientPort) Close() {
@@ -97,14 +103,22 @@ func (p *ClientPort) Send(msg interface{}) {
 
 			out := reflect.New(v.RespType.Elem()).Interface()
 			if err := p.conn.Invoke(context.Background(), v.Endpoint, msg, out); err != nil {
-				log.Fatalf("Failed to invoke: %v", err)
+				p.callResultC <- callResult{
+					err:  err,
+					resp: nil,
+				}
+				log.Printf("[DEBUG] Failed to invoke: %v\n", err)
 			}
 
 			var resp interface{}
 			rv := reflect.ValueOf(&resp)
 			rv.Elem().Set(reflect.New(v.RespType))
 			rv.Elem().Set(reflect.ValueOf(out))
-			p.out <- resp
+			fmt.Println("received: ", resp)
+			p.callResultC <- callResult{
+				err:  nil,
+				resp: resp,
+			}
 		}()
 
 		deadline := time.Tick(time.Second * 10)
@@ -115,6 +129,27 @@ func (p *ClientPort) Send(msg interface{}) {
 			return
 		}
 	}()
+}
+
+// TODO add timout
+func (p *ClientPort) ReceiveMatch(i ...interface{}) {
+	deadlineC := time.Tick(time.Second * 4)
+
+	m, err := match.PayloadMatchFucs(i...)
+	if err != nil {
+		panic(err)
+	}
+
+	select {
+	case <-deadlineC:
+		log.Fatalf("Deadline during receving %T message", m.ArgType)
+	case result := <-p.callResultC:
+		if result.err != nil {
+			log.Fatalf("Got unexpected error during receive, err: %v", result.err)
+		}
+
+		m.MatchFn(nil, result.resp)
+	}
 }
 
 func (p *ClientPort) Receive(msg interface{}, opts ...PortOpt) {
@@ -128,9 +163,11 @@ func (p *ClientPort) Receive(msg interface{}, opts ...PortOpt) {
 	select {
 	case <-deadlineC:
 		log.Fatalf("Deadline during receving %T message", msg)
-	case m := <-p.out:
-		//TODO Use template pattern matching
-		if err := deep.Equal(msg, m); err != nil {
+	case result := <-p.callResultC:
+		if result.err != nil {
+			log.Fatalf("Got unexpected error during receive, err: %v", result.err)
+		}
+		if err := deep.Equal(msg, result.resp); err != nil {
 			log.Fatalf("Struct not eq: %v", err)
 		}
 	}
