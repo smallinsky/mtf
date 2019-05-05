@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smallinsky/mtf/e2e/proto/oracle"
+	"github.com/smallinsky/mtf/match"
 )
 
 func TestGRPCServer(t *testing.T) {
@@ -22,9 +23,13 @@ func TestGRPCServer(t *testing.T) {
 
 	t.Run("SingeCall", func(t *testing.T) {
 		go func() {
-			svr.Receive(&oracle.AskDeepThroughRequest{
-				Data: "Ultimate question",
-			})
+			svr.ReceiveM(
+				match.Payload(
+					&oracle.AskDeepThroughRequest{
+						Data: "Ultimate question",
+					},
+				),
+			)
 
 			svr.Send(&oracle.AskDeepThroughRespnse{
 				Data: "42",
@@ -75,13 +80,13 @@ func TestGRPCServer(t *testing.T) {
 
 	t.Run("ReciveMatchFn", func(t *testing.T) {
 		go func() {
-			svr.ReceiveMatch(
+			svr.ReceiveM(match.Fn(
 				func(r *oracle.AskDeepThroughRequest) {
 					if r.Data != "Ultimate question" {
 						t.Fatalf("unexpected payload: %v", r.Data)
 					}
 				},
-			)
+			))
 
 			svr.Send(&oracle.AskDeepThroughRespnse{
 				Data: "42",

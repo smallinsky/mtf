@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/smallinsky/mtf/port/match"
+	"github.com/smallinsky/mtf/match"
 )
 
 type processFunc func(i interface{}) (interface{}, error)
@@ -79,10 +79,8 @@ func (p *PortIn) Receive(i interface{}, opts ...Opt) {
 		o(&options)
 	}
 
-	// TODO handle messages by type and add erro on unexpected msg recived
 	select {
 	case v := <-p.reqC:
-		//TODO Use template pattern matching
 		if err := deep.Equal(v, i); err != nil {
 			log.Fatalf("Struct not eq: %v", err)
 		}
@@ -91,17 +89,22 @@ func (p *PortIn) Receive(i interface{}, opts ...Opt) {
 	}
 }
 
-func (p *PortIn) ReceiveMatch(i ...interface{}) {
-	r, err := match.PayloadMatchFucs(i...)
-	if err != nil {
-		panic(err)
+func (p *PortIn) ReceiveM(m match.Matcher, opts ...Opt) {
+	options := defaultPortOpts
+	for _, o := range opts {
+		o(&options)
+	}
+	if err := m.Validate(); err != nil {
+		log.Fatalf("matcher %T validation failed: %v", m, err)
 	}
 
 	select {
-	case v := <-p.reqC:
-		r.MatchFn(nil, v)
-	case <-time.NewTimer(time.Second * 5).C:
-		log.Printf("Timeout, expected message %T not received\n", r.ArgType)
+	case got := <-p.reqC:
+		if err := m.Match(nil, got); err != nil {
+			log.Fatalf("%T match failed: %v", m, err)
+		}
+	case <-time.NewTimer(options.timeout).C:
+		log.Printf("Timeout, expected message not received\n")
 	}
 }
 

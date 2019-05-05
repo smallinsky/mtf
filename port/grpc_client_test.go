@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"google.golang.org/grpc"
+
+	"github.com/smallinsky/mtf/match"
 )
 
 func TestGrpcClientPort(t *testing.T) {
@@ -25,9 +27,9 @@ func TestGrpcClientPort(t *testing.T) {
 		port.Send(&FirstRequest{
 			ID: 1,
 		})
-		port.Receive(&FirstResponse{
+		port.ReceiveM(match.Payload(&FirstResponse{
 			ID: 1,
-		})
+		}))
 	})
 
 	t.Run("SendReceiveTwoMessageSameType", func(t *testing.T) {
@@ -40,12 +42,12 @@ func TestGrpcClientPort(t *testing.T) {
 		})
 
 		//TODO: Fix async order based on send call
-		port.Receive(&FirstResponse{
+		port.ReceiveM(match.Payload(&FirstResponse{
 			ID: 1,
-		})
-		port.Receive(&FirstResponse{
+		}))
+		port.ReceiveM(match.Payload(&FirstResponse{
 			ID: 2,
-		})
+		}))
 	})
 
 	t.Run("SendReciveParaller", func(t *testing.T) {
@@ -59,9 +61,9 @@ func TestGrpcClientPort(t *testing.T) {
 				port.Send(&FirstRequest{
 					ID: i,
 				})
-				port.Receive(&FirstResponse{
+				port.ReceiveM(match.Payload(&FirstResponse{
 					ID: i,
-				})
+				}))
 			}()
 			wg.Wait()
 		}
@@ -71,13 +73,13 @@ func TestGrpcClientPort(t *testing.T) {
 		port.Send(&FirstRequest{
 			ID: 10,
 		})
-		port.ReceiveMatch(
+		port.ReceiveM(match.Fn(
 			func(r *FirstResponse) {
 				if r.ID != 10 {
 					t.Fatalf("expected response id = 10 but got: %v", r.ID)
 				}
 			},
-		)
+		))
 	})
 }
 

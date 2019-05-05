@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/smallinsky/mtf/port/match"
+	"github.com/smallinsky/mtf/match"
 )
 
 type EndpointRespTypePair struct {
@@ -129,24 +129,23 @@ func (p *ClientPort) Send(msg interface{}) {
 	}()
 }
 
-// TODO add timout
-func (p *ClientPort) ReceiveMatch(i ...interface{}) {
-	deadlineC := time.Tick(time.Second * 4)
+func (p *ClientPort) ReceiveM(m match.Matcher, opts ...PortOpt) {
+	options := defaultPortOpts
+	for _, o := range opts {
+		o(&options)
+	}
 
-	m, err := match.PayloadMatchFucs(i...)
-	if err != nil {
-		panic(err)
+	if err := m.Validate(); err != nil {
+		log.Fatalf("matcher %T validation failed: %v ", m, err)
 	}
 
 	select {
-	case <-deadlineC:
-		log.Fatalf("Deadline during receving %T message", m.ArgType)
 	case result := <-p.callResultC:
-		if result.err != nil {
-			log.Fatalf("Got unexpected error during receive, err: %v", result.err)
+		if err := m.Match(result.err, result.resp); err != nil {
+			log.Fatalf("%T match failed: %v", m, err)
 		}
-
-		m.MatchFn(nil, result.resp)
+	case <-time.Tick(options.timeout):
+		log.Fatalf("Deadline during receving message")
 	}
 }
 
