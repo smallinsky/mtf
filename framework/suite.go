@@ -2,6 +2,8 @@ package framework
 
 import (
 	"testing"
+
+	"github.com/smallinsky/mtf/framework/components"
 )
 
 func NewSuite(testID string, m *testing.M) *Suite {
@@ -16,6 +18,10 @@ type Suite struct {
 func (s *Suite) Run() {
 	// TODO: setup testing env and all dependency in docker
 	// and before triggering testcases run rediness check.
+
+	net := components.Net{}
+	net.Start()
+	defer net.Stop()
 
 	s.mRunFn()
 
