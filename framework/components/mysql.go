@@ -9,26 +9,34 @@ import (
 	"time"
 )
 
+func NewMySQL() *MySQL {
+	return &MySQL{
+		ready: make(chan struct{}),
+	}
+}
+
 type MySQL struct {
 	Pass     string
 	Port     string
 	DB       []string
 	Hostname string
 	Network  string
+	ready    chan struct{}
 }
 
 func (c *MySQL) Start() {
-	time.Sleep(time.Second * 5)
 	cmd := `docker run --rm -d --network=mtf_net --name mysql_mtf --hostname=mysql_mtf --env MYSQL_ROOT_PASSWORD=test --env MYSQL_DATABASE=test_db -p 3306:3306 mysql --default-authentication-plugin=mysql_native_password`
 	run(cmd)
+	close(c.ready)
 }
 
 func (c *MySQL) Stop() {
-	run("docker stop mysql_mtf")
+	run("docker kill mysql_mtf")
 }
 
 func (c *MySQL) Ready() {
 	waitForOpenPort("localhost", "3306")
+	<-c.ready
 }
 
 func run(s string) error {

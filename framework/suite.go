@@ -26,19 +26,45 @@ func (s *Suite) Run() {
 	// TODO: setup testing env and all dependency in docker
 	// and before triggering testcases run rediness check.
 
+	net := components.NewNet()
+	net.Start()
+	net.Ready()
+	defer net.Stop()
+
 	comps := []Comper{
-		&components.Net{},
-		&components.MySQL{},
-		&components.Redis{},
-		&components.MigrateDB{},
+		components.NewMySQL(),
+		components.NewRedis(),
+		//	components.NewPubsub(),
 	}
 
 	for _, comp := range comps {
-		log.Printf("--- Staring %T component ---\n", comp)
-		comp.Start()
+		go func(comp Comper) {
+			log.Printf("--- Staring %T component ---\n", comp)
+			comp.Start()
+		}(comp)
+		log.Printf("--- Component %T is ready ---\n", comp)
+	}
+
+	for _, comp := range comps {
 		comp.Ready()
 		log.Printf("--- Component %T is ready ---\n", comp)
 	}
+
+	m := components.MigrateDB{}
+	m.Start()
+	m.Ready()
+	defer m.Stop()
+
+	sut := components.SUT{}
+
+	log.Printf("starting sut")
+	sut.Start()
+	sut.Ready()
+
+	defer func() {
+		log.Printf("stopping sut")
+		sut.Stop()
+	}()
 	s.mRunFn()
 
 	// TODO: clear all dependency, add leazy teardown for most

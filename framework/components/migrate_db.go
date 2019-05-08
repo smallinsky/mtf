@@ -23,7 +23,6 @@ func (c *MigrateDB) Start() {
 		return
 	}
 	cmd := fmt.Sprintf(`docker run --rm -v %s:/migrations --network=mtf_net migrate/migrate -path /migrations -database mysql://root:test@tcp(mysql_mtf:3306)/test_db up`, c.migrationDirPath)
-	log.Printf("[INFO] %T running '%s'\n", c, cmd)
 	run(cmd)
 }
 

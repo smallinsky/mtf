@@ -23,9 +23,10 @@ func (c *Pubsub) Start() {
 }
 
 func (c *Pubsub) Stop() {
-	run("docker stop pubsub_mtf")
+	run("docker kill pubsub_mtf")
 }
 
 func (c *Pubsub) Ready() {
 	<-c.ready
+	waitForPortOpen("localhost", "8001")
 }
