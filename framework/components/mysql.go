@@ -1,6 +1,7 @@
 package components
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -25,12 +26,19 @@ type MySQL struct {
 }
 
 func (c *MySQL) Start() {
+	defer close(c.ready)
+
+	if containerIsRunning("mysql_mtf") {
+		fmt.Printf("mysql_mtf is already running")
+		return
+	}
+
 	cmd := `docker run --rm -d --network=mtf_net --name mysql_mtf --hostname=mysql_mtf --env MYSQL_ROOT_PASSWORD=test --env MYSQL_DATABASE=test_db -p 3306:3306 mysql --default-authentication-plugin=mysql_native_password`
 	run(cmd)
-	close(c.ready)
 }
 
 func (c *MySQL) Stop() {
+	return
 	run("docker kill mysql_mtf")
 }
 

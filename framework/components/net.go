@@ -11,14 +11,19 @@ type Net struct {
 }
 
 func (c *Net) Start() {
+	defer close(c.ready)
+	if networkExists("mtf_net") {
+		return
+	}
 	run("docker network create --driver bridge mtf_net")
-	close(c.ready)
 }
 
 func (c *Net) Stop() {
+	return
 	run("docker network rm mtf_net")
 }
 
 func (c *Net) Ready() {
+	return
 	<-c.ready
 }

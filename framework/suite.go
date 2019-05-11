@@ -1,8 +1,11 @@
 package framework
 
 import (
-	"log"
+	"fmt"
+	"reflect"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/smallinsky/mtf/framework/components"
 )
@@ -25,6 +28,7 @@ type Comper interface {
 func (s *Suite) Run() {
 	// TODO: setup testing env and all dependency in docker
 	// and before triggering testcases run rediness check.
+	start := time.Now()
 
 	net := components.NewNet()
 	net.Start()
@@ -39,15 +43,12 @@ func (s *Suite) Run() {
 
 	for _, comp := range comps {
 		go func(comp Comper) {
-			log.Printf("--- Staring %T component ---\n", comp)
 			comp.Start()
 		}(comp)
-		log.Printf("--- Component %T is ready ---\n", comp)
 	}
 
 	for _, comp := range comps {
 		comp.Ready()
-		log.Printf("--- Component %T is ready ---\n", comp)
 	}
 
 	m := components.MigrateDB{}
@@ -57,14 +58,14 @@ func (s *Suite) Run() {
 
 	sut := components.SUT{}
 
-	log.Printf("starting sut")
 	sut.Start()
 	sut.Ready()
 
 	defer func() {
-		log.Printf("stopping sut")
 		sut.Stop()
 	}()
+
+	fmt.Printf("Components start time: %v\n", time.Now().Sub(start))
 	s.mRunFn()
 
 	// TODO: clear all dependency, add leazy teardown for most
@@ -75,7 +76,6 @@ func (s *Suite) Run() {
 	for i := len(comps) - 1; i >= 0; i-- {
 		// TODO defer during component start.
 		comp := comps[i]
-		log.Printf("--- Stopping %T component ---\n", comp)
 		comp.Stop()
 	}
 }
@@ -87,4 +87,45 @@ func newSuite(testID string, run runFn) *Suite {
 		mRunFn: run,
 		testID: testID,
 	}
+}
+
+func Run(t *testing.T, i interface{}) {
+	if v, ok := i.(interface{ Init(*testing.T) }); ok {
+		v.Init(t)
+	}
+
+	for _, test := range getTests(i) {
+		t.Run(test.Name, test.F)
+	}
+}
+
+func getTests(i interface{}) []testing.InternalTest {
+	var out []testing.InternalTest
+	v := reflect.ValueOf(i)
+	if v.Type().Kind() != reflect.Ptr && v.Type().Kind() != reflect.Struct {
+		panic("arg is not a ptr to a struct")
+	}
+	for i := 0; i < v.Type().NumMethod(); i++ {
+		tm := v.Type().Method(i)
+		if !strings.HasPrefix(tm.Name, "Test") {
+			continue
+		}
+		m := v.Method(i)
+		if m.Type().NumIn() != 1 {
+			continue
+		}
+		if m.Type().NumOut() != 0 {
+			continue
+		}
+		if m.Type().In(0) != reflect.TypeOf((*testing.T)(nil)) {
+			continue
+		}
+		out = append(out, testing.InternalTest{
+			Name: tm.Name,
+			F: func(t *testing.T) {
+				m.Call([]reflect.Value{reflect.ValueOf(t)})
+			},
+		})
+	}
+	return out
 }

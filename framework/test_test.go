@@ -11,38 +11,48 @@ func TestMain(m *testing.M) {
 	NewSuite("suite_first", m).Run()
 }
 
-func TestFoo(t *testing.T) {
-	echoPort := port.NewGRPCClient((*pb.EchoClient)(nil), "localhost:8001")
-	httpPort := port.NewHTTP()
+type SuiteTest struct {
+	echoPort port.ClientPort
+	httpPort port.HTTPPort
+}
 
-	echoPort.Send(&pb.AskRedisRequest{
+func (st *SuiteTest) Init(t *testing.T) {
+	st.echoPort = port.NewGRPCClient((*pb.EchoClient)(nil), "localhost:8001")
+	st.httpPort = port.NewHTTP()
+}
+
+func (st *SuiteTest) TestRedis(t *testing.T) {
+	st.echoPort.Send(&pb.AskRedisRequest{
 		Data: "make me sandwitch",
 	})
 
-	echoPort.Receive(&pb.AskRedisResponse{
+	st.echoPort.Receive(&pb.AskRedisResponse{
 		Data: "what? make it yourself",
 	})
 
-	echoPort.Send(&pb.AskRedisRequest{
+	st.echoPort.Send(&pb.AskRedisRequest{
 		Data: "sudo make me sandwitch",
 	})
-	echoPort.Receive(&pb.AskRedisResponse{
+	st.echoPort.Receive(&pb.AskRedisResponse{
 		Data: "okey",
 	})
+}
 
-	echoPort.Send(&pb.AskGoogleRequest{
+func (st *SuiteTest) TestHTTP(t *testing.T) {
+	st.echoPort.Send(&pb.AskGoogleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	httpPort.Receive(&port.HTTPRequest{
+	st.httpPort.Receive(&port.HTTPRequest{
 		Method: "GET",
 	})
-	httpPort.Send(&port.HTTPResponse{
+	st.httpPort.Send(&port.HTTPResponse{
 		Body: []byte(`{"value":{"joke":"42"}}`),
 	})
-	echoPort.Receive(&pb.AskGoogleResponse{
+	st.echoPort.Receive(&pb.AskGoogleResponse{
 		Data: "42",
 	})
 }
 
-func TestBar(t *testing.T) {
+func TestEchoService(t *testing.T) {
+	Run(t, new(SuiteTest))
 }
