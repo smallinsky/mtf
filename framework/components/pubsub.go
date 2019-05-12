@@ -1,6 +1,9 @@
 package components
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 func NewPubsub() *Pubsub {
 	return &Pubsub{
@@ -16,9 +19,11 @@ type Pubsub struct {
 	Network  string
 
 	ready chan struct{}
+	start time.Time
 }
 
 func (c *Pubsub) Start() {
+	c.start = time.Now()
 	defer close(c.ready)
 	if containerIsRunning("redis_mtf") {
 		fmt.Printf("pubsub_mtf is already running")
@@ -29,11 +34,12 @@ func (c *Pubsub) Start() {
 }
 
 func (c *Pubsub) Stop() {
+	return
 	run("docker kill pubsub_mtf")
 }
 
 func (c *Pubsub) Ready() {
-	return
 	<-c.ready
 	waitForPortOpen("localhost", "8001")
+	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
 }

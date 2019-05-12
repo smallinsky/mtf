@@ -1,5 +1,10 @@
 package components
 
+import (
+	"fmt"
+	"time"
+)
+
 func NewNet() *Net {
 	return &Net{
 		ready: make(chan struct{}),
@@ -8,9 +13,11 @@ func NewNet() *Net {
 
 type Net struct {
 	ready chan struct{}
+	start time.Time
 }
 
 func (c *Net) Start() {
+	c.start = time.Now()
 	defer close(c.ready)
 	if networkExists("mtf_net") {
 		return
@@ -24,6 +31,7 @@ func (c *Net) Stop() {
 }
 
 func (c *Net) Ready() {
+	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
 	return
 	<-c.ready
 }

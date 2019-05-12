@@ -9,10 +9,12 @@ import (
 )
 
 type SUT struct {
-	Path string
+	Path  string
+	start time.Time
 }
 
 func (c *SUT) Start() {
+	c.start = time.Now()
 	c.Path = "../e2e/service/echo/"
 
 	var err error
@@ -26,6 +28,7 @@ func (c *SUT) Start() {
 func (c *SUT) Ready() {
 	waitForPortOpen("localhost", "8001")
 	time.Sleep(time.Second * 1)
+	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
 }
 
 func (c *SUT) Stop() {

@@ -7,14 +7,17 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type MigrateDB struct {
 	migrationDirPath string
+	start            time.Time
 }
 
 func (c *MigrateDB) Start() {
 	c.migrationDirPath = "../e2e/migrations"
+	c.start = time.Now()
 
 	var err error
 	if c.migrationDirPath, err = filepath.Abs(c.migrationDirPath); err != nil {
@@ -55,4 +58,5 @@ func (c *MigrateDB) Stop() {
 }
 
 func (c *MigrateDB) Ready() {
+	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
 }

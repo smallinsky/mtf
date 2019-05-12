@@ -1,6 +1,9 @@
 package components
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 func NewRedis() *Redis {
 	return &Redis{
@@ -15,9 +18,11 @@ type Redis struct {
 	Hostname string
 	Network  string
 	ready    chan struct{}
+	start    time.Time
 }
 
 func (c *Redis) Start() {
+	c.start = time.Now()
 	defer close(c.ready)
 	if containerIsRunning("redis_mtf") {
 		fmt.Printf("mysql_mtf is already running")
@@ -35,4 +40,5 @@ func (c *Redis) Stop() {
 
 func (c *Redis) Ready() {
 	<-c.ready
+	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
 }
