@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"strings"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/go-test/deep"
@@ -94,15 +93,13 @@ func (p *ClientPort) Close() {
 
 func (p *ClientPort) Send(msg interface{}) error {
 	startSync.Wait()
-	errC := make(chan error)
+
+	v, ok := p.emd[reflect.TypeOf(msg)]
+	if !ok {
+		return errors.Errorf("port doesn't support message type %T", msg)
+	}
 
 	go func() {
-		v, ok := p.emd[reflect.TypeOf(msg)]
-		if !ok {
-			errC <- errors.Errorf("port dosn't support message type %T", msg)
-			return
-		}
-
 		out := reflect.New(v.RespType.Elem()).Interface()
 		if err := p.conn.Invoke(context.Background(), v.Endpoint, msg, out); err != nil {
 			go func() {
@@ -111,7 +108,6 @@ func (p *ClientPort) Send(msg interface{}) error {
 					resp: nil,
 				}
 			}()
-			errC <- errors.Wrapf(err, "failed to send %T message", msg)
 			return
 		}
 
@@ -125,15 +121,9 @@ func (p *ClientPort) Send(msg interface{}) error {
 				resp: resp,
 			}
 		}()
-		errC <- nil
 	}()
 
-	select {
-	case <-time.Tick(time.Second * 5):
-		return errors.Errorf("failed to send %T message, deadline exeeded", msg)
-	case err := <-errC:
-		return err
-	}
+	return nil
 }
 
 func (p *ClientPort) ReceiveM(m match.Matcher, opts ...PortOpt) error {
@@ -177,22 +167,4 @@ func (p *ClientPort) Receive(msg interface{}, opts ...PortOpt) error {
 		}
 	}
 	return nil
-}
-
-func (port *ClientPort) SendT(t *testing.T, msg interface{}) {
-	if err := port.Send(msg); err != nil {
-		t.Fatalf("failed to send %T, error: %v", msg, err)
-	}
-}
-
-func (port *ClientPort) ReceiveT(t *testing.T, msg interface{}, opts ...PortOpt) {
-	if err := port.Receive(msg, opts...); err != nil {
-		t.Fatalf("failed to receive %T, error: %v", msg, err)
-	}
-}
-
-func (port *ClientPort) ReceiveTM(t *testing.T, m match.Matcher, opts ...PortOpt) {
-	if err := port.ReceiveM(m, opts...); err != nil {
-		t.Fatalf("failed to receive, error: %v", err)
-	}
 }

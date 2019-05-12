@@ -27,7 +27,8 @@ func (c *SUT) Start() {
 
 func (c *SUT) Ready() {
 	waitForPortOpen("localhost", "8001")
-	time.Sleep(time.Second * 1)
+	// TODO sync sut start
+	time.Sleep(time.Millisecond * 700)
 	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
 }
 

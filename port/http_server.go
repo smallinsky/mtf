@@ -134,12 +134,12 @@ func (p *HTTPPort) ReceiveM(m match.Matcher, opts ...Opt) error {
 	return nil
 }
 
-func (m *HTTPPort) Send(resp *HTTPResponse, opts ...Opt) error {
+func (p *HTTPPort) Send(resp *HTTPResponse, opts ...Opt) error {
 	resp.setDefaults()
 	go func() {
-		m.respC <- resp
+		p.respC <- resp
 	}()
-	<-m.sync
+	<-p.sync
 	time.Sleep(time.Millisecond * 100)
 	return nil
 }

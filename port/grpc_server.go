@@ -5,7 +5,6 @@ import (
 	"log"
 	"reflect"
 	"strings"
-	"testing"
 	"time"
 	"unsafe"
 
@@ -184,22 +183,4 @@ func getServerDesc(s interface{}) (name string, methods []string) {
 		methods = append(methods, t.Method(i).Name)
 	}
 	return
-}
-
-func (p *PortIn) ReceiveT(t *testing.T, i interface{}, opts ...Opt) {
-	if err := p.Receive(i, opts...); err != nil {
-		t.Fatalf("failed to receive, error: %v", err)
-	}
-}
-
-func (p *PortIn) ReceiveTM(t *testing.T, m match.Matcher, opts ...Opt) {
-	if err := p.ReceiveM(m, opts...); err != nil {
-		t.Fatalf("failed to receive, error: %v", err)
-	}
-}
-
-func (p *PortIn) SendT(t *testing.T, msg interface{}, opts ...PortOpt) {
-	if err := p.Send(msg, opts...); err != nil {
-		t.Fatalf("failed to send %T, error: %v", msg, err)
-	}
 }
