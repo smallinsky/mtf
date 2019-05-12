@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	pb "github.com/smallinsky/mtf/e2e/proto/echo"
+	//pbo "github.com/smallinsky/mtf/e2e/proto/oracle"
 	"github.com/smallinsky/mtf/port"
 )
 
@@ -12,8 +13,9 @@ func TestMain(m *testing.M) {
 }
 
 type SuiteTest struct {
-	echoPort *port.ClientPort
-	httpPort *port.HTTPPort
+	echoPort   *port.ClientPort
+	httpPort   *port.HTTPPort
+	oraclePort *port.PortIn
 }
 
 func (st *SuiteTest) Init(t *testing.T) {
@@ -24,6 +26,9 @@ func (st *SuiteTest) Init(t *testing.T) {
 	if st.httpPort, err = port.NewHTTP(); err != nil {
 		t.Fatalf("failed to init http port")
 	}
+	//if st.oraclePort, err = port.NewGRPCServer((*pbo.OracleServer)(nil), ":8002"); err != nil {
+	//	t.Fatalf("failed to init grpc oracle server")
+	//}
 }
 
 func (st *SuiteTest) TestRedis(t *testing.T) {
@@ -57,6 +62,21 @@ func (st *SuiteTest) TestHTTP(t *testing.T) {
 		Data: "42",
 	})
 }
+
+//func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
+//	st.echoPort.SendT(t, &pb.AskOracleRequest{
+//		Data: "Get answer for ultimate question of life the universe and everything",
+//	})
+//	st.oraclePort.ReceiveT(t, &pbo.AskDeepThroughRequest{
+//		Data: "Get answer for ultimate question of life the universe and everything",
+//	})
+//	st.oraclePort.SendT(t, &pbo.AskDeepThroughRespnse{
+//		Data: "42",
+//	})
+//	st.echoPort.ReceiveT(t, &pb.AskOracleResponse{
+//		Data: "42",
+//	})
+//}
 
 func TestEchoService(t *testing.T) {
 	Run(t, new(SuiteTest))
