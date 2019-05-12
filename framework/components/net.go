@@ -22,12 +22,26 @@ func (c *Net) Start() {
 	if networkExists("mtf_net") {
 		return
 	}
-	run("docker network create --driver bridge mtf_net")
+
+	var (
+		name = "mtf_net"
+	)
+
+	cmd := []string{
+		"docker", "network", "create",
+		"--driver", "bridge", name,
+	}
+
+	runCmd(cmd)
 }
 
 func (c *Net) Stop() {
 	return
 	run("docker network rm mtf_net")
+	cmd := []string{
+		"docker", "network", "rm", "mtf_net",
+	}
+	runCmd(cmd)
 }
 
 func (c *Net) Ready() {

@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+func NewSUT() *SUT {
+	return &SUT{}
+}
+
 type SUT struct {
 	Path  string
 	start time.Time
@@ -16,13 +20,33 @@ type SUT struct {
 func (c *SUT) Start() {
 	c.start = time.Now()
 	c.Path = "../e2e/service/echo/"
+	binary := "echo"
 
 	var err error
 	if c.Path, err = filepath.Abs(c.Path); err != nil {
 		log.Printf("[ERROR]: Failed to get absolute path for %v path", c.Path)
 	}
-	cmd := fmt.Sprintf("docker run --rm -d --name=sut_mtf --hostname=sut_mtf --network=mtf_net -p 8001:8001 --cap-add=NET_ADMIN --cap-add=NET_RAW -v %s:/component run_sut", c.Path)
-	run(cmd)
+
+	var (
+		name  = "sut"
+		port  = "8001"
+		image = "run_sut"
+	)
+
+	arg := []string{
+		"docker", "run", "--rm", "-d",
+		fmt.Sprintf("--name=%s_mtf", name),
+		fmt.Sprintf("--hostname=%s_mtf", name),
+		"--network=mtf_net",
+		"-p", fmt.Sprintf("%s:%s", port, port),
+		"--cap-add=NET_ADMIN",
+		"--cap-add=NET_RAW",
+		"-e", fmt.Sprintf("SUT_BINARY_NAME=%v", binary),
+		"-v", fmt.Sprintf("%s:/component", c.Path),
+		image,
+	}
+
+	runCmd(arg)
 }
 
 func (c *SUT) Ready() {
@@ -33,7 +57,10 @@ func (c *SUT) Ready() {
 }
 
 func (c *SUT) Stop() {
-	run("docker kill sut_mtf")
+	cmd := []string{
+		"docker", "kill", fmt.Sprintf("%s_mtf", "sut"),
+	}
+	runCmd(cmd)
 }
 
 func waitForPortOpen(host, port string) {

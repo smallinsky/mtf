@@ -35,13 +35,35 @@ func (c *MySQL) Start() {
 		return
 	}
 
-	cmd := `docker run --rm -d --network=mtf_net --name mysql_mtf --hostname=mysql_mtf --env MYSQL_ROOT_PASSWORD=test --env MYSQL_DATABASE=test_db -p 3306:3306 mysql --default-authentication-plugin=mysql_native_password`
-	run(cmd)
+	var (
+		name     = "mysql"
+		port     = "3306"
+		database = "test_db"
+		password = "test"
+		image    = "mysql"
+		arg      = "--default-authentication-plugin=mysql_native_password"
+	)
+
+	cmd := []string{
+		"docker", "run", "--rm", "-d",
+		fmt.Sprintf("--name=%s_mtf", name),
+		fmt.Sprintf("--hostname=%s_mtf", name),
+		"--network=mtf_net",
+		"-p", fmt.Sprintf("%s:%s", port, port),
+		"-e", fmt.Sprintf("MYSQL_DATABASE=%v", database),
+		"-e", fmt.Sprintf("MYSQL_ROOT_PASSWORD=%v", password),
+		image, arg,
+	}
+
+	runCmd(cmd)
 }
 
 func (c *MySQL) Stop() {
 	return
-	run("docker kill mysql_mtf")
+	cmd := []string{
+		"docker", "kill", fmt.Sprintf("%s_mtf", "mysql"),
+	}
+	runCmd(cmd)
 }
 
 func (c *MySQL) Ready() {
@@ -65,7 +87,21 @@ func run(s string) error {
 		log.Printf("[ERROR] cmd wait: %v , \n", err)
 		return err
 	}
-	//log.Printf("[DEBUG] output: %v\n", string(buff))
+	return nil
+}
+
+func runCmd(arg []string) error {
+	cmd := exec.Command(arg[0], arg[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+	err := cmd.Start()
+	if err != nil {
+		return err
+	}
+	err = cmd.Wait()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

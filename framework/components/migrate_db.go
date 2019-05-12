@@ -27,8 +27,23 @@ func (c *MigrateDB) Start() {
 		log.Printf("[ERROR]: Migraitn path: %v doesn't exist\n", c.migrationDirPath)
 		return
 	}
-	cmd := fmt.Sprintf(`docker run --rm -v %s:/migrations --network=mtf_net migrate/migrate -path /migrations -database mysql://root:test@tcp(mysql_mtf:3306)/test_db up`, c.migrationDirPath)
-	run(cmd)
+
+	var (
+		image    = "migrate/migrate"
+		hostname = "mysql"
+		password = "test"
+		port     = "3306"
+	)
+
+	cmd := []string{
+		"docker", "run", "--rm", "-d",
+		"-v", fmt.Sprintf("%s/migrations", c.migrationDirPath),
+		image,
+		"-path", "/migrations",
+		"-database", fmt.Sprintf("mysql://root:%s@(%s:%s/test_db up", password, hostname, port),
+	}
+
+	runCmd(cmd)
 }
 
 func networkExists(name string) bool {

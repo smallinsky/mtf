@@ -25,17 +25,35 @@ type Pubsub struct {
 func (c *Pubsub) Start() {
 	c.start = time.Now()
 	defer close(c.ready)
-	if containerIsRunning("redis_mtf") {
+	if containerIsRunning("pubsub_mtf") {
 		fmt.Printf("pubsub_mtf is already running")
 		return
 	}
-	cmd := `docker run --rm -d --network=mtf_net --name pubsub_mtf --hostname=pubsub_mtf -p 8085:8085 adilsoncarvalho/gcloud-pubsub-emulator`
-	run(cmd)
+
+	var (
+		name  = "pubsub"
+		port  = "8085"
+		image = "adilsoncarvalho/gcloud-pubsub-emulator"
+	)
+
+	cmd := []string{
+		"docker", "run", "--rm", "-d",
+		fmt.Sprintf("--name=%s_mtf", name),
+		fmt.Sprintf("--hostname=%s_mtf", name),
+		"--network=mtf_net",
+		"-p", fmt.Sprintf("%s:%s", port, port),
+		image,
+	}
+
+	runCmd(cmd)
 }
 
 func (c *Pubsub) Stop() {
 	return
-	run("docker kill pubsub_mtf")
+	cmd := []string{
+		"docker", "kill", fmt.Sprintf("%s_mtf", "pubsub"),
+	}
+	runCmd(cmd)
 }
 
 func (c *Pubsub) Ready() {

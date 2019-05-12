@@ -29,13 +29,31 @@ func (c *Redis) Start() {
 		return
 	}
 
-	cmd := `docker run --rm -d --network=mtf_net --name redis_mtf --hostname=redis_mtf --env REDIS_PASSWORD=test -p 6379:6379 bitnami/redis:4.0`
-	run(cmd)
+	var (
+		name  = "redis"
+		port  = "6379"
+		image = "bitnami/redis:4.0"
+	)
+
+	cmd := []string{
+		"docker", "run", "--rm", "-d",
+		fmt.Sprintf("--name=%s_mtf", name),
+		fmt.Sprintf("--hostname=%s_mtf", name),
+		"--network=mtf_net",
+		"--env", "REDIS_PASSWORD=test",
+		"-p", fmt.Sprintf("%s:%s", port, port),
+		image,
+	}
+
+	runCmd(cmd)
 }
 
 func (c *Redis) Stop() {
 	return
-	run("docker stop redis_mtf")
+	cmd := []string{
+		"docker", "kill", fmt.Sprintf("%s_mtf", "redis"),
+	}
+	runCmd(cmd)
 }
 
 func (c *Redis) Ready() {
