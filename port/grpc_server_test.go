@@ -13,7 +13,7 @@ import (
 )
 
 func TestGRPCServer(t *testing.T) {
-	svr := NewGRPCServer((*oracle.OracleServer)(nil), ":9999")
+	svr, _ := NewGRPCServer((*oracle.OracleServer)(nil), ":9999")
 	conn, err := grpc.Dial("localhost:9999", grpc.WithInsecure())
 	if err != nil {
 		t.Fatal("fialed to dial echo addres: ", err)
@@ -23,7 +23,7 @@ func TestGRPCServer(t *testing.T) {
 
 	t.Run("SingeCall", func(t *testing.T) {
 		go func() {
-			svr.ReceiveM(
+			svr.ReceiveTM(t,
 				match.Payload(
 					&oracle.AskDeepThroughRequest{
 						Data: "Ultimate question",
@@ -31,7 +31,7 @@ func TestGRPCServer(t *testing.T) {
 				),
 			)
 
-			svr.Send(&oracle.AskDeepThroughRespnse{
+			svr.SendT(t, &oracle.AskDeepThroughRespnse{
 				Data: "42",
 			})
 		}()
@@ -55,10 +55,10 @@ func TestGRPCServer(t *testing.T) {
 
 		go func() {
 			for i := 0; i < N; i++ {
-				svr.Receive(&oracle.AskDeepThroughRequest{
+				svr.ReceiveT(t, &oracle.AskDeepThroughRequest{
 					Data: fmt.Sprintf("Request: %v", i),
 				})
-				svr.Send(&oracle.AskDeepThroughRespnse{
+				svr.SendT(t, &oracle.AskDeepThroughRespnse{
 					Data: fmt.Sprintf("Response: %v", i),
 				})
 			}
@@ -80,7 +80,7 @@ func TestGRPCServer(t *testing.T) {
 
 	t.Run("ReciveMatchFn", func(t *testing.T) {
 		go func() {
-			svr.ReceiveM(match.Fn(
+			svr.ReceiveTM(t, match.Fn(
 				func(r *oracle.AskDeepThroughRequest) {
 					if r.Data != "Ultimate question" {
 						t.Fatalf("unexpected payload: %v", r.Data)
@@ -120,13 +120,13 @@ func TestGRPCServerStart(t *testing.T) {
 
 		// Value 1s are causing causes client grpc.Dial error call.
 		time.Sleep(time.Second * 1)
-		svr := NewGRPCServer((*oracle.OracleServer)(nil), ":9991")
+		svr, _ := NewGRPCServer((*oracle.OracleServer)(nil), ":9991")
 		go func() {
-			svr.Receive(&oracle.AskDeepThroughRequest{
+			svr.ReceiveT(t, &oracle.AskDeepThroughRequest{
 				Data: "Ultimate question",
 			})
 
-			svr.Send(&oracle.AskDeepThroughRespnse{
+			svr.SendT(t, &oracle.AskDeepThroughRespnse{
 				Data: "42",
 			})
 		}()

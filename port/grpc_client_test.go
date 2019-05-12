@@ -24,28 +24,28 @@ func TestGrpcClientPort(t *testing.T) {
 	}
 
 	t.Run("SendReceiveOneMessgeSameType", func(t *testing.T) {
-		port.Send(&FirstRequest{
+		port.SendT(t, &FirstRequest{
 			ID: 1,
 		})
-		port.ReceiveM(match.Payload(&FirstResponse{
+		port.ReceiveTM(t, match.Payload(&FirstResponse{
 			ID: 1,
 		}))
 	})
 
 	t.Run("SendReceiveTwoMessageSameType", func(t *testing.T) {
 		t.Skipf("fix async call and queue messages")
-		port.Send(&FirstRequest{
+		port.SendT(t, &FirstRequest{
 			ID: 1,
 		})
-		port.Send(&FirstRequest{
+		port.SendT(t, &FirstRequest{
 			ID: 2,
 		})
 
 		//TODO: Fix async order based on send call
-		port.ReceiveM(match.Payload(&FirstResponse{
+		port.ReceiveTM(t, match.Payload(&FirstResponse{
 			ID: 1,
 		}))
-		port.ReceiveM(match.Payload(&FirstResponse{
+		port.ReceiveTM(t, match.Payload(&FirstResponse{
 			ID: 2,
 		}))
 	})
@@ -58,10 +58,10 @@ func TestGrpcClientPort(t *testing.T) {
 				defer wg.Done()
 				i := i
 
-				port.Send(&FirstRequest{
+				port.SendT(t, &FirstRequest{
 					ID: i,
 				})
-				port.ReceiveM(match.Payload(&FirstResponse{
+				port.ReceiveTM(t, match.Payload(&FirstResponse{
 					ID: i,
 				}))
 			}()
@@ -70,10 +70,10 @@ func TestGrpcClientPort(t *testing.T) {
 	})
 
 	t.Run("RecieveMatchFn", func(t *testing.T) {
-		port.Send(&FirstRequest{
+		port.SendT(t, &FirstRequest{
 			ID: 10,
 		})
-		port.ReceiveM(match.Fn(
+		port.ReceiveTM(t, match.Fn(
 			func(r *FirstResponse) {
 				if r.ID != 10 {
 					t.Fatalf("expected response id = 10 but got: %v", r.ID)

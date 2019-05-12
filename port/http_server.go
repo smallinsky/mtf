@@ -9,18 +9,22 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/smallinsky/mtf/match"
 )
 
 //TODO Add https support
-func NewHTTP() HTTPPort {
-	p := HTTPPort{
+func NewHTTP() (*HTTPPort, error) {
+	port := &HTTPPort{
 		reqC:  make(chan *HTTPRequest),
 		respC: make(chan *HTTPResponse),
 		sync:  make(chan struct{}),
 	}
-	p.serve()
-	return p
+	if err := port.serve(); err != nil {
+		return nil, errors.Wrapf(err, "failed to serv")
+	}
+	return port, nil
 }
 
 type HTTPRequest struct {
@@ -68,15 +72,16 @@ type HTTPPort struct {
 	svr *httptest.Server
 }
 
-func (p *HTTPPort) serve() {
-	var err error
-
+func (p *HTTPPort) serve() error {
 	p.svr = httptest.NewUnstartedServer(http.HandlerFunc(p.Handle))
+
+	var err error
 	p.svr.Listener, err = net.Listen("tcp", ":8080")
 	if err != nil {
-		log.Fatalf("Filed to start net listener: %v", err)
+		return errors.Wrapf(err, "faield to start net listener")
 	}
 	p.svr.Start()
+	return nil
 }
 
 func (p *HTTPPort) Stop() {
@@ -92,7 +97,7 @@ func (p *HTTPPort) Handle(w http.ResponseWriter, req *http.Request) {
 	p.sync <- struct{}{}
 }
 
-func (p *HTTPPort) Receive(r *HTTPRequest, opts ...Opt) {
+func (p *HTTPPort) Receive(r *HTTPRequest, opts ...Opt) error {
 	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
@@ -103,34 +108,38 @@ func (p *HTTPPort) Receive(r *HTTPRequest, opts ...Opt) {
 		// Add matcher
 		log.Printf("[DEBUG]: %T Received %v", p, req)
 	case <-time.Tick(options.timeout):
-		log.Fatalf("Timeout during receive call")
+		return errors.Errorf("failed to receive  message, deadline exeeded")
 	}
+
+	return nil
 }
 
-func (p *HTTPPort) ReceiveM(m match.Matcher, opts ...Opt) {
+func (p *HTTPPort) ReceiveM(m match.Matcher, opts ...Opt) error {
 	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
 	}
 	if err := m.Validate(); err != nil {
-		log.Fatalf("matcher %T validation failed: %v ", m, err)
+		return errors.Wrapf(err, "invalid marcher argument")
 	}
 
 	select {
 	case req := <-p.reqC:
 		if err := m.Match(nil, req); err != nil {
-			log.Fatalf("%T match failed: %v", m, err)
+			return errors.Wrapf(err, "%T message match failed", m)
 		}
 	case <-time.Tick(options.timeout):
-		log.Fatalf("Timeout during receive call")
+		return errors.Errorf("failed to receive  message, deadline exeeded")
 	}
+	return nil
 }
 
-func (m *HTTPPort) Send(resp *HTTPResponse, opts ...Opt) {
+func (m *HTTPPort) Send(resp *HTTPResponse, opts ...Opt) error {
 	resp.setDefaults()
 	go func() {
 		m.respC <- resp
 	}()
 	<-m.sync
 	time.Sleep(time.Millisecond * 100)
+	return nil
 }

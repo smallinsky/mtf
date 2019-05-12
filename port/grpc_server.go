@@ -5,10 +5,12 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"testing"
 	"time"
 	"unsafe"
 
 	"github.com/go-test/deep"
+	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
@@ -27,41 +29,44 @@ type PortIn struct {
 	respC chan outValues
 }
 
-func NewGRPCServer(i interface{}, port string, opts ...PortOpt) *PortIn {
+func NewGRPCServer(i interface{}, port string, opts ...PortOpt) (*PortIn, error) {
 	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
 	}
 
-	p := &PortIn{
+	portIn := &PortIn{
 		reqC:  make(chan interface{}),
 		respC: make(chan outValues),
 	}
 
 	fn := func(i interface{}) (interface{}, error) {
 		go func() {
-			p.reqC <- i
+			portIn.reqC <- i
 		}()
-		retV := <-p.respC
+		retV := <-portIn.respC
 		return retV.msg, retV.err
 	}
 
 	// TODO Add tls support
 	lis, err := listen("tcp", port)
 	if err != nil {
-		log.Fatalf("Failed to listen %v", err)
+		return nil, errors.Wrapf(err, "failed to create net listener")
 	}
 
 	grpcOpts := []grpc.ServerOption{}
 	if options.serverCertPath != "" && options.serverKeyPath != "" {
 		creds, err := credentials.NewServerTLSFromFile(options.serverCertPath, options.serverKeyPath)
 		if err != nil {
-			log.Fatalf("failed to load TLS certs")
+			return nil, errors.Wrapf(err, "failed to load TLS certs")
 		}
 		grpcOpts = append(grpcOpts, grpc.Creds(creds))
 	}
 
-	s := registerInterface(grpc.NewServer(grpcOpts...), i, fn, options)
+	s, err := registerInterface(grpc.NewServer(grpcOpts...), i, fn, options)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to reqigster server interface")
+	}
 
 	startSync.Add(1)
 
@@ -70,10 +75,10 @@ func NewGRPCServer(i interface{}, port string, opts ...PortOpt) *PortIn {
 			log.Fatalf("Failed to server %v", err)
 		}
 	}()
-	return p
+	return portIn, nil
 }
 
-func (p *PortIn) Receive(i interface{}, opts ...Opt) {
+func (p *PortIn) Receive(i interface{}, opts ...Opt) error {
 	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
@@ -81,34 +86,36 @@ func (p *PortIn) Receive(i interface{}, opts ...Opt) {
 
 	select {
 	case v := <-p.reqC:
-		if err := deep.Equal(v, i); err != nil {
-			log.Fatalf("Struct not eq: %v", err)
+		if diff := deep.Equal(v, i); diff != nil {
+			return errors.Errorf("Struct not eq: \n diff: '%v'", diff)
 		}
 	case <-time.NewTimer(options.timeout).C:
-		log.Printf("Timeout, expected message %T not received\n", i)
+		return errors.Errorf("failed to receive  message, deadline exeeded")
 	}
+	return nil
 }
 
-func (p *PortIn) ReceiveM(m match.Matcher, opts ...Opt) {
+func (p *PortIn) ReceiveM(m match.Matcher, opts ...Opt) error {
 	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
 	}
 	if err := m.Validate(); err != nil {
-		log.Fatalf("matcher %T validation failed: %v", m, err)
+		return errors.Wrapf(err, "invalid marcher argument")
 	}
 
 	select {
 	case got := <-p.reqC:
 		if err := m.Match(nil, got); err != nil {
-			log.Fatalf("%T match failed: %v", m, err)
+			return errors.Wrapf(err, "%T message match failed", m)
 		}
 	case <-time.NewTimer(options.timeout).C:
-		log.Printf("Timeout, expected message not received\n")
+		return errors.Errorf("failed to receive  message, deadline exeeded")
 	}
+	return nil
 }
 
-func (p *PortIn) Send(msg interface{}, opts ...PortOpt) {
+func (p *PortIn) Send(msg interface{}, opts ...PortOpt) error {
 	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
@@ -118,10 +125,11 @@ func (p *PortIn) Send(msg interface{}, opts ...PortOpt) {
 		msg: msg,
 		err: options.err,
 	}
+	return nil
 }
 
-func registerInterface(s *grpc.Server, i interface{}, procCall processFunc, opts portOpts) *grpc.Server {
-	sv := reflect.ValueOf(&s).Elem().Elem().FieldByName("m")
+func registerInterface(server *grpc.Server, i interface{}, procCall processFunc, opts portOpts) (*grpc.Server, error) {
+	sv := reflect.ValueOf(&server).Elem().Elem().FieldByName("m")
 	nsv := reflect.New(sv.Type().Elem().Elem())
 	mdv := nsv.Elem().FieldByName("md")
 	//TODO register handler for stream methods
@@ -129,7 +137,10 @@ func registerInterface(s *grpc.Server, i interface{}, procCall processFunc, opts
 	z := reflect.New(mdv.Type().Elem().Elem())
 	mv := allocMap(mdv)
 
-	desc := getGrpcDetails(i)
+	desc, err := getGrpcDetails(i)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed ot get grpc details")
+	}
 	for _, mdesc := range desc.methodsDesc {
 		fn := func(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 			v := reflect.New(mdesc.InType)
@@ -152,7 +163,7 @@ func registerInterface(s *grpc.Server, i interface{}, procCall processFunc, opts
 
 	mv = allocMap(sv)
 	mv.Elem().SetMapIndex(reflect.ValueOf(desc.Name), nsv)
-	return s
+	return server, nil
 }
 
 func allocMap(v reflect.Value) reflect.Value {
@@ -173,4 +184,22 @@ func getServerDesc(s interface{}) (name string, methods []string) {
 		methods = append(methods, t.Method(i).Name)
 	}
 	return
+}
+
+func (p *PortIn) ReceiveT(t *testing.T, i interface{}, opts ...Opt) {
+	if err := p.Receive(i, opts...); err != nil {
+		t.Fatalf("failed to receive, error: %v", err)
+	}
+}
+
+func (p *PortIn) ReceiveTM(t *testing.T, m match.Matcher, opts ...Opt) {
+	if err := p.ReceiveM(m, opts...); err != nil {
+		t.Fatalf("failed to receive, error: %v", err)
+	}
+}
+
+func (p *PortIn) SendT(t *testing.T, msg interface{}, opts ...PortOpt) {
+	if err := p.Send(msg, opts...); err != nil {
+		t.Fatalf("failed to send %T, error: %v", msg, err)
+	}
 }
