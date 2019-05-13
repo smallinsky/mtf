@@ -20,6 +20,8 @@ type SUT struct {
 func (c *SUT) Start() {
 	c.start = time.Now()
 
+	c.Path = "../e2e/service/echo/"
+
 	var err error
 	if c.Path, err = filepath.Abs(c.Path); err != nil {
 		log.Printf("[ERROR]: Failed to get absolute path for %v path", c.Path)
@@ -44,6 +46,7 @@ func (c *SUT) Start() {
 		"--cap-add=NET_ADMIN",
 		"--cap-add=NET_RAW",
 		"-e", fmt.Sprintf("SUT_BINARY_NAME=%v", binary),
+		"-e", "ORACLE_ADDR=host.docker.internal:8002",
 		"-v", fmt.Sprintf("%s:/component", path),
 		image,
 	}

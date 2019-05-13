@@ -153,10 +153,8 @@ func (p *ClientPort) Receive(msg interface{}, opts ...PortOpt) error {
 		o(&options)
 	}
 
-	deadlineC := time.Tick(options.timeout)
-
 	select {
-	case <-deadlineC:
+	case <-time.Tick(options.timeout):
 		return errors.Errorf("failed to receive  message, deadline exeeded")
 	case result := <-p.callResultC:
 		if result.err != nil {
