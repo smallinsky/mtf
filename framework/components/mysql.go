@@ -69,6 +69,8 @@ func (c *MySQL) Stop() {
 func (c *MySQL) Ready() {
 	waitForOpenPort("localhost", "3306")
 	<-c.ready
+	migrate := &MigrateDB{}
+	migrate.Start()
 	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
 }
 

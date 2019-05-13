@@ -51,11 +51,6 @@ func (s *Suite) Run() {
 		comp.Ready()
 	}
 
-	m := components.MigrateDB{}
-	m.Start()
-	m.Ready()
-	defer m.Stop()
-
 	sut := components.SUT{}
 
 	sut.Start()

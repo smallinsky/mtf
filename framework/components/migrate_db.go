@@ -7,17 +7,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 type MigrateDB struct {
 	migrationDirPath string
-	start            time.Time
 }
 
 func (c *MigrateDB) Start() {
 	c.migrationDirPath = "../e2e/migrations"
-	c.start = time.Now()
 
 	var err error
 	if c.migrationDirPath, err = filepath.Abs(c.migrationDirPath); err != nil {
@@ -27,23 +24,21 @@ func (c *MigrateDB) Start() {
 		log.Printf("[ERROR]: Migraitn path: %v doesn't exist\n", c.migrationDirPath)
 		return
 	}
-
-	var (
-		image    = "migrate/migrate"
-		hostname = "mysql"
-		password = "test"
-		port     = "3306"
-	)
-
 	cmd := []string{
 		"docker", "run", "--rm", "-d",
-		"-v", fmt.Sprintf("%s/migrations", c.migrationDirPath),
-		image,
+		"-v", fmt.Sprintf("%s:/migrations", c.migrationDirPath),
+		"--network=mtf_net",
+		"migrate/migrate",
 		"-path", "/migrations",
-		"-database", fmt.Sprintf("mysql://root:%s@(%s:%s/test_db up", password, hostname, port),
+		"-database", "mysql://root:test@tcp(mysql_mtf:3306)/test_db", "up",
 	}
-
 	runCmd(cmd)
+}
+
+func (c *MigrateDB) Stop() {
+}
+
+func (c *MigrateDB) Ready() {
 }
 
 func networkExists(name string) bool {
@@ -53,6 +48,7 @@ func networkExists(name string) bool {
 func containerIsRunning(name string) bool {
 	return cmdExitStatus(fmt.Sprintf("docker top %s", name))
 }
+
 func cmdExitStatus(command string) bool {
 	args := strings.Split(command, " ")
 	cmd := exec.Command(args[0], args[1:len(args)]...)
@@ -67,11 +63,4 @@ func cmdExitStatus(command string) bool {
 		}
 	}
 	return true
-}
-
-func (c *MigrateDB) Stop() {
-}
-
-func (c *MigrateDB) Ready() {
-	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
 }

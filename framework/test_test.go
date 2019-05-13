@@ -39,11 +39,9 @@ func (st *SuiteTest) TestRedis(t *testing.T) {
 	st.echoPort.SendT(t, &pb.AskRedisRequest{
 		Data: "make me sandwitch",
 	})
-
 	st.echoPort.ReceiveT(t, &pb.AskRedisResponse{
 		Data: "what? make it yourself",
 	})
-
 	st.echoPort.SendT(t, &pb.AskRedisRequest{
 		Data: "sudo make me sandwitch",
 	})
@@ -79,5 +77,14 @@ func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
 	})
 	st.echoPort.ReceiveT(t, &pb.AskOracleResponse{
 		Data: "42",
+	})
+}
+
+func (st *SuiteTest) TestFetchDataFromDB(t *testing.T) {
+	st.echoPort.SendT(t, &pb.AskDBRequest{
+		Data: "the dirty fork",
+	})
+	st.echoPort.ReceiveT(t, &pb.AskDBResponse{
+		Data: "Lucky we didn't say anything about the dirty knife",
 	})
 }
