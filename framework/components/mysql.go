@@ -92,16 +92,25 @@ func run(s string) error {
 	return nil
 }
 
-func runCmd(arg []string) error {
-	cmd := exec.Command(arg[0], arg[1:]...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stdout
-	err := cmd.Start()
-	if err != nil {
-		return err
+type option func(*exec.Cmd)
+
+func WithEnv(env ...string) option {
+	return func(cmd *exec.Cmd) {
+		cmd.Env = append(cmd.Env, env...)
 	}
-	err = cmd.Wait()
-	if err != nil {
+}
+
+func runCmd(arg []string, opts ...option) error {
+	cmd := exec.Command(arg[0], arg[1:]...)
+	cmd.Env = os.Environ()
+	//cmd.Stdout = os.Stdout
+	//cmd.Stderr = os.Stdout
+	for _, opt := range opts {
+		opt(cmd)
+	}
+
+	if buff, err := cmd.CombinedOutput(); err != nil {
+		log.Printf("error cmd buff: '%s', err%v \n", string(buff), err)
 		return err
 	}
 	return nil

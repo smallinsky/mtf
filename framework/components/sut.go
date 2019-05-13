@@ -4,8 +4,12 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"path/filepath"
+	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 func NewSUT() *SUT {
@@ -26,6 +30,21 @@ func (c *SUT) Start() {
 	if c.Path, err = filepath.Abs(c.Path); err != nil {
 		log.Printf("[ERROR]: Failed to get absolute path for %v path", c.Path)
 	}
+	if _, err := os.Stat(c.Path); os.IsNotExist(err) {
+		log.Printf("[ERROR]: Migraitn path: %v doesn't exist\n", c.Path)
+		return
+	}
+
+	b := strings.Split(c.Path, `/`)
+	bin := b[len(b)-1]
+
+	// TODO Add go test flag to rebuild sut binary.
+	if false {
+		if err := BuildGoBinary(c.Path); err != nil {
+			log.Printf("[ERROR]: failed to build sut binary from %s, err %v", c.Path, err)
+			return
+		}
+	}
 
 	var (
 		name  = "sut"
@@ -33,7 +52,7 @@ func (c *SUT) Start() {
 		image = "run_sut"
 		// TODO Get binary base on the path and repo name or if binary deosn't exist build it.
 		// Add ability to run sut from existing image.
-		binary = "echo"
+		binary = bin
 		path   = c.Path
 	)
 
@@ -52,6 +71,28 @@ func (c *SUT) Start() {
 	}
 
 	runCmd(arg)
+}
+
+func BuildGoBinary(path string) error {
+	var err error
+	if path, err = filepath.Abs(path); err != nil {
+		return errors.Wrapf(err, "failed to get abs path")
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return errors.Wrapf(err, "dir doesn't exist")
+	}
+
+	b := strings.Split(path, `/`)
+	bin := b[len(b)-1]
+
+	cmd := []string{
+		"go", "build", "-o", fmt.Sprintf("%s/%s", path, bin), path,
+	}
+
+	if err := runCmd(cmd, WithEnv("GOOS=linux", "GOARCH=amd64")); err != nil {
+		return errors.Wrapf(err, "failed to run cmd")
+	}
+	return nil
 }
 
 func (c *SUT) Ready() {
