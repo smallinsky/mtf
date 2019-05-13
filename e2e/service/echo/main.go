@@ -16,15 +16,15 @@ import (
 
 type config struct {
 	GrpcPort   string `envconfig:"GRPC_PORT" default:":8001"`
-	OracleAddr string `envconfig:"ORACLE_ADDR" default:"localhost:8002"`
+	OracleAddr string `envconfig:"ORACLE_ADDR" default:"oracle_mtf:8002"`
 
 	TLSRootPath string `envconfig:"TLS_ROOT_PATH"`
 	TLSCertPath string `envconfig:"TLS_CERT_PATH"`
 	TLSKeyPath  string `envconfig:"TLS_KEY_PATH"`
-	DBDsn       string `envconfig:"DB_DSN" default:"root:test@tcp(localhost:3306)/test_db"`
+	DBDsn       string `envconfig:"DB_DSN" default:"root:test@tcp(mysql_mtf:3306)/test_db"`
 
-	RedisAdrr string `envconfig:"REDIS_ADDR" default:"redis:6379"`
-	RedisPass string `envconfig:"REDIS_PASS" default:"password123"`
+	RedisAdrr string `envconfig:"REDIS_ADDR" default:"redis_mtf:6379"`
+	RedisPass string `envconfig:"REDIS_PASS" default:"test"`
 }
 
 func main() {
