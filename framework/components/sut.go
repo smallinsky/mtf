@@ -19,8 +19,6 @@ type SUT struct {
 
 func (c *SUT) Start() {
 	c.start = time.Now()
-	c.Path = "../e2e/service/echo/"
-	binary := "echo"
 
 	var err error
 	if c.Path, err = filepath.Abs(c.Path); err != nil {
@@ -31,6 +29,10 @@ func (c *SUT) Start() {
 		name  = "sut"
 		port  = "8001"
 		image = "run_sut"
+		// TODO Get binary base on the path and repo name or if binary deosn't exist build it.
+		// Add ability to run sut from existing image.
+		binary = "echo"
+		path   = c.Path
 	)
 
 	arg := []string{
@@ -42,7 +44,7 @@ func (c *SUT) Start() {
 		"--cap-add=NET_ADMIN",
 		"--cap-add=NET_RAW",
 		"-e", fmt.Sprintf("SUT_BINARY_NAME=%v", binary),
-		"-v", fmt.Sprintf("%s:/component", c.Path),
+		"-v", fmt.Sprintf("%s:/component", path),
 		image,
 	}
 
