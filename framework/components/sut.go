@@ -56,7 +56,11 @@ func (c *SUT) Start() {
 		path   = c.Path
 	)
 
-	arg := []string{
+	runCmd([]string{
+		"mkdir", "-p", "/tmp/mtf/cert",
+	})
+
+	runCmd([]string{
 		"docker", "run", "--rm", "-d",
 		fmt.Sprintf("--name=%s_mtf", name),
 		fmt.Sprintf("--hostname=%s_mtf", name),
@@ -67,10 +71,9 @@ func (c *SUT) Start() {
 		"-e", fmt.Sprintf("SUT_BINARY_NAME=%v", binary),
 		"-e", "ORACLE_ADDR=host.docker.internal:8002",
 		"-v", fmt.Sprintf("%s:/component", path),
+		"-v", "/tmp/mtf/cert:/usr/local/share/ca-certificates",
 		image,
-	}
-
-	runCmd(arg)
+	})
 }
 
 func BuildGoBinary(path string) error {

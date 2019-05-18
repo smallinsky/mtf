@@ -1,8 +1,19 @@
 package port
 
 import (
+	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"math/big"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -17,14 +28,24 @@ import (
 )
 
 //TODO Add https support
-func NewHTTP() (*HTTPPort, error) {
+func NewHTTP(options ...PortOpt) (*HTTPPort, error) {
 	port := &HTTPPort{
 		reqC:  make(chan *HTTPRequest),
 		respC: make(chan *HTTPResponse),
 		sync:  make(chan struct{}),
 	}
-	if err := port.serve(); err != nil {
-		return nil, errors.Wrapf(err, "failed to serv")
+
+	defaultOption := defaultPortOpts
+	for _, option := range options {
+		option(&defaultOption)
+	}
+
+	if err := port.serveHTTPS(defaultOption.TLSHosts); err != nil {
+		return nil, errors.Wrapf(err, "failed to serv https")
+	}
+
+	if err := port.serveHTTP(); err != nil {
+		return nil, errors.Wrapf(err, "failed to serv http")
 	}
 	return port, nil
 }
@@ -85,26 +106,43 @@ func (p *HTTPPort) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	p.sync <- struct{}{}
 }
 
-func (p *HTTPPort) serve() error {
-
+func (p *HTTPPort) serveHTTP() error {
 	p.svr = httptest.NewUnstartedServer(http.HandlerFunc(p.ServeHTTP))
 
 	var err error
 	p.svr.Listener, err = net.Listen("tcp", ":8080")
 	if err != nil {
-		return errors.Wrapf(err, "faield to start net listener")
+		return errors.Wrapf(err, "failed to start net listener")
 	}
 	p.svr.Start()
+
+	return nil
+}
+
+func (p *HTTPPort) serveHTTPS(hosts []string) error {
+	ck, err := genCertForHost(hosts)
+	if err != nil {
+		return err
+	}
+	_, err = tls.X509KeyPair(ck.Cert, ck.Key)
+	if err != nil {
+		return fmt.Errorf("Faield to verify keyPair err: %v\n", err)
+	}
+
+	if err := writeCert(ck); err != nil {
+		return err
+	}
 
 	srv := &http.Server{
 		Addr:    ":8443",
 		Handler: p,
 	}
 	go func() {
-		log.Fatal(srv.ListenAndServeTLS(serverCertFile, serverKeyFile))
+		if err := srv.ListenAndServeTLS(serverCertFile, serverKeyFile); err != nil {
+			log.Fatalf("faield to start tls server: %v", err)
+		}
 	}()
 	return nil
-
 }
 
 func (p *HTTPPort) Stop() {
@@ -168,72 +206,112 @@ func (p *HTTPPort) Send(resp *HTTPResponse, opts ...Opt) error {
 }
 
 var (
-	serverCertFile = "/tmp/mtf/server.crt"
-	serverKeyFile  = "/tmp/mtf/server.key"
+	serverCertFile = "/tmp/mtf/cert/server.crt"
+	serverKeyFile  = "/tmp/mtf/cert/server.key"
 )
 
-func init() {
+func writeCert(ck *CertKey) error {
 	dir := filepath.Dir(serverCertFile)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err := os.MkdirAll("/tmp/mtf", 0777); err != nil {
-			panic(err)
-		}
+		return err
 	}
-	if err := ioutil.WriteFile(serverCertFile, serverCert, 0665); err != nil {
-		panic(err)
+	if err := ioutil.WriteFile(serverCertFile, ck.Cert, 0665); err != nil {
+		return err
 	}
+	if err := ioutil.WriteFile(serverKeyFile, ck.Key, 0665); err != nil {
+		return err
+	}
+	return nil
+}
 
-	if err := ioutil.WriteFile(serverKeyFile, serverKey, 0665); err != nil {
-		panic(err)
+func publicKey(priv interface{}) interface{} {
+	switch k := priv.(type) {
+	case *rsa.PrivateKey:
+		return &k.PublicKey
+	case *ecdsa.PrivateKey:
+		return &k.PublicKey
+	default:
+		return nil
 	}
 }
 
-var serverCert = []byte(`-----BEGIN CERTIFICATE-----
-MIIDLjCCAhYCCQD/jIo7GMKmYjANBgkqhkiG9w0BAQsFADBZMQswCQYDVQQGEwJQ
-TDEQMA4GA1UECAwHV3JvY2xhdzEQMA4GA1UEBwwHV3JvY2xhdzEMMAoGA1UECgwD
-TVRGMQwwCgYDVQQLDANNVEYxCjAIBgNVBAMMASowHhcNMTkwNTE1MjA1NjM0WhcN
-MzkwNTEwMjA1NjM0WjBZMQswCQYDVQQGEwJQTDEQMA4GA1UECAwHV3JvY2xhdzEQ
-MA4GA1UEBwwHV3JvY2xhdzEMMAoGA1UECgwDTVRGMQwwCgYDVQQLDANNVEYxCjAI
-BgNVBAMMASowggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDZSuamylfv
-vUuQw7jjjtc5sb0drwtidsuqMBMlKeznmajQjZb7TCRCDNo+d+JJ1SAVWaaVUzAQ
-wj/MMKhm4tchS8ZYANZD65IKxFOZn7tp3sZzGL+X8VTdVgoyMYZd2H5O2HU8vkd8
-SNOiYfzFsQtJbkFMbABwbDP5ZNSatIQ3x9QECBHg4We3o+UNqsvMw3PKCNjwPlrS
-MhSzgbfJ1ZMH57w47PX3sGMyceJdeKhJqLNwH37nYFHkfXyo4to848SpAA79NouI
-Gk+OhFXYJxRVpQQ/4D8LI/HTlZM9xFCaKDLcv9vRodpfUe/Jy9EzFAj9HfhI46zM
-3ciS73BsVO9TAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAF9IXL93AZWJV+krCbIn
-pVY/PQXcNFADjbadjP7dEAy5rqfYSk3llcGr4ct2MynawtLQj84YNX9L1mQaUW0b
-uAegiLP0+cDUCkCPCVdevbK/nGBH1caYRaiFJNqpihjuErGDm+zKeG9hRSCqRh5j
-Oz+j225UxmZpL9/peJnOzNZY56zg9oswHJcEzN2paSeNgfmK68UDTrOr/Od/rn+A
-6NpGSfXh1egl5GlHc2mHz3VyqrrXaQTkmHEqBGSnGjRFp0q4VQpRDPK0RaoOFddL
-syGhC6L8SM/B793UEQR3HUcoYFYZX2fhHVcUc9BpD3VmegcJi5x65k7U/i3nXvyC
-j3c=
------END CERTIFICATE-----`)
+type CertKey struct {
+	Cert []byte
+	Key  []byte
+}
 
-var serverKey = []byte(`-----BEGIN PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDZSuamylfvvUuQ
-w7jjjtc5sb0drwtidsuqMBMlKeznmajQjZb7TCRCDNo+d+JJ1SAVWaaVUzAQwj/M
-MKhm4tchS8ZYANZD65IKxFOZn7tp3sZzGL+X8VTdVgoyMYZd2H5O2HU8vkd8SNOi
-YfzFsQtJbkFMbABwbDP5ZNSatIQ3x9QECBHg4We3o+UNqsvMw3PKCNjwPlrSMhSz
-gbfJ1ZMH57w47PX3sGMyceJdeKhJqLNwH37nYFHkfXyo4to848SpAA79NouIGk+O
-hFXYJxRVpQQ/4D8LI/HTlZM9xFCaKDLcv9vRodpfUe/Jy9EzFAj9HfhI46zM3ciS
-73BsVO9TAgMBAAECggEABSfczypP6dVQ/K9YLLYP70ODXDfyCjUNYg1f9urGvzwL
-IF+rrGzDE3ogl4jaqqvO5hLJfBOMOWmSf/LLnB1Xw2d73kyuyM/HGFBON3/tv3ZU
-uRhmO2GzhMjs1wIL0SA45wAF0BonshA8TUcL61jnDqf6DqklXYWDujAlR0JvPK+K
-4pfNwPLT3czAwb+t9OmIDZLJ7xo8q7uXD6E9lhHvBYJdy/BdYUeA7cPPFJEAFZ0K
-3Kv3Zp9wnGlJJY/uIfT6IgViUkRswRn+dP2bq+8+A8YWX2/ifQ6swFkLlxnSiJqZ
-PuNFzGmc7vYYbPcv1GuM3kRIdW0wocHazJm8VZVCmQKBgQD/y1GTnfn3D7SXRLz7
-O90ec+K3OJobfkkNDKYmtP5H1cazvQzrH9U319Ngsu3W4RI+h2HWTfN+BAVCJlTy
-+IC8yCSFzoDK5imnCPBupkJXypZzhVknOdjq9GjC+B8OqfA/3ez4Sucs9gR77yfz
-ifoxlEhD9SBONJ1iCr3Ns7iqrwKBgQDZd6cgIjYp7SRjRNLdJSa1oMCizirzxHlx
-zVTdFuVFsKpy8wp25jK352vTbPUP3fK8Z90XTGeFX2qjE0BprEAdR9S6yyaFR29U
-5GTf3KEU8m2IaShxYsyfUM2q4H6hMGcO5wgdsUz6CNMRj02iIQ3GpbkanEIgCz98
-WlawKxhenQKBgErwRfX5UkIPV9j5SmRQJXfGe6Ux7/QeC0jHa+XrIJPrDUubFy3L
-Jaw2jrbFtOg/CBlJkGA4dh11EBVRJZIJO64S9KA+33yR8aH9/HJuQwF1WJ5/cp8L
-U4GCGS8FghPJtZkAa2xShWemq6mjZxDyW1orFwDRz6UZxQH0I6cf//oBAoGALpuk
-aBCtByNaLyRrBRaXS0oev0Xskr5DQQ6+53umu973SRep4H3J1Px2caPiifoJsjOY
-gQvRDBa9JiJUJdHTE/N3Nmmf4eTDibBBpnEE3RZwP1I6ZsLEFEkfK0ZeHXHgRKNj
-a+m6E8ScaCEMhHkNGMwf9gITcga3HpHGDo/N80kCgYEApUBr6+x90nhDUV8IntNB
-JHr0d0Tp8D2C2EjleGfQ1AuNcheCD+BdD8Exn4Hot0wxZIrE9PF1AsQC1ATIJgfR
-XC5VgDfPmzTG+u+pyqqMN1/pPCPQABz3j7HGeTObnrumnXmHgBLbFxvkkNEgZDEV
-7aZxkbcqsPRzeI8UThNm9BU=
------END PRIVATE KEY-----`)
+func genCertForHost(hosts []string) (*CertKey, error) {
+	var priv interface{}
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate private key: %s", err)
+	}
+
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate serial number: %s", err)
+	}
+
+	now := time.Now()
+	template := x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			Organization: []string{"Acme"},
+		},
+		NotBefore: now,
+		NotAfter:  now.Add(365 * 24 * time.Hour),
+
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+
+	hosts = append(hosts, []string{"localhost"}...)
+	for _, h := range hosts {
+		if ip := net.ParseIP(h); ip != nil {
+			template.IPAddresses = append(template.IPAddresses, ip)
+		} else {
+			template.DNSNames = append(template.DNSNames, h)
+		}
+	}
+
+	template.IsCA = true
+	template.KeyUsage |= x509.KeyUsageCertSign
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, publicKey(priv), priv)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create certificate: %s", err)
+	}
+
+	var certBuff bytes.Buffer
+	if err := pem.Encode(&certBuff, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+		return nil, fmt.Errorf("failed to write data to cert.pem: %s", err)
+	}
+
+	var keyBuff bytes.Buffer
+	if err := pem.Encode(&keyBuff, pemBlockForKey(priv)); err != nil {
+		return nil, fmt.Errorf("failed to write data to key.pem: %s", err)
+	}
+
+	return &CertKey{
+		Cert: certBuff.Bytes(),
+		Key:  keyBuff.Bytes(),
+	}, nil
+}
+
+func pemBlockForKey(priv interface{}) *pem.Block {
+	switch k := priv.(type) {
+	case *rsa.PrivateKey:
+		return &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(k)}
+	case *ecdsa.PrivateKey:
+		b, err := x509.MarshalECPrivateKey(k)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to marshal ECDSA private key: %v", err)
+			os.Exit(2)
+		}
+		return &pem.Block{Type: "EC PRIVATE KEY", Bytes: b}
+	default:
+		return nil
+	}
+}

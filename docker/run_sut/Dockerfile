@@ -5,11 +5,7 @@ RUN apk update              \
  && apk add iptables
 
 
-COPY ./cert/server.crt /usr/local/share/ca-certificates/server.crt
-RUN update-ca-certificates 2>/dev/null
-COPY ./cert /cert/
+COPY docker_entrypoint.sh  docker_entrypoint.sh
+RUN chmod +x docker_entrypoint.sh
 
-COPY run.sh  run.sh
-RUN chmod +x run.sh
-
-CMD ["./run.sh"]
+CMD ["./docker_entrypoint.sh"]

@@ -24,9 +24,10 @@ type portOpts struct {
 	serverCertPath string
 	serverKeyPath  string
 
-	pkgName string
-	err     error
-	timeout time.Duration
+	pkgName  string
+	err      error
+	timeout  time.Duration
+	TLSHosts []string
 }
 
 type PortOpt func(*portOpts)
@@ -47,6 +48,12 @@ func WithTLS(crtPath, keyPath string) PortOpt {
 func WithPkgName(name string) PortOpt {
 	return func(o *portOpts) {
 		o.pkgName = name
+	}
+}
+
+func WithTLSHost(hosts ...string) PortOpt {
+	return func(o *portOpts) {
+		o.TLSHosts = hosts
 	}
 }
 
