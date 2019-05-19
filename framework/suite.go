@@ -51,7 +51,10 @@ func (s *Suite) Run() {
 		comp.Ready()
 	}
 
-	sut := components.SUT{}
+	sut := components.NewSUT(
+		"/Users/Marek/Go/src/github.com/smallinsky/mtf/e2e/service/echo/",
+		"ORACLE_ADDR=host.docker.internal:8002",
+	)
 
 	sut.Start()
 	sut.Ready()

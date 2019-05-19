@@ -12,19 +12,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewSUT() *SUT {
-	return &SUT{}
+func NewSUT(path string, env ...string) *SUT {
+	return &SUT{
+		Path: path,
+		Env:  env,
+	}
 }
 
 type SUT struct {
 	Path  string
+	Env   []string
 	start time.Time
 }
 
 func (c *SUT) Start() {
 	c.start = time.Now()
-
-	c.Path = "../e2e/service/echo/"
 
 	var err error
 	if c.Path, err = filepath.Abs(c.Path); err != nil {
@@ -60,7 +62,7 @@ func (c *SUT) Start() {
 		"mkdir", "-p", "/tmp/mtf/cert",
 	})
 
-	runCmd([]string{
+	cmd := []string{
 		"docker", "run", "--rm", "-d",
 		fmt.Sprintf("--name=%s_mtf", name),
 		fmt.Sprintf("--hostname=%s_mtf", name),
@@ -69,11 +71,34 @@ func (c *SUT) Start() {
 		"--cap-add=NET_ADMIN",
 		"--cap-add=NET_RAW",
 		"-e", fmt.Sprintf("SUT_BINARY_NAME=%v", binary),
-		"-e", "ORACLE_ADDR=host.docker.internal:8002",
+		envPlaceholder,
 		"-v", fmt.Sprintf("%s:/component", path),
 		"-v", "/tmp/mtf/cert:/usr/local/share/ca-certificates",
 		image,
-	})
+	}
+	cmd = appendEnv(cmd, c.Env)
+	runCmd(cmd)
+}
+
+const (
+	envPlaceholder = "ENV_PLACEHOLDER"
+)
+
+func appendEnv(cmd, env []string) []string {
+	var penv []string
+	for _, s := range env {
+		penv = append(penv, []string{"-e", s}...)
+	}
+	var out []string
+	for i := range cmd {
+		if cmd[i] == envPlaceholder {
+			out = append(out, cmd[0:i]...)
+			out = append(out, penv...)
+			out = append(out, cmd[i+1:]...)
+			return out
+		}
+	}
+	return cmd
 }
 
 func BuildGoBinary(path string) error {
