@@ -24,6 +24,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/smallinsky/mtf/framework/context"
 	"github.com/smallinsky/mtf/match"
 )
 
@@ -54,6 +55,7 @@ type HTTPRequest struct {
 	Body   []byte
 	URL    *url.URL
 	Method string
+	Host   string
 }
 
 type HTTPResponse struct {
@@ -76,6 +78,7 @@ func convHTTPRequest(r *http.Request) *HTTPRequest {
 		Method: r.Method,
 		URL:    r.URL,
 		Body:   buff,
+		Host:   r.Host,
 	}
 
 	return out
@@ -164,8 +167,10 @@ func (p *HTTPPort) Receive(r *HTTPRequest, opts ...Opt) error {
 		o(&options)
 	}
 
+	ctx := context.Get(options.t)
 	select {
 	case req := <-p.reqC:
+		ctx.LogReceive("portHTTP", req)
 		// Add matcher
 		log.Printf("[DEBUG]: %T Received %v", p, req)
 	case <-time.Tick(options.timeout):
@@ -196,6 +201,13 @@ func (p *HTTPPort) ReceiveM(m match.Matcher, opts ...Opt) error {
 }
 
 func (p *HTTPPort) Send(resp *HTTPResponse, opts ...Opt) error {
+	options := defaultPortOpts
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	ctx := context.Get(options.t)
+	ctx.LogSend("portHTTP", resp)
 	resp.setDefaults()
 	go func() {
 		p.respC <- resp

@@ -1,6 +1,7 @@
 package port
 
 import (
+	"testing"
 	"time"
 )
 
@@ -9,6 +10,12 @@ type Opt func(*portOpts)
 func WithError(err error) Opt {
 	return func(o *portOpts) {
 		o.err = err
+	}
+}
+
+func WithT(t *testing.T) Opt {
+	return func(o *portOpts) {
+		o.t = t
 	}
 }
 
@@ -28,6 +35,8 @@ type portOpts struct {
 	err      error
 	timeout  time.Duration
 	TLSHosts []string
+
+	t *testing.T
 }
 
 type PortOpt func(*portOpts)
@@ -45,12 +54,6 @@ func WithTLS(crtPath, keyPath string) PortOpt {
 	}
 }
 
-func WithPkgName(name string) PortOpt {
-	return func(o *portOpts) {
-		o.pkgName = name
-	}
-}
-
 func WithTLSHost(hosts ...string) PortOpt {
 	return func(o *portOpts) {
 		o.TLSHosts = hosts
@@ -58,7 +61,5 @@ func WithTLSHost(hosts ...string) PortOpt {
 }
 
 var defaultPortOpts = portOpts{
-	// TODO: build dynamically base on proto package name.
-	pkgName: "",
 	timeout: time.Second * 5,
 }

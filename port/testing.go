@@ -1,9 +1,8 @@
 package port
 
 import (
-	"testing"
-
 	"github.com/smallinsky/mtf/match"
+	"testing"
 )
 
 func (port *ClientPort) SendT(t *testing.T, msg interface{}) {
@@ -43,13 +42,13 @@ func (p *PortIn) SendT(t *testing.T, msg interface{}, opts ...PortOpt) {
 }
 
 func (p *HTTPPort) SendT(t *testing.T, resp *HTTPResponse, opts ...Opt) {
-	if err := p.Send(resp, opts...); err != nil {
+	if err := p.Send(resp, append([]Opt{WithT(t)}, opts...)...); err != nil {
 		t.Fatalf("faield to send, error %v", err)
 	}
 }
 
 func (p *HTTPPort) ReceiveT(t *testing.T, req *HTTPRequest, opts ...Opt) {
-	if err := p.Receive(req, opts...); err != nil {
+	if err := p.Receive(req, append([]Opt{WithT(t)}, opts...)...); err != nil {
 		t.Fatalf("faield to receive, error %v", err)
 	}
 }

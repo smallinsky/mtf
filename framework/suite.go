@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/smallinsky/mtf/framework/components"
+	"github.com/smallinsky/mtf/framework/context"
 )
 
 func NewSuite(testID string, m *testing.M) *Suite {
@@ -100,7 +101,10 @@ func Run(t *testing.T, i interface{}) {
 		v.Init(t)
 	}
 
+	context.CreateDirectory()
+
 	for _, test := range getTests(i) {
+		// Create context and tmp dir
 		t.Run(test.Name, test.F)
 	}
 }
@@ -129,7 +133,11 @@ func getTests(i interface{}) []testing.InternalTest {
 		out = append(out, testing.InternalTest{
 			Name: tm.Name,
 			F: func(t *testing.T) {
+				// create test dir
+				context.CreateTestContext(t)
 				m.Call([]reflect.Value{reflect.ValueOf(t)})
+				context.RemoveTextContext(t)
+				// get all port and run cleanup func
 			},
 		})
 	}
