@@ -2,6 +2,7 @@ package framework
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 	"testing"
@@ -20,9 +21,9 @@ type Suite struct {
 }
 
 type Comper interface {
-	Start()
-	Stop()
-	Ready()
+	Start() error
+	Stop() error
+	Ready() error
 }
 
 func (s *Suite) Run() {
@@ -43,12 +44,16 @@ func (s *Suite) Run() {
 
 	for _, comp := range comps {
 		go func(comp Comper) {
-			comp.Start()
+			if err := comp.Start(); err != nil {
+				log.Fatalf("failed to start %T, err %v", comp, err)
+			}
 		}(comp)
 	}
 
 	for _, comp := range comps {
-		comp.Ready()
+		if err := comp.Ready(); err != nil {
+			log.Fatalf("faield to call ready for %T, err: %v", comp, err)
+		}
 	}
 
 	sut := components.NewSUT(
@@ -74,7 +79,10 @@ func (s *Suite) Run() {
 	for i := len(comps) - 1; i >= 0; i-- {
 		// TODO defer during component start.
 		comp := comps[i]
-		comp.Stop()
+		if err := comp.Stop(); err != nil {
+			log.Fatalf("faild to stop %T, err: %v", comp, err)
+
+		}
 	}
 }
 

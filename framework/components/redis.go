@@ -2,6 +2,7 @@ package components
 
 import (
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -21,12 +22,12 @@ type Redis struct {
 	start    time.Time
 }
 
-func (c *Redis) Start() {
+func (c *Redis) Start() error {
 	c.start = time.Now()
 	defer close(c.ready)
 	if containerIsRunning("redis_mtf") {
-		fmt.Printf("mysql_mtf is already running")
-		return
+		log.Printf("[INFO] Redis component is already running\n")
+		return nil
 	}
 
 	var (
@@ -45,18 +46,19 @@ func (c *Redis) Start() {
 		image,
 	}
 
-	runCmd(cmd)
+	return runCmd(cmd)
 }
 
-func (c *Redis) Stop() {
-	return
+func (c *Redis) Stop() error {
+	return nil
 	cmd := []string{
 		"docker", "kill", fmt.Sprintf("%s_mtf", "redis"),
 	}
-	runCmd(cmd)
+	return runCmd(cmd)
 }
 
-func (c *Redis) Ready() {
+func (c *Redis) Ready() error {
 	<-c.ready
 	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
+	return nil
 }

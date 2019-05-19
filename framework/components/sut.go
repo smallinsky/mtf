@@ -2,7 +2,6 @@ package components
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -25,16 +24,15 @@ type SUT struct {
 	start time.Time
 }
 
-func (c *SUT) Start() {
+func (c *SUT) Start() error {
 	c.start = time.Now()
 
 	var err error
 	if c.Path, err = filepath.Abs(c.Path); err != nil {
-		log.Printf("[ERROR]: Failed to get absolute path for %v path", c.Path)
+		return fmt.Errorf("failed to get absolute path for %v path", c.Path)
 	}
 	if _, err := os.Stat(c.Path); os.IsNotExist(err) {
-		log.Printf("[ERROR]: Migraitn path: %v doesn't exist\n", c.Path)
-		return
+		return fmt.Errorf("path '%v' doesn't exist", c.Path)
 	}
 
 	b := strings.Split(c.Path, `/`)
@@ -43,8 +41,7 @@ func (c *SUT) Start() {
 	// TODO Add go test flag to rebuild sut binary.
 	if false {
 		if err := BuildGoBinary(c.Path); err != nil {
-			log.Printf("[ERROR]: failed to build sut binary from %s, err %v", c.Path, err)
-			return
+			return fmt.Errorf("failed to build sut binary from %s, err %v", c.Path, err)
 		}
 	}
 
@@ -77,7 +74,7 @@ func (c *SUT) Start() {
 		image,
 	}
 	cmd = appendEnv(cmd, c.Env)
-	runCmd(cmd)
+	return runCmd(cmd)
 }
 
 const (
@@ -123,18 +120,20 @@ func BuildGoBinary(path string) error {
 	return nil
 }
 
-func (c *SUT) Ready() {
+func (c *SUT) Ready() error {
 	waitForPortOpen("localhost", "8001")
 	// TODO sync sut start
 	time.Sleep(time.Millisecond * 700)
 	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
+	return nil
 }
 
-func (c *SUT) Stop() {
+func (c *SUT) Stop() error {
 	cmd := []string{
 		"docker", "kill", fmt.Sprintf("%s_mtf", "sut"),
 	}
 	runCmd(cmd)
+	return nil
 }
 
 func waitForPortOpen(host, port string) {

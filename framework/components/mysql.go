@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"strings"
 	"time"
 )
 
@@ -26,13 +25,13 @@ type MySQL struct {
 	start    time.Time
 }
 
-func (c *MySQL) Start() {
+func (c *MySQL) Start() error {
 	c.start = time.Now()
 	defer close(c.ready)
 
 	if containerIsRunning("mysql_mtf") {
-		fmt.Printf("mysql_mtf is already running")
-		return
+		log.Printf("[INFO] MySQL component is already running")
+		return nil
 	}
 
 	var (
@@ -55,40 +54,23 @@ func (c *MySQL) Start() {
 		image, arg,
 	}
 
-	runCmd(cmd)
+	return runCmd(cmd)
 }
 
-func (c *MySQL) Stop() {
-	return
+func (c *MySQL) Stop() error {
+	return nil
 	cmd := []string{
 		"docker", "kill", fmt.Sprintf("%s_mtf", "mysql"),
 	}
-	runCmd(cmd)
+	return runCmd(cmd)
 }
 
-func (c *MySQL) Ready() {
+func (c *MySQL) Ready() error {
 	waitForOpenPort("localhost", "3306")
 	<-c.ready
 	migrate := &MigrateDB{}
 	migrate.Start()
 	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
-}
-
-func run(s string) error {
-	args := strings.Split(s, " ")
-	cmd := exec.Command(args[0], args[1:len(args)]...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stdout
-	err := cmd.Start()
-	if err != nil {
-		log.Printf("[ERROR] cmd start: %v , \n", err)
-		return err
-	}
-	err = cmd.Wait()
-	if err != nil {
-		log.Printf("[ERROR] cmd wait: %v , \n", err)
-		return err
-	}
 	return nil
 }
 
@@ -110,8 +92,7 @@ func runCmd(arg []string, opts ...option) error {
 	}
 
 	if buff, err := cmd.CombinedOutput(); err != nil {
-		log.Printf("error cmd buff: '%s', err%v \n", string(buff), err)
-		return err
+		return fmt.Errorf("failed to run: '%v' cmd\nerror: %v\noutput: %v\n", arg, err, string(buff))
 	}
 	return nil
 }

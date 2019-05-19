@@ -22,12 +22,12 @@ type Pubsub struct {
 	start time.Time
 }
 
-func (c *Pubsub) Start() {
+func (c *Pubsub) Start() error {
 	c.start = time.Now()
 	defer close(c.ready)
 	if containerIsRunning("pubsub_mtf") {
 		fmt.Printf("pubsub_mtf is already running")
-		return
+		return nil
 	}
 
 	var (
@@ -45,19 +45,20 @@ func (c *Pubsub) Start() {
 		image,
 	}
 
-	runCmd(cmd)
+	return runCmd(cmd)
 }
 
-func (c *Pubsub) Stop() {
-	return
+func (c *Pubsub) Stop() error {
+	return nil
 	cmd := []string{
 		"docker", "kill", fmt.Sprintf("%s_mtf", "pubsub"),
 	}
-	runCmd(cmd)
+	return runCmd(cmd)
 }
 
-func (c *Pubsub) Ready() {
+func (c *Pubsub) Ready() error {
 	<-c.ready
 	waitForPortOpen("localhost", "8001")
 	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
+	return nil
 }

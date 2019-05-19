@@ -16,11 +16,11 @@ type Net struct {
 	start time.Time
 }
 
-func (c *Net) Start() {
+func (c *Net) Start() error {
 	c.start = time.Now()
 	defer close(c.ready)
 	if networkExists("mtf_net") {
-		return
+		return nil
 	}
 
 	var (
@@ -32,20 +32,20 @@ func (c *Net) Start() {
 		"--driver", "bridge", name,
 	}
 
-	runCmd(cmd)
+	return runCmd(cmd)
 }
 
-func (c *Net) Stop() {
-	return
-	run("docker network rm mtf_net")
+func (c *Net) Stop() error {
+	return nil
 	cmd := []string{
 		"docker", "network", "rm", "mtf_net",
 	}
-	runCmd(cmd)
+	return runCmd(cmd)
 }
 
-func (c *Net) Ready() {
+func (c *Net) Ready() error {
 	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
-	return
+	return nil
 	<-c.ready
+	return nil
 }

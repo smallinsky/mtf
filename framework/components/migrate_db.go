@@ -2,7 +2,6 @@ package components
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,16 +12,15 @@ type MigrateDB struct {
 	migrationDirPath string
 }
 
-func (c *MigrateDB) Start() {
+func (c *MigrateDB) Start() error {
 	c.migrationDirPath = "../e2e/migrations"
 
 	var err error
 	if c.migrationDirPath, err = filepath.Abs(c.migrationDirPath); err != nil {
-		log.Printf("[ERROR]: Failed to get absolute path for %v path", c.migrationDirPath)
+		return fmt.Errorf("failed to get absolute path for %v path", c.migrationDirPath)
 	}
 	if _, err := os.Stat(c.migrationDirPath); os.IsNotExist(err) {
-		log.Printf("[ERROR]: Migraitn path: %v doesn't exist\n", c.migrationDirPath)
-		return
+		return fmt.Errorf("migraitn path: %v doesn't exist\n", c.migrationDirPath)
 	}
 	cmd := []string{
 		"docker", "run", "--rm", "-d",
@@ -32,13 +30,15 @@ func (c *MigrateDB) Start() {
 		"-path", "/migrations",
 		"-database", "mysql://root:test@tcp(mysql_mtf:3306)/test_db", "up",
 	}
-	runCmd(cmd)
+	return runCmd(cmd)
 }
 
-func (c *MigrateDB) Stop() {
+func (c *MigrateDB) Stop() error {
+	return nil
 }
 
-func (c *MigrateDB) Ready() {
+func (c *MigrateDB) Ready() error {
+	return nil
 }
 
 func networkExists(name string) bool {
