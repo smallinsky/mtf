@@ -58,7 +58,6 @@ func (c *MySQL) Start() error {
 }
 
 func (c *MySQL) Stop() error {
-	return nil
 	cmd := []string{
 		"docker", "kill", fmt.Sprintf("%s_mtf", "mysql"),
 	}

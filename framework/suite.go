@@ -10,6 +10,7 @@ import (
 
 	"github.com/smallinsky/mtf/framework/components"
 	"github.com/smallinsky/mtf/framework/context"
+	"github.com/smallinsky/mtf/framework/core"
 )
 
 func NewSuite(testID string, m *testing.M) *Suite {
@@ -76,13 +77,14 @@ func (s *Suite) Run() {
 	// time consuming components like database conatiner, right now DB start
 	// in docker can take around 15s.
 
-	// reverse order
-	for i := len(comps) - 1; i >= 0; i-- {
-		// TODO defer during component start.
-		comp := comps[i]
-		if err := comp.Stop(); err != nil {
-			log.Fatalf("faild to stop %T, err: %v", comp, err)
-
+	if core.Settings.StopComponentsAfterExit {
+		// reverse order
+		for i := len(comps) - 1; i >= 0; i-- {
+			// TODO defer during component start.
+			comp := comps[i]
+			if err := comp.Stop(); err != nil {
+				log.Fatalf("faild to stop %T, err: %v", comp, err)
+			}
 		}
 	}
 }

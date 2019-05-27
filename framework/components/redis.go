@@ -45,12 +45,10 @@ func (c *Redis) Start() error {
 		"-p", fmt.Sprintf("%s:%s", port, port),
 		image,
 	}
-
 	return runCmd(cmd)
 }
 
 func (c *Redis) Stop() error {
-	return nil
 	cmd := []string{
 		"docker", "kill", fmt.Sprintf("%s_mtf", "redis"),
 	}

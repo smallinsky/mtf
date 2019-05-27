@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
+	"github.com/smallinsky/mtf/framework/core"
 )
 
 func NewSUT(path string, env ...string) *SUT {
@@ -38,8 +40,7 @@ func (c *SUT) Start() error {
 	b := strings.Split(c.Path, `/`)
 	bin := b[len(b)-1]
 
-	// TODO Add go test flag to rebuild sut binary.
-	if false {
+	if core.Settings.BuildBinary {
 		if err := BuildGoBinary(c.Path); err != nil {
 			return fmt.Errorf("failed to build sut binary from %s, err %v", c.Path, err)
 		}
@@ -132,8 +133,7 @@ func (c *SUT) Stop() error {
 	cmd := []string{
 		"docker", "kill", fmt.Sprintf("%s_mtf", "sut"),
 	}
-	runCmd(cmd)
-	return nil
+	return runCmd(cmd)
 }
 
 func waitForPortOpen(host, port string) {

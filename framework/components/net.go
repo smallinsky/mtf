@@ -36,7 +36,6 @@ func (c *Net) Start() error {
 }
 
 func (c *Net) Stop() error {
-	return nil
 	cmd := []string{
 		"docker", "network", "rm", "mtf_net",
 	}

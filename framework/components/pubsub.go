@@ -49,7 +49,6 @@ func (c *Pubsub) Start() error {
 }
 
 func (c *Pubsub) Stop() error {
-	return nil
 	cmd := []string{
 		"docker", "kill", fmt.Sprintf("%s_mtf", "pubsub"),
 	}
