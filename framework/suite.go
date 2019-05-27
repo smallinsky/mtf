@@ -121,13 +121,7 @@ func getTests(i interface{}) []testing.InternalTest {
 			continue
 		}
 		m := v.Method(i)
-		if m.Type().NumIn() != 1 {
-			continue
-		}
-		if m.Type().NumOut() != 0 {
-			continue
-		}
-		if m.Type().In(0) != reflect.TypeOf((*testing.T)(nil)) {
+		if _, ok := m.Interface().(func(*testing.T)); !ok {
 			continue
 		}
 		out = append(out, testing.InternalTest{
