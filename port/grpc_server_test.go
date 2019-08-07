@@ -88,7 +88,7 @@ func TestGRPCServer(t *testing.T) {
 				},
 			))
 
-			svr.Send(&oracle.AskDeepThroughRespnse{
+			svr.send(&oracle.AskDeepThroughRespnse{
 				Data: "42",
 			})
 		}()
