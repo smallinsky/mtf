@@ -75,12 +75,17 @@ func (c *SUT) Start() error {
 		image,
 	}
 	cmd = appendEnv(cmd, c.Env)
+	fmt.Println("Run ", join(cmd))
 	return runCmd(cmd)
 }
 
 const (
 	envPlaceholder = "ENV_PLACEHOLDER"
 )
+
+func join(args []string) string {
+	return strings.Join(args, " ")
+}
 
 func appendEnv(cmd, env []string) []string {
 	var penv []string

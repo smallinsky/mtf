@@ -45,6 +45,7 @@ func (c *Redis) Start() error {
 		"-p", fmt.Sprintf("%s:%s", port, port),
 		image,
 	}
+	fmt.Println("Run ", join(cmd))
 	return runCmd(cmd)
 }
 

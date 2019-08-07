@@ -45,6 +45,7 @@ func (c *Pubsub) Start() error {
 		image,
 	}
 
+	fmt.Println("Run ", join(cmd))
 	return runCmd(cmd)
 }
 

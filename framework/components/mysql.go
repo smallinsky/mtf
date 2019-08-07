@@ -54,6 +54,7 @@ func (c *MySQL) Start() error {
 		image, arg,
 	}
 
+	fmt.Println("Run ", join(cmd))
 	return runCmd(cmd)
 }
 

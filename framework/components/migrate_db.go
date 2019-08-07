@@ -30,6 +30,7 @@ func (c *MigrateDB) Start() error {
 		"-path", "/migrations",
 		"-database", "mysql://root:test@tcp(mysql_mtf:3306)/test_db", "up",
 	}
+	fmt.Println("Run ", join(cmd))
 	return runCmd(cmd)
 }
 

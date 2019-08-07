@@ -45,11 +45,12 @@ func (s *Suite) Run() {
 	}
 
 	for _, comp := range comps {
-		go func(comp Comper) {
-			if err := comp.Start(); err != nil {
-				log.Fatalf("failed to start %T, err %v", comp, err)
-			}
-		}(comp)
+		//	go func(comp Comper) {
+		if err := comp.Start(); err != nil {
+			log.Fatalf("failed to start %T, err %v", comp, err)
+		}
+		fmt.Printf("started %T \n", comp)
+		//	}(comp)
 	}
 
 	for _, comp := range comps {
@@ -63,7 +64,10 @@ func (s *Suite) Run() {
 		"ORACLE_ADDR=host.docker.internal:8002",
 	)
 
-	sut.Start()
+	err := sut.Start()
+	if err != nil {
+		log.Fatalf("failed to run sut: %v", err)
+	}
 	sut.Ready()
 
 	defer func() {
@@ -105,6 +109,7 @@ func Run(t *testing.T, i interface{}) {
 
 	context.CreateDirectory()
 
+	fmt.Println("runing test cases")
 	for _, test := range getTests(i) {
 		// Create context and tmp dir
 		t.Run(test.Name, test.F)
