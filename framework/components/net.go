@@ -3,6 +3,8 @@ package components
 import (
 	"fmt"
 	"time"
+
+	"github.com/smallinsky/mtf/pkg/exec"
 )
 
 func NewNet() *Net {
@@ -32,14 +34,14 @@ func (c *Net) Start() error {
 		"--driver", "bridge", name,
 	}
 
-	return runCmd(cmd)
+	return exec.Run(cmd)
 }
 
 func (c *Net) Stop() error {
 	cmd := []string{
 		"docker", "network", "rm", "mtf_net",
 	}
-	return runCmd(cmd)
+	return exec.Run(cmd)
 }
 
 func (c *Net) Ready() error {

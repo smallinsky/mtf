@@ -8,12 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-test/deep"
+	//	"github.com/go-test/deep"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-
-	"github.com/smallinsky/mtf/match"
 )
 
 type EndpointRespTypePair struct {
@@ -50,6 +48,16 @@ func NewGRPCClient(i interface{}, target string, opts ...PortOpt) (*ClientPort, 
 	return port, nil
 }
 
+func NewGRPCClientPort(i interface{}, target string, opts ...PortOpt) (*Port, error) {
+	c, err := NewGRPCClient(i, target, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &Port{
+		impl: c,
+	}, nil
+}
+
 type connection interface {
 	Invoke(ctx context.Context, method string, args, reply interface{}, opts ...grpc.CallOption) error
 	Close() error
@@ -66,6 +74,14 @@ type ClientPort struct {
 type callResult struct {
 	resp interface{}
 	err  error
+}
+
+func (p *ClientPort) Kind() Kind {
+	return KIND_CLIENT
+}
+
+func (p *ClientPort) Name() string {
+	return "grpc_client"
 }
 
 func (p *ClientPort) connect(addr, certfile string) error {
@@ -91,14 +107,42 @@ func (p *ClientPort) Close() {
 	p.conn.Close()
 }
 
-func (p *ClientPort) Send(msg interface{}) error {
-	startSync.Wait()
+type res struct {
+	err error
+	msg interface{}
+}
 
+func (p *ClientPort) Receive() (interface{}, error) {
+	return p.receive()
+}
+
+func (p *ClientPort) Send(i interface{}) error {
+	return p.send(i)
+}
+
+func (p *ClientPort) receive(opts ...PortOpt) (interface{}, error) {
+	options := defaultPortOpts
+	for _, o := range opts {
+		o(&options)
+	}
+
+	select {
+	case <-time.Tick(options.timeout):
+		return nil, errors.Errorf("failed to receive  message, deadline exeeded")
+	case result := <-p.callResultC:
+		if result.err != nil {
+			return nil, errors.Wrapf(result.err, "Got unexpected error during receive, err: %v", result.err)
+		}
+		return result.resp, nil
+	}
+}
+
+func (p *ClientPort) send(msg interface{}) error {
+	startSync.Wait()
 	v, ok := p.emd[reflect.TypeOf(msg)]
 	if !ok {
 		return errors.Errorf("port doesn't support message type %T", msg)
 	}
-
 	go func() {
 		out := reflect.New(v.RespType.Elem()).Interface()
 		if err := p.conn.Invoke(context.Background(), v.Endpoint, msg, out); err != nil {
@@ -110,7 +154,6 @@ func (p *ClientPort) Send(msg interface{}) error {
 			}()
 			return
 		}
-
 		var resp interface{}
 		rv := reflect.ValueOf(&resp)
 		rv.Elem().Set(reflect.New(v.RespType))
@@ -122,47 +165,5 @@ func (p *ClientPort) Send(msg interface{}) error {
 			}
 		}()
 	}()
-
-	return nil
-}
-
-func (p *ClientPort) ReceiveM(m match.Matcher, opts ...PortOpt) error {
-	options := defaultPortOpts
-	for _, o := range opts {
-		o(&options)
-	}
-
-	if err := m.Validate(); err != nil {
-		return errors.Wrapf(err, "invalid marcher argument")
-	}
-
-	select {
-	case result := <-p.callResultC:
-		if err := m.Match(result.err, result.resp); err != nil {
-			return errors.Wrapf(err, "%T message match failed", m)
-		}
-	case <-time.Tick(options.timeout):
-		return errors.Errorf("failed to receive  message, deadline exeeded")
-	}
-	return nil
-}
-
-func (p *ClientPort) Receive(msg interface{}, opts ...PortOpt) error {
-	options := defaultPortOpts
-	for _, o := range opts {
-		o(&options)
-	}
-
-	select {
-	case <-time.Tick(options.timeout):
-		return errors.Errorf("failed to receive  message, deadline exeeded")
-	case result := <-p.callResultC:
-		if result.err != nil {
-			return errors.Wrapf(result.err, "Got unexpected error during receive, err: %v", result.err)
-		}
-		if diff := deep.Equal(msg, result.resp); diff != nil {
-			return errors.Errorf("struct not eq:\n diff '%s'\n", diff)
-		}
-	}
 	return nil
 }

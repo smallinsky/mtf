@@ -1,4 +1,4 @@
-package components
+package sut
 
 import (
 	"fmt"
@@ -8,10 +8,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
 
 	"github.com/smallinsky/mtf/framework/core"
+	"github.com/smallinsky/mtf/pkg/docker"
+	"github.com/smallinsky/mtf/pkg/exec"
 )
+
+type Config struct {
+	Dir string
+	Env []string
+}
 
 func NewSUT(path string, env ...string) *SUT {
 	return &SUT{
@@ -21,9 +29,12 @@ func NewSUT(path string, env ...string) *SUT {
 }
 
 type SUT struct {
-	Path  string
-	Env   []string
-	start time.Time
+	Config Config
+
+	Path      string
+	Env       []string
+	start     time.Time
+	container *docker.Container
 }
 
 func (c *SUT) Start() error {
@@ -47,56 +58,60 @@ func (c *SUT) Start() error {
 	}
 
 	var (
-		name  = "sut"
-		port  = "8001"
-		image = "run_sut"
 		// TODO Get binary base on the path and repo name or if binary deosn't exist build it.
 		// Add ability to run sut from existing image.
 		binary = bin
 		path   = c.Path
 	)
 
-	runCmd([]string{
+	exec.Run([]string{
 		"mkdir", "-p", "/tmp/mtf/cert",
 	})
 
-	cmd := []string{
-		"docker", "run", "--rm", "-d",
-		fmt.Sprintf("--name=%s_mtf", name),
-		fmt.Sprintf("--hostname=%s_mtf", name),
-		"--network=mtf_net",
-		"-p", fmt.Sprintf("%s:%s", port, port),
-		"--cap-add=NET_ADMIN",
-		"--cap-add=NET_RAW",
-		"-e", fmt.Sprintf("SUT_BINARY_NAME=%v", binary),
-		envPlaceholder,
-		"-v", fmt.Sprintf("%s:/component", path),
-		"-v", "/tmp/mtf/cert:/usr/local/share/ca-certificates",
-		image,
+	cli, err := client.NewEnvClient()
+	if err != nil {
+		return err
 	}
-	cmd = appendEnv(cmd, c.Env)
-	return runCmd(cmd)
+
+	result, err := docker.NewContainer(cli, docker.Config{
+		Name:     "sut_mtf",
+		Image:    "run_sut",
+		Hostname: "sut_mtf",
+		CapAdd:   []string{"NET_RAW", "NET_ADMIN"},
+		Labels: map[string]string{
+			"mtf": "mtf",
+		},
+		Env: append([]string{
+			fmt.Sprintf("SUT_BINARY_NAME=%s", binary),
+			"ORACLE_ADDR=host.docker.internal:8002",
+		}, c.Env...),
+		PortMap: docker.PortMap{
+			8001: 8001,
+		},
+		Mounts: docker.Mounts{
+			docker.Mount{
+				Source: path,
+				Target: "/component",
+			},
+			docker.Mount{
+				Source: "/tmp/mtf/cert",
+				Target: "/usr/local/share/ca-certificates",
+			},
+		},
+		NetworkName: "mtf_net",
+		Healtcheck: &docker.Healtcheck{
+			Test: []string{"CMD", "pgrep", binary, "|", "exit", "1"},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	c.container = result
+	return nil
 }
 
-const (
-	envPlaceholder = "ENV_PLACEHOLDER"
-)
-
-func appendEnv(cmd, env []string) []string {
-	var penv []string
-	for _, s := range env {
-		penv = append(penv, []string{"-e", s}...)
-	}
-	var out []string
-	for i := range cmd {
-		if cmd[i] == envPlaceholder {
-			out = append(out, cmd[0:i]...)
-			out = append(out, penv...)
-			out = append(out, cmd[i+1:]...)
-			return out
-		}
-	}
-	return cmd
+func join(args []string) string {
+	return strings.Join(args, " ")
 }
 
 func BuildGoBinary(path string) error {
@@ -115,25 +130,35 @@ func BuildGoBinary(path string) error {
 		"go", "build", "-o", fmt.Sprintf("%s/%s", path, bin), path,
 	}
 
-	if err := runCmd(cmd, WithEnv("GOOS=linux", "GOARCH=amd64")); err != nil {
+	if err := exec.Run(cmd, exec.WithEnv("GOOS=linux", "GOARCH=amd64")); err != nil {
 		return errors.Wrapf(err, "failed to run cmd")
 	}
 	return nil
 }
 
-func (c *SUT) Ready() error {
-	waitForPortOpen("localhost", "8001")
-	// TODO sync sut start
-	time.Sleep(time.Millisecond * 700)
-	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
+func (c *SUT) Ready() (err error) {
+	defer func() {
+		if err != nil {
+			_ = c.container.Stop()
+		}
+	}()
+
+	state, err := c.container.WaitForReady()
+	if err != nil {
+		return err
+	}
+	if state.ExitCode != 0 {
+		logs, _ := c.container.Logs()
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("failed to start container:\nExitCode: %v\nContainer logs: %s", state.ExitCode, logs)
+	}
 	return nil
 }
 
 func (c *SUT) Stop() error {
-	cmd := []string{
-		"docker", "kill", fmt.Sprintf("%s_mtf", "sut"),
-	}
-	return runCmd(cmd)
+	return c.container.Stop()
 }
 
 func waitForPortOpen(host, port string) {

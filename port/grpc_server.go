@@ -8,12 +8,11 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/go-test/deep"
+	//"github.com/go-test/deep"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-
-	"github.com/smallinsky/mtf/match"
+	//"github.com/smallinsky/mtf/match"
 )
 
 type processFunc func(i interface{}) (interface{}, error)
@@ -28,6 +27,32 @@ type PortIn struct {
 	respC chan outValues
 }
 
+func (p *PortIn) Kind() Kind {
+	return KIND_SERVER
+}
+
+func (p *PortIn) Name() string {
+	return "grpc_server"
+}
+
+func (p *PortIn) Send(i interface{}) error {
+	return p.send(i)
+}
+
+func (p *PortIn) Receive() (interface{}, error) {
+	return p.receive()
+}
+
+func NewGRPCServerPort(i interface{}, port string, opts ...PortOpt) (*Port, error) {
+	p, err := NewGRPCServer(i, port, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &Port{
+		impl: p,
+	}, nil
+}
+
 func NewGRPCServer(i interface{}, port string, opts ...PortOpt) (*PortIn, error) {
 	options := defaultPortOpts
 	for _, o := range opts {
@@ -37,14 +62,6 @@ func NewGRPCServer(i interface{}, port string, opts ...PortOpt) (*PortIn, error)
 	portIn := &PortIn{
 		reqC:  make(chan interface{}),
 		respC: make(chan outValues),
-	}
-
-	fn := func(i interface{}) (interface{}, error) {
-		go func() {
-			portIn.reqC <- i
-		}()
-		retV := <-portIn.respC
-		return retV.msg, retV.err
 	}
 
 	// TODO Add tls support
@@ -62,7 +79,7 @@ func NewGRPCServer(i interface{}, port string, opts ...PortOpt) (*PortIn, error)
 		grpcOpts = append(grpcOpts, grpc.Creds(creds))
 	}
 
-	s, err := registerInterface(grpc.NewServer(grpcOpts...), i, fn, options)
+	s, err := registerInterface(grpc.NewServer(grpcOpts...), i, portIn.rpcCallHandler, options)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to reqigster server interface")
 	}
@@ -77,44 +94,29 @@ func NewGRPCServer(i interface{}, port string, opts ...PortOpt) (*PortIn, error)
 	return portIn, nil
 }
 
-func (p *PortIn) Receive(i interface{}, opts ...Opt) error {
+func (p *PortIn) rpcCallHandler(req interface{}) (interface{}, error) {
+	go func() {
+		p.reqC <- req
+	}()
+	resp := <-p.respC
+	return resp.msg, resp.err
+}
+
+func (p *PortIn) receive(opts ...Opt) (interface{}, error) {
 	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
 	}
 
 	select {
+	case <-time.NewTimer(options.timeout).C:
+		return nil, errors.Errorf("failed to receive  message, deadline exeeded")
 	case v := <-p.reqC:
-		if diff := deep.Equal(v, i); diff != nil {
-			return errors.Errorf("Struct not eq: \n diff: '%v'", diff)
-		}
-	case <-time.NewTimer(options.timeout).C:
-		return errors.Errorf("failed to receive  message, deadline exeeded")
+		return v, nil
 	}
-	return nil
 }
 
-func (p *PortIn) ReceiveM(m match.Matcher, opts ...Opt) error {
-	options := defaultPortOpts
-	for _, o := range opts {
-		o(&options)
-	}
-	if err := m.Validate(); err != nil {
-		return errors.Wrapf(err, "invalid marcher argument")
-	}
-
-	select {
-	case got := <-p.reqC:
-		if err := m.Match(nil, got); err != nil {
-			return errors.Wrapf(err, "%T message match failed", m)
-		}
-	case <-time.NewTimer(options.timeout).C:
-		return errors.Errorf("failed to receive  message, deadline exeeded")
-	}
-	return nil
-}
-
-func (p *PortIn) Send(msg interface{}, opts ...PortOpt) error {
+func (p *PortIn) send(msg interface{}, opts ...PortOpt) error {
 	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)

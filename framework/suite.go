@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"github.com/smallinsky/mtf/framework/components"
+	"github.com/smallinsky/mtf/framework/components/mysql"
+	"github.com/smallinsky/mtf/framework/components/redis"
+	"github.com/smallinsky/mtf/framework/components/sut"
 	"github.com/smallinsky/mtf/framework/context"
 	"github.com/smallinsky/mtf/framework/core"
 )
@@ -39,17 +42,17 @@ func (s *Suite) Run() {
 	defer net.Stop()
 
 	comps := []Comper{
-		components.NewMySQL(),
-		components.NewRedis(),
-		//	components.NewPubsub(),
+		mysql.NewMySQL(),
+		redis.NewRedis(),
 	}
 
 	for _, comp := range comps {
-		go func(comp Comper) {
-			if err := comp.Start(); err != nil {
-				log.Fatalf("failed to start %T, err %v", comp, err)
-			}
-		}(comp)
+		//	go func(comp Comper) {
+		if err := comp.Start(); err != nil {
+			log.Fatalf("failed to start %T, err %v", comp, err)
+		}
+		fmt.Printf("started %T \n", comp)
+		//	}(comp)
 	}
 
 	for _, comp := range comps {
@@ -58,16 +61,19 @@ func (s *Suite) Run() {
 		}
 	}
 
-	sut := components.NewSUT(
+	aa := sut.NewSUT(
 		"/Users/Marek/Go/src/github.com/smallinsky/mtf/e2e/service/echo/",
 		"ORACLE_ADDR=host.docker.internal:8002",
 	)
 
-	sut.Start()
-	sut.Ready()
+	err := aa.Start()
+	if err != nil {
+		log.Fatalf("failed to run sut: %v", err)
+	}
+	aa.Ready()
 
 	defer func() {
-		sut.Stop()
+		aa.Stop()
 	}()
 
 	fmt.Printf("Components start time: %v\n", time.Now().Sub(start))
@@ -105,6 +111,7 @@ func Run(t *testing.T, i interface{}) {
 
 	context.CreateDirectory()
 
+	fmt.Println("runing test cases")
 	for _, test := range getTests(i) {
 		// Create context and tmp dir
 		t.Run(test.Name, test.F)
@@ -130,9 +137,9 @@ func getTests(i interface{}) []testing.InternalTest {
 			Name: tm.Name,
 			F: func(t *testing.T) {
 				// create test dir
-				context.CreateTestContext(t)
+				//context.CreateTestContext(t)
 				m.Call([]reflect.Value{reflect.ValueOf(t)})
-				context.RemoveTextContext(t)
+				//context.RemoveTextContext(t)
 				// get all port and run cleanup func
 			},
 		})

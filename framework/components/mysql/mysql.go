@@ -1,12 +1,16 @@
-package components
+package mysql
 
 import (
 	"fmt"
 	"log"
 	"net"
-	"os"
-	"os/exec"
 	"time"
+
+	"github.com/docker/docker/client"
+
+	"github.com/smallinsky/mtf/framework/components/migrate"
+	"github.com/smallinsky/mtf/pkg/docker"
+	"github.com/smallinsky/mtf/pkg/exec"
 )
 
 func NewMySQL() *MySQL {
@@ -23,6 +27,8 @@ type MySQL struct {
 	Network  string
 	ready    chan struct{}
 	start    time.Time
+
+	c *docker.Container
 }
 
 func (c *MySQL) Start() error {
@@ -35,64 +41,57 @@ func (c *MySQL) Start() error {
 	}
 
 	var (
-		name     = "mysql"
-		port     = "3306"
 		database = "test_db"
 		password = "test"
-		image    = "mysql"
-		arg      = "--default-authentication-plugin=mysql_native_password"
 	)
 
-	cmd := []string{
-		"docker", "run", "--rm", "-d",
-		fmt.Sprintf("--name=%s_mtf", name),
-		fmt.Sprintf("--hostname=%s_mtf", name),
-		"--network=mtf_net",
-		"-p", fmt.Sprintf("%s:%s", port, port),
-		"-e", fmt.Sprintf("MYSQL_DATABASE=%v", database),
-		"-e", fmt.Sprintf("MYSQL_ROOT_PASSWORD=%v", password),
-		image, arg,
+	cli, err := client.NewEnvClient()
+	if err != nil {
+		return err
 	}
+	c1, err := docker.NewContainer(cli, docker.Config{
+		Name:     "mysql_mtf",
+		Image:    "mysql",
+		Hostname: "mysql_mtf",
+		Labels: map[string]string{
+			"mtf": "mtf",
+		},
+		PortMap: docker.PortMap{
+			3306: 3306,
+		},
+		NetworkName: "mtf_net",
+		Env: []string{
+			"name=mysql_mtf",
+			"hostname=mysql_mtf",
+			"network=mtf_net",
+			fmt.Sprintf("MYSQL_DATABASE=%s", database),
+			fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", password),
+		},
+		Cmd: []string{
+			"--default-authentication-plugin=mysql_native_password",
+		},
+	})
+	c.c = c1
 
-	return runCmd(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *MySQL) Stop() error {
 	cmd := []string{
 		"docker", "kill", fmt.Sprintf("%s_mtf", "mysql"),
 	}
-	return runCmd(cmd)
+	return exec.Run(cmd)
 }
 
 func (c *MySQL) Ready() error {
 	waitForOpenPort("localhost", "3306")
 	<-c.ready
-	migrate := &MigrateDB{}
+	migrate := &migrate.MigrateDB{}
 	migrate.Start()
 	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
-	return nil
-}
-
-type option func(*exec.Cmd)
-
-func WithEnv(env ...string) option {
-	return func(cmd *exec.Cmd) {
-		cmd.Env = append(cmd.Env, env...)
-	}
-}
-
-func runCmd(arg []string, opts ...option) error {
-	cmd := exec.Command(arg[0], arg[1:]...)
-	cmd.Env = os.Environ()
-	//cmd.Stdout = os.Stdout
-	//cmd.Stderr = os.Stdout
-	for _, opt := range opts {
-		opt(cmd)
-	}
-
-	if buff, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to run: '%v' cmd\nerror: %v\noutput: %v\n", arg, err, string(buff))
-	}
 	return nil
 }
 

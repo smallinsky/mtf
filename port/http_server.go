@@ -23,10 +23,37 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
-	"github.com/smallinsky/mtf/framework/context"
-	"github.com/smallinsky/mtf/match"
 )
+
+func NewHTTPPort(options ...PortOpt) (*Port, error) {
+	p, err := NewHTTP(options...)
+	if err != nil {
+		return nil, err
+	}
+	return &Port{
+		impl: p,
+	}, nil
+}
+
+func (p *HTTPPort) Kind() Kind {
+	return KIND_SERVER
+}
+
+func (p *HTTPPort) Name() string {
+	return "http_server"
+}
+
+func (p *HTTPPort) Send(i interface{}) error {
+	resp, ok := i.(*HTTPResponse)
+	if !ok {
+		return errors.Errorf("invalid type %T", i)
+	}
+	return p.send(resp)
+}
+
+func (p *HTTPPort) Receive() (interface{}, error) {
+	return p.receive()
+}
 
 //TODO Add https support
 func NewHTTP(options ...PortOpt) (*HTTPPort, error) {
@@ -123,6 +150,7 @@ func (p *HTTPPort) serveHTTP() error {
 }
 
 func (p *HTTPPort) serveHTTPS(hosts []string) error {
+	fmt.Println("generating cers for: ", hosts)
 	ck, err := genCertForHost(hosts)
 	if err != nil {
 		return err
@@ -161,56 +189,48 @@ func (p *HTTPPort) Handle(w http.ResponseWriter, req *http.Request) {
 	p.sync <- struct{}{}
 }
 
-func (p *HTTPPort) Receive(r *HTTPRequest, opts ...Opt) error {
+//func (p *HTTPPort) Receive(r *HTTPRequest, opts ...Opt) error {
+//	options := defaultPortOpts
+//	for _, o := range opts {
+//		o(&options)
+//	}
+//
+//	ctx := context.Get(options.t)
+//	select {
+//	case req := <-p.reqC:
+//		ctx.LogReceive("portHTTP", req)
+//		// Add matcher
+//		log.Printf("[DEBUG]: %T Received %v", p, req)
+//	case <-time.Tick(options.timeout):
+//		return errors.Errorf("failed to receive  message, deadline exeeded")
+//	}
+//
+//	return nil
+//}
+
+func (p *HTTPPort) receive(opts ...Opt) (*HTTPRequest, error) {
 	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
 	}
 
-	ctx := context.Get(options.t)
 	select {
 	case req := <-p.reqC:
-		ctx.LogReceive("portHTTP", req)
-		// Add matcher
-		log.Printf("[DEBUG]: %T Received %v", p, req)
+		return req, nil
 	case <-time.Tick(options.timeout):
-		return errors.Errorf("failed to receive  message, deadline exeeded")
+		return nil, errors.Errorf("failed to receive  message, deadline exeeded")
 	}
-
-	return nil
 }
 
-func (p *HTTPPort) ReceiveM(m match.Matcher, opts ...Opt) error {
-	options := defaultPortOpts
-	for _, o := range opts {
-		o(&options)
-	}
-	if err := m.Validate(); err != nil {
-		return errors.Wrapf(err, "invalid marcher argument")
-	}
-
-	select {
-	case req := <-p.reqC:
-		if err := m.Match(nil, req); err != nil {
-			return errors.Wrapf(err, "%T message match failed", m)
-		}
-	case <-time.Tick(options.timeout):
-		return errors.Errorf("failed to receive  message, deadline exeeded")
-	}
-	return nil
-}
-
-func (p *HTTPPort) Send(resp *HTTPResponse, opts ...Opt) error {
+func (p *HTTPPort) send(msg *HTTPResponse, opts ...Opt) error {
 	options := defaultPortOpts
 	for _, opt := range opts {
 		opt(&options)
 	}
 
-	ctx := context.Get(options.t)
-	ctx.LogSend("portHTTP", resp)
-	resp.setDefaults()
+	msg.setDefaults()
 	go func() {
-		p.respC <- resp
+		p.respC <- msg
 	}()
 	<-p.sync
 	time.Sleep(time.Millisecond * 100)
