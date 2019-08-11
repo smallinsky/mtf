@@ -11,6 +11,8 @@ var (
 	ErrMatchFnInvalidArg = errors.New("match fn invalid arg")
 )
 
+type Any struct{}
+
 type FnMatcher struct {
 	Args []interface{}
 }

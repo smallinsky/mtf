@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"github.com/smallinsky/mtf/framework/components"
+	"github.com/smallinsky/mtf/framework/components/mysql"
+	"github.com/smallinsky/mtf/framework/components/redis"
+	"github.com/smallinsky/mtf/framework/components/sut"
 	"github.com/smallinsky/mtf/framework/context"
 	"github.com/smallinsky/mtf/framework/core"
 )
@@ -39,9 +42,8 @@ func (s *Suite) Run() {
 	defer net.Stop()
 
 	comps := []Comper{
-		components.NewMySQL(),
-		components.NewRedis(),
-		//	components.NewPubsub(),
+		mysql.NewMySQL(),
+		redis.NewRedis(),
 	}
 
 	for _, comp := range comps {
@@ -59,19 +61,19 @@ func (s *Suite) Run() {
 		}
 	}
 
-	sut := components.NewSUT(
+	aa := sut.NewSUT(
 		"/Users/Marek/Go/src/github.com/smallinsky/mtf/e2e/service/echo/",
 		"ORACLE_ADDR=host.docker.internal:8002",
 	)
 
-	err := sut.Start()
+	err := aa.Start()
 	if err != nil {
 		log.Fatalf("failed to run sut: %v", err)
 	}
-	sut.Ready()
+	aa.Ready()
 
 	defer func() {
-		sut.Stop()
+		aa.Stop()
 	}()
 
 	fmt.Printf("Components start time: %v\n", time.Now().Sub(start))

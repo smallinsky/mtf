@@ -27,6 +27,32 @@ type PortIn struct {
 	respC chan outValues
 }
 
+func (p *PortIn) Kind() Kind {
+	return KIND_SERVER
+}
+
+func (p *PortIn) Name() string {
+	return "grpc_server"
+}
+
+func (p *PortIn) Send(i interface{}) error {
+	return p.send(i)
+}
+
+func (p *PortIn) Receive() (interface{}, error) {
+	return p.receive()
+}
+
+func NewGRPCServerPort(i interface{}, port string, opts ...PortOpt) (*Port, error) {
+	p, err := NewGRPCServer(i, port, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &Port{
+		impl: p,
+	}, nil
+}
+
 func NewGRPCServer(i interface{}, port string, opts ...PortOpt) (*PortIn, error) {
 	options := defaultPortOpts
 	for _, o := range opts {

@@ -23,9 +23,37 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	//"github.com/smallinsky/mtf/framework/context"
-	//"github.com/smallinsky/mtf/match"
 )
+
+func NewHTTPPort(options ...PortOpt) (*Port, error) {
+	p, err := NewHTTP(options...)
+	if err != nil {
+		return nil, err
+	}
+	return &Port{
+		impl: p,
+	}, nil
+}
+
+func (p *HTTPPort) Kind() Kind {
+	return KIND_SERVER
+}
+
+func (p *HTTPPort) Name() string {
+	return "http_server"
+}
+
+func (p *HTTPPort) Send(i interface{}) error {
+	resp, ok := i.(*HTTPResponse)
+	if !ok {
+		return errors.Errorf("invalid type %T", i)
+	}
+	return p.send(resp)
+}
+
+func (p *HTTPPort) Receive() (interface{}, error) {
+	return p.receive()
+}
 
 //TODO Add https support
 func NewHTTP(options ...PortOpt) (*HTTPPort, error) {

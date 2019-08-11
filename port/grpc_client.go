@@ -48,6 +48,16 @@ func NewGRPCClient(i interface{}, target string, opts ...PortOpt) (*ClientPort, 
 	return port, nil
 }
 
+func NewGRPCClientPort(i interface{}, target string, opts ...PortOpt) (*Port, error) {
+	c, err := NewGRPCClient(i, target, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &Port{
+		impl: c,
+	}, nil
+}
+
 type connection interface {
 	Invoke(ctx context.Context, method string, args, reply interface{}, opts ...grpc.CallOption) error
 	Close() error
@@ -64,6 +74,14 @@ type ClientPort struct {
 type callResult struct {
 	resp interface{}
 	err  error
+}
+
+func (p *ClientPort) Kind() Kind {
+	return KIND_CLIENT
+}
+
+func (p *ClientPort) Name() string {
+	return "grpc_client"
 }
 
 func (p *ClientPort) connect(addr, certfile string) error {
@@ -92,6 +110,14 @@ func (p *ClientPort) Close() {
 type res struct {
 	err error
 	msg interface{}
+}
+
+func (p *ClientPort) Receive() (interface{}, error) {
+	return p.receive()
+}
+
+func (p *ClientPort) Send(i interface{}) error {
+	return p.send(i)
 }
 
 func (p *ClientPort) receive(opts ...PortOpt) (interface{}, error) {
