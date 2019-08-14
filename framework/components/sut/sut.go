@@ -73,7 +73,7 @@ func (c *SUT) Start() error {
 		return err
 	}
 
-	result, err := docker.NewContainer(cli, docker.Config{
+	container, err := docker.NewContainer(cli, docker.Config{
 		Name:     "sut_mtf",
 		Image:    "run_sut",
 		Hostname: "sut_mtf",
@@ -100,13 +100,20 @@ func (c *SUT) Start() error {
 		},
 		NetworkName: "mtf_net",
 		Healtcheck: &docker.Healtcheck{
-			Test: []string{"CMD", "pgrep", binary, "|", "exit", "1"},
+			Test:     []string{"CMD", "pgrep", binary, "||", "exit", "1"},
+			Interval: time.Millisecond * 100,
+			Timeout:  time.Second * 1,
 		},
 	})
 	if err != nil {
 		return err
 	}
-	c.container = result
+
+	if err := container.Start(); err != nil {
+		return err
+	}
+
+	c.container = container
 	return nil
 }
 
@@ -142,7 +149,6 @@ func (c *SUT) Ready() (err error) {
 			_ = c.container.Stop()
 		}
 	}()
-
 	state, err := c.container.WaitForReady()
 	if err != nil {
 		return err

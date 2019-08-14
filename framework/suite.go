@@ -70,7 +70,9 @@ func (s *Suite) Run() {
 	if err != nil {
 		log.Fatalf("failed to run sut: %v", err)
 	}
-	aa.Ready()
+	if err := aa.Ready(); err != nil {
+		log.Fatalf("sut is not ready: ", err)
+	}
 
 	defer func() {
 		aa.Stop()
@@ -83,11 +85,12 @@ func (s *Suite) Run() {
 	// time consuming components like database conatiner, right now DB start
 	// in docker can take around 15s.
 
-	if core.Settings.StopComponentsAfterExit {
+	if true || core.Settings.StopComponentsAfterExit {
 		// reverse order
 		for i := len(comps) - 1; i >= 0; i-- {
 			// TODO defer during component start.
 			comp := comps[i]
+			fmt.Printf("calling stop on %T\n", comp)
 			if err := comp.Stop(); err != nil {
 				log.Fatalf("faild to stop %T, err: %v", comp, err)
 			}
@@ -137,9 +140,9 @@ func getTests(i interface{}) []testing.InternalTest {
 			Name: tm.Name,
 			F: func(t *testing.T) {
 				// create test dir
-				//context.CreateTestContext(t)
+				context.CreateTestContext(t)
 				m.Call([]reflect.Value{reflect.ValueOf(t)})
-				//context.RemoveTextContext(t)
+				context.RemoveTextContext(t)
 				// get all port and run cleanup func
 			},
 		})

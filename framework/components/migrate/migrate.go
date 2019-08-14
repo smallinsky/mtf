@@ -11,11 +11,12 @@ import (
 
 type MigrateDB struct {
 	migrationDirPath string
-	container        *docker.Container
+
+	container *docker.Container
 }
 
 func (m *MigrateDB) Start() error {
-	m.migrationDirPath = "../e2e/migrations"
+	m.migrationDirPath = "../../e2e/migrations"
 
 	var err error
 	if m.migrationDirPath, err = filepath.Abs(m.migrationDirPath); err != nil {
@@ -30,7 +31,7 @@ func (m *MigrateDB) Start() error {
 		return err
 	}
 
-	c1, err := docker.NewContainer(cli, docker.Config{
+	container, err := docker.NewContainer(cli, docker.Config{
 		Name:     "mtf_migrate",
 		Image:    "migrate/migrate",
 		Hostname: "run_sut",
@@ -51,9 +52,15 @@ func (m *MigrateDB) Start() error {
 		},
 	})
 	if err != nil {
-		return nil
+		return err
 	}
-	m.container = c1
+
+	if err := container.Start(); err != nil {
+		fmt.Println("stage 1")
+		return err
+	}
+	m.container = container
+	fmt.Println("container asssigned")
 	return nil
 }
 
@@ -62,5 +69,15 @@ func (m *MigrateDB) Stop() error {
 }
 
 func (m *MigrateDB) Ready() error {
+	if m.container == nil {
+		return fmt.Errorf("got nil container")
+	}
+	state, err := m.container.GetState()
+	if err != nil {
+		return err
+	}
+	if state.ExitCode != 0 {
+		return fmt.Errorf("container has finished with status code %v", state.ExitCode)
+	}
 	return nil
 }

@@ -21,7 +21,9 @@ func TestSUT(t *testing.T) {
 		t.Fatalf("logs error: %v", err)
 	}
 
-	t.Logf("Got logs from container: '%s'", logs)
+	if len(logs) != 0 {
+		t.Logf("Got logs from container: '%s'", logs)
+	}
 
 	if err := sut.Stop(); err != nil {
 		t.Fatalf("stop error: %v", err)
