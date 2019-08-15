@@ -2,7 +2,6 @@ package sut
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -167,20 +166,6 @@ func (c *SUT) Stop() error {
 	return c.container.Stop()
 }
 
-func waitForPortOpen(host, port string) {
-	firstRun := true
-	for {
-		if firstRun {
-			firstRun = false
-		} else {
-			time.Sleep(time.Millisecond * 50)
-		}
-		conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), time.Millisecond*500)
-		if err != nil {
-			continue
-		}
-
-		conn.Close()
-		return
-	}
+func (c *SUT) StartPriority() int {
+	return 5
 }

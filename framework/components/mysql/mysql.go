@@ -2,12 +2,10 @@ package mysql
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/docker/docker/client"
 
-	"github.com/smallinsky/mtf/framework/components/migrate"
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
@@ -24,19 +22,17 @@ type MySQL struct {
 	Hostname string
 	Network  string
 	ready    chan struct{}
-	start    time.Time
 
 	container *docker.Container
 }
 
 func (c *MySQL) Start() error {
-	c.start = time.Now()
 	defer close(c.ready)
 
-	if containerIsRunning("mysql_mtf") {
-		log.Printf("[INFO] MySQL component is already running")
-		return nil
-	}
+	//if containerIsRunning("mysql_mtf") {
+	//	log.Printf("[INFO] MySQL component is already running")
+	//	return nil
+	//}
 
 	var (
 		database = "test_db"
@@ -99,12 +95,9 @@ func (c *MySQL) Ready() error {
 		return fmt.Errorf("container is in wrong state %v", state.Status)
 	}
 	<-c.ready
-	time.Sleep(time.Millisecond * 200)
-	migrate := &migrate.MigrateDB{}
-	if err := migrate.Start(); err != nil {
-		fmt.Printf("migrate start error: %v", err)
-		return err
-	}
-	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
 	return nil
+}
+
+func (m *MySQL) StartPriority() int {
+	return 2
 }

@@ -1,9 +1,6 @@
 package redis
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/docker/docker/client"
 
 	"github.com/smallinsky/mtf/pkg/docker"
@@ -22,7 +19,6 @@ type Redis struct {
 	Hostname string
 	Network  string
 	ready    chan struct{}
-	start    time.Time
 
 	contianer *docker.Container
 }
@@ -31,12 +27,7 @@ func (c *Redis) Start() error {
 	var (
 		image = "bitnami/redis:4.0"
 	)
-	c.start = time.Now()
 	defer close(c.ready)
-	//if containerIsRunning("redis_mtf") {
-	//	log.Printf("[INFO] Redis component is already running\n")
-	//	return nil
-	//}
 
 	cli, err := client.NewEnvClient()
 	if err != nil {
@@ -74,6 +65,9 @@ func (c *Redis) Stop() error {
 
 func (c *Redis) Ready() error {
 	<-c.ready
-	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
 	return nil
+}
+
+func (n *Redis) StartPriority() int {
+	return 1
 }

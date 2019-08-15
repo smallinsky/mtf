@@ -56,11 +56,9 @@ func (m *MigrateDB) Start() error {
 	}
 
 	if err := container.Start(); err != nil {
-		fmt.Println("stage 1")
 		return err
 	}
 	m.container = container
-	fmt.Println("container asssigned")
 	return nil
 }
 
@@ -79,5 +77,10 @@ func (m *MigrateDB) Ready() error {
 	if state.ExitCode != 0 {
 		return fmt.Errorf("container has finished with status code %v", state.ExitCode)
 	}
+
 	return nil
+}
+
+func (m *MigrateDB) StartPriority() int {
+	return 3
 }
