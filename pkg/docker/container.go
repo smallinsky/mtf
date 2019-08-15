@@ -110,16 +110,19 @@ func NewContainer(cli *client.Client, config Config) (*Container, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := cli.ContainerStart(context.Background(), result.ID, types.ContainerStartOptions{}); err != nil {
-		_ = cli.Close()
-		return nil, err
-	}
 
 	return &Container{
 		ID:     result.ID,
 		cli:    cli,
 		config: config,
 	}, nil
+}
+
+func (c *Container) Start() error {
+	if err := c.cli.ContainerStart(context.Background(), c.ID, types.ContainerStartOptions{}); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *Container) GetState() (*types.ContainerState, error) {
@@ -147,6 +150,27 @@ func (c *Container) WaitForReady() (state *types.ContainerState, err error) {
 		}
 
 		if state.Health.Status == types.Starting {
+			continue
+		}
+		break
+	}
+	return state, nil
+}
+
+func (c *Container) WaitForStatusHealthly() (state *types.ContainerState, err error) {
+	if c.config.Healtcheck == nil {
+		return nil, fmt.Errorf("heltcheck was not set")
+	}
+	for {
+		state, err = c.GetState()
+		if err != nil {
+			return nil, err
+		}
+		if state.Health == nil {
+			return nil, fmt.Errorf("failed to get health status")
+		}
+
+		if state.Health.Status != types.Healthy {
 			continue
 		}
 		break

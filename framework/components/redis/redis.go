@@ -1,14 +1,9 @@
 package redis
 
 import (
-	"fmt"
-	"log"
-	"time"
-
 	"github.com/docker/docker/client"
 
 	"github.com/smallinsky/mtf/pkg/docker"
-	"github.com/smallinsky/mtf/pkg/exec"
 )
 
 func NewRedis() *Redis {
@@ -24,27 +19,21 @@ type Redis struct {
 	Hostname string
 	Network  string
 	ready    chan struct{}
-	start    time.Time
 
-	c *docker.Container
+	contianer *docker.Container
 }
 
 func (c *Redis) Start() error {
 	var (
 		image = "bitnami/redis:4.0"
 	)
-	c.start = time.Now()
 	defer close(c.ready)
-	if containerIsRunning("redis_mtf") {
-		log.Printf("[INFO] Redis component is already running\n")
-		return nil
-	}
 
 	cli, err := client.NewEnvClient()
 	if err != nil {
 		return err
 	}
-	c1, err := docker.NewContainer(cli, docker.Config{
+	container, err := docker.NewContainer(cli, docker.Config{
 		Name:     "redis_mtf",
 		Image:    image,
 		Hostname: "redis_mtf",
@@ -59,23 +48,26 @@ func (c *Redis) Start() error {
 			"REDIS_PASSWORD=test",
 		},
 	})
-	c.c = c1
 	if err != nil {
 		return err
 	}
+	if err := container.Start(); err != nil {
+		return err
+	}
+	c.contianer = container
 
 	return err
 }
 
 func (c *Redis) Stop() error {
-	cmd := []string{
-		"docker", "kill", fmt.Sprintf("%s_mtf", "redis"),
-	}
-	return exec.Run(cmd)
+	return c.contianer.Stop()
 }
 
 func (c *Redis) Ready() error {
 	<-c.ready
-	fmt.Printf("%T start time %v\n", c, time.Now().Sub(c.start))
 	return nil
+}
+
+func (n *Redis) StartPriority() int {
+	return 1
 }

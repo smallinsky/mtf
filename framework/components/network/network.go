@@ -9,7 +9,7 @@ type Network struct {
 	startC chan struct{}
 	name   string
 
-	dockerNet *docker.Netowrk
+	dockerNet *docker.Network
 }
 
 func New() *Network {
@@ -25,7 +25,7 @@ func (n *Network) Start() error {
 		return err
 	}
 
-	net, err := docker.NewNetwork(cli, docker.NetworkSettings{
+	net, err := docker.NewNetwork(cli, docker.NetworkConfig{
 		Name: n.name,
 	})
 	if err != nil {
@@ -43,4 +43,8 @@ func (n *Network) Stop() error {
 func (n *Network) Ready() error {
 	<-n.startC
 	return nil
+}
+
+func (n *Network) StartPriority() int {
+	return 0
 }

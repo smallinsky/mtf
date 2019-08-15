@@ -19,7 +19,7 @@ function forward_http() {
 }
 
 
-#update_ca
+update_ca&
 forward_http
 
 /component/$SUT_BINARY_NAME

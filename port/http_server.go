@@ -17,7 +17,9 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
+
+	//"net/url"
+
 	"os"
 	"path/filepath"
 	"time"
@@ -79,10 +81,11 @@ func NewHTTP(options ...PortOpt) (*HTTPPort, error) {
 }
 
 type HTTPRequest struct {
-	Body   []byte
-	URL    *url.URL
+	Body []byte
+	//URL    *url.URL
 	Method string
 	Host   string
+	URL    string
 }
 
 type HTTPResponse struct {
@@ -103,9 +106,10 @@ func convHTTPRequest(r *http.Request) *HTTPRequest {
 
 	out := &HTTPRequest{
 		Method: r.Method,
-		URL:    r.URL,
-		Body:   buff,
-		Host:   r.Host,
+		//URL:    r.URL,
+		Body: buff,
+		Host: r.Host,
+		URL:  r.URL.RequestURI(),
 	}
 
 	return out
@@ -150,7 +154,6 @@ func (p *HTTPPort) serveHTTP() error {
 }
 
 func (p *HTTPPort) serveHTTPS(hosts []string) error {
-	fmt.Println("generating cers for: ", hosts)
 	ck, err := genCertForHost(hosts)
 	if err != nil {
 		return err

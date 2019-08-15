@@ -3,6 +3,7 @@ package port
 import (
 	"testing"
 
+	"github.com/smallinsky/mtf/framework/context"
 	"github.com/smallinsky/mtf/match"
 )
 
@@ -28,12 +29,18 @@ func (p *Port) Send(t *testing.T, i interface{}) error {
 	if err := p.impl.Send(i); err != nil {
 		t.Fatalf("failed to send %T from %s, err: %v", i, p.impl.Name(), err)
 	}
-	//t.Logf("[%v: %T] --> [SUT]\n", p.impl.Name(), i)
+	ctx := context.Get(t)
+	ctx.LogSend(p.impl.Name(), i)
 	return nil
 }
 
 func (p *Port) Receive(t *testing.T, i interface{}) error {
 	m, err := p.impl.Receive()
+	ctx := context.Get(t)
+	ctx.LogReceive(p.impl.Name(), i)
+	if err != nil {
+		t.Fatalf("failed to receive %T from %s: %v", i, p.impl.Name(), err)
+	}
 
 	switch t := i.(type) {
 	case match.FnMatcher:
