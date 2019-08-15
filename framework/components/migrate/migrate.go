@@ -10,20 +10,31 @@ import (
 )
 
 type MigrateDB struct {
-	migrationDirPath string
-
+	config    MigrateConfig
+	cli       *client.Client
 	container *docker.Container
 }
 
+type MigrateConfig struct {
+	Path string
+}
+
+func NewMigrate(cli *client.Client, config MigrateConfig) *MigrateDB {
+	return &MigrateDB{
+		config: config,
+		cli:    cli,
+	}
+}
+
 func (m *MigrateDB) Start() error {
-	m.migrationDirPath = "../../e2e/migrations"
+	m.config.Path = "../../e2e/migrations"
 
 	var err error
-	if m.migrationDirPath, err = filepath.Abs(m.migrationDirPath); err != nil {
-		return fmt.Errorf("failed to get absolute path for %v path", m.migrationDirPath)
+	if m.config.Path, err = filepath.Abs(m.config.Path); err != nil {
+		return fmt.Errorf("failed to get absolute path for %v path", m.config.Path)
 	}
-	if _, err := os.Stat(m.migrationDirPath); os.IsNotExist(err) {
-		return fmt.Errorf("migraitn path: %v doesn't exist\n", m.migrationDirPath)
+	if _, err := os.Stat(m.config.Path); os.IsNotExist(err) {
+		return fmt.Errorf("migraitn path: %v doesn't exist\n", m.config.Path)
 	}
 
 	cli, err := client.NewEnvClient()
@@ -41,7 +52,7 @@ func (m *MigrateDB) Start() error {
 		},
 		Mounts: docker.Mounts{
 			docker.Mount{
-				Source: m.migrationDirPath,
+				Source: m.config.Path,
 				Target: "/migrations",
 			},
 		},

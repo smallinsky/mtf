@@ -7,37 +7,37 @@ import (
 
 type Network struct {
 	startC chan struct{}
-	name   string
-
-	dockerNet *docker.Network
+	net    *docker.Network
+	cli    *client.Client
+	config NetworkConfig
 }
 
-func New() *Network {
+type NetworkConfig struct {
+	Name string
+}
+
+func New(cli *client.Client, config NetworkConfig) *Network {
 	return &Network{
-		name:   "mtf_net",
 		startC: make(chan struct{}),
+		cli:    cli,
+		config: config,
 	}
 }
 
 func (n *Network) Start() error {
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		return err
-	}
-
-	net, err := docker.NewNetwork(cli, docker.NetworkConfig{
-		Name: n.name,
+	net, err := docker.NewNetwork(n.cli, docker.NetworkConfig{
+		Name: n.config.Name,
 	})
 	if err != nil {
 		return err
 	}
-	n.dockerNet = net
+	n.net = net
 	close(n.startC)
 	return nil
 }
 
 func (n *Network) Stop() error {
-	return n.dockerNet.Close()
+	return n.net.Close()
 }
 
 func (n *Network) Ready() error {

@@ -1,26 +1,34 @@
 package redis
 
 import (
+	"fmt"
+
 	"github.com/docker/docker/client"
 
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
-func NewRedis() *Redis {
+type RedisConfig struct {
+	Password string
+}
+
+func NewRedis(cli *client.Client, config RedisConfig) *Redis {
 	return &Redis{
-		ready: make(chan struct{}),
+		cli:    cli,
+		config: config,
+		ready:  make(chan struct{}),
 	}
 }
 
 type Redis struct {
 	Pass     string
-	Port     string
-	DB       []string
 	Hostname string
 	Network  string
 	ready    chan struct{}
 
 	contianer *docker.Container
+	cli       *client.Client
+	config    RedisConfig
 }
 
 func (c *Redis) Start() error {
@@ -45,7 +53,7 @@ func (c *Redis) Start() error {
 		},
 		NetworkName: "mtf_net",
 		Env: []string{
-			"REDIS_PASSWORD=test",
+			fmt.Sprintf("REDIS_PASSWORD=%s", c.config.Password),
 		},
 	})
 	if err != nil {

@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/docker/docker/client"
+
 	"github.com/smallinsky/mtf/framework/components/migrate"
 	"github.com/smallinsky/mtf/framework/components/mysql"
 	"github.com/smallinsky/mtf/framework/components/network"
@@ -37,15 +39,23 @@ func (s *Suite) Run() {
 	fmt.Println("=== PREPERING TEST ENV")
 	start := time.Now()
 
-	netCom := network.New()
+	cli, err := client.NewEnvClient()
+	if err != nil {
+		panic(err)
+	}
 
-	sutCom := sut.NewSUT(
-		"/Users/Marek/Go/src/github.com/smallinsky/mtf/e2e/service/echo/",
-		"ORACLE_ADDR=host.docker.internal:8002",
-	)
-	mysqlCom := mysql.NewMySQL()
-	redisCom := redis.NewRedis()
-	migrate := &migrate.MigrateDB{}
+	netCom := network.New(cli, network.NetworkConfig{
+		Name: "mtf_net",
+	})
+
+	sutCom := sut.NewSUT(cli, sut.SutConfig{
+		Path: "/Users/Marek/Go/src/github.com/smallinsky/mtf/e2e/service/echo/",
+		Env:  []string{"ORACLE_ADDR=host.docker.internal:8002"},
+	})
+
+	mysqlCom := mysql.NewMySQL(cli, mysql.MySQLConfig{})
+	redisCom := redis.NewRedis(cli, redis.RedisConfig{Password: "test"})
+	migrate := migrate.NewMigrate(cli, migrate.MigrateConfig{})
 
 	comps := []Comper{
 		netCom,

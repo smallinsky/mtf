@@ -15,44 +15,48 @@ import (
 	"github.com/smallinsky/mtf/pkg/exec"
 )
 
-type Config struct {
-	Dir string
-	Env []string
+type SutConfig struct {
+	Path string
+	Env  []string
 }
 
-func NewSUT(path string, env ...string) *SUT {
+func NewSUT(cli *client.Client, config SutConfig) *SUT {
 	return &SUT{
-		Path: path,
-		Env:  env,
+		//Path:   path,
+		//Env:    env,
+		cli:    cli,
+		config: config,
 	}
 }
 
 type SUT struct {
-	Config Config
+	//	Path  string
+	//	Env   []string
+	start time.Time
 
-	Path      string
-	Env       []string
-	start     time.Time
+	cli       *client.Client
 	container *docker.Container
+
+	config SutConfig
 }
 
 func (c *SUT) Start() error {
 	c.start = time.Now()
 
 	var err error
-	if c.Path, err = filepath.Abs(c.Path); err != nil {
-		return fmt.Errorf("failed to get absolute path for %v path", c.Path)
+	if c.config.Path, err = filepath.Abs(c.config.Path); err != nil {
+		return fmt.Errorf("failed to get absolute path for %v path", c.config.Path)
 	}
-	if _, err := os.Stat(c.Path); os.IsNotExist(err) {
-		return fmt.Errorf("path '%v' doesn't exist", c.Path)
+	if _, err := os.Stat(c.config.Path); os.IsNotExist(err) {
+		return fmt.Errorf("path '%v' doesn't exist", c.config.Path)
 	}
 
-	b := strings.Split(c.Path, `/`)
+	b := strings.Split(c.config.Path, `/`)
 	bin := b[len(b)-1]
 
 	if core.Settings.BuildBinary {
-		if err := BuildGoBinary(c.Path); err != nil {
-			return fmt.Errorf("failed to build sut binary from %s, err %v", c.Path, err)
+		if err := BuildGoBinary(c.config.Path); err != nil {
+			return fmt.Errorf("failed to build sut binary from %s, err %v", c.config, err)
 		}
 	}
 
@@ -60,7 +64,7 @@ func (c *SUT) Start() error {
 		// TODO Get binary base on the path and repo name or if binary deosn't exist build it.
 		// Add ability to run sut from existing image.
 		binary = bin
-		path   = c.Path
+		path   = c.config.Path
 	)
 
 	exec.Run([]string{
@@ -83,7 +87,7 @@ func (c *SUT) Start() error {
 		Env: append([]string{
 			fmt.Sprintf("SUT_BINARY_NAME=%s", binary),
 			"ORACLE_ADDR=host.docker.internal:8002",
-		}, c.Env...),
+		}, c.config.Env...),
 		PortMap: docker.PortMap{
 			8001: 8001,
 		},

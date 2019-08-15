@@ -9,21 +9,34 @@ import (
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
-func NewMySQL() *MySQL {
+type MySQLConfig struct {
+	Database string
+	Password string
+	Pass     string
+	Port     string
+	Hostname string
+	Network  string
+}
+
+func NewMySQL(cli *client.Client, config MySQLConfig) *MySQL {
 	return &MySQL{
-		ready: make(chan struct{}),
+		cli:    cli,
+		config: config,
+		ready:  make(chan struct{}),
 	}
 }
 
 type MySQL struct {
 	Pass     string
 	Port     string
-	DB       []string
 	Hostname string
 	Network  string
 	ready    chan struct{}
 
 	container *docker.Container
+	cli       *client.Client
+
+	config MySQLConfig
 }
 
 func (c *MySQL) Start() error {
