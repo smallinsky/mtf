@@ -17,6 +17,15 @@ type MigrateDB struct {
 
 type MigrateConfig struct {
 	Path string
+
+	Password string
+	Port     string
+	Hostname string
+	Database string
+}
+
+func (c *MigrateConfig) DBConnString() string {
+	return fmt.Sprintf("mysql://root:%s@tcp(%s:%s)/%s", c.Password, c.Hostname, c.Port, c.Database)
 }
 
 func NewMigrate(cli *client.Client, config MigrateConfig) *MigrateDB {
@@ -27,8 +36,6 @@ func NewMigrate(cli *client.Client, config MigrateConfig) *MigrateDB {
 }
 
 func (m *MigrateDB) Start() error {
-	m.config.Path = "../../e2e/migrations"
-
 	var err error
 	if m.config.Path, err = filepath.Abs(m.config.Path); err != nil {
 		return fmt.Errorf("failed to get absolute path for %v path", m.config.Path)
@@ -43,9 +50,9 @@ func (m *MigrateDB) Start() error {
 	}
 
 	container, err := docker.NewContainer(cli, docker.Config{
-		Name:     "mtf_migrate",
+		Name:     "migrate_mtf",
 		Image:    "migrate/migrate",
-		Hostname: "run_sut",
+		Hostname: "migrate_mtf",
 		CapAdd:   []string{"NET_RAW", "NET_ADMIN"},
 		Labels: map[string]string{
 			"mtf": "mtf",
@@ -59,7 +66,7 @@ func (m *MigrateDB) Start() error {
 		NetworkName: "mtf_net",
 		Cmd: []string{
 			"-path", "/migrations",
-			"-database", "mysql://root:test@tcp(mysql_mtf:3306)/test_db", "up",
+			"-database", m.config.DBConnString(), "up",
 		},
 	})
 	if err != nil {
