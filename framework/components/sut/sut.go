@@ -22,18 +22,12 @@ type SutConfig struct {
 
 func NewSUT(cli *client.Client, config SutConfig) *SUT {
 	return &SUT{
-		//Path:   path,
-		//Env:    env,
 		cli:    cli,
 		config: config,
 	}
 }
 
 type SUT struct {
-	//	Path  string
-	//	Env   []string
-	start time.Time
-
 	cli       *client.Client
 	container *docker.Container
 
@@ -41,7 +35,6 @@ type SUT struct {
 }
 
 func (c *SUT) Start() error {
-	c.start = time.Now()
 
 	var err error
 	if c.config.Path, err = filepath.Abs(c.config.Path); err != nil {
@@ -86,7 +79,7 @@ func (c *SUT) Start() error {
 		},
 		Env: append([]string{
 			fmt.Sprintf("SUT_BINARY_NAME=%s", binary),
-			"ORACLE_ADDR=host.docker.internal:8002",
+			//"ORACLE_ADDR=host.docker.internal:8002",
 		}, c.config.Env...),
 		PortMap: docker.PortMap{
 			8001: 8001,
@@ -140,7 +133,7 @@ func BuildGoBinary(path string) error {
 		"go", "build", "-o", fmt.Sprintf("%s/%s", path, bin), path,
 	}
 
-	if err := exec.Run(cmd, exec.WithEnv("GOOS=linux", "GOARCH=amd64")); err != nil {
+	if err := exec.Run(cmd, exec.WithEnv("GOOS=linux", "GOARCH=amd64", "GO111MODULE=on")); err != nil {
 		return errors.Wrapf(err, "failed to run cmd")
 	}
 	return nil

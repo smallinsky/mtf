@@ -26,6 +26,7 @@ func NewSuite(testID string, m *testing.M) *Suite {
 type Suite struct {
 	testID string
 	mRunFn runFn
+	sutEnv []string
 }
 
 type Comper interface {
@@ -39,15 +40,21 @@ func (s *Suite) Run() {
 	start := time.Now()
 
 	fmt.Println("=== PREPERING TEST ENV")
-	stopFn := startComponents()
+	stopFn := s.startComponents()
 	fmt.Printf("=== PREPERING TEST ENV DONE - %v\n\n", time.Now().Sub(start))
 
 	defer stopFn()
 
 	s.mRunFn()
 }
+func (s *Suite) SUTEnv(m map[string]string) *Suite {
+	for k, v := range m {
+		s.sutEnv = append(s.sutEnv, fmt.Sprintf("%s=%s", k, v))
+	}
+	return s
+}
 
-func startComponents() (stopFn func()) {
+func (s *Suite) startComponents() (stopFn func()) {
 	cli, err := client.NewEnvClient()
 	if err != nil {
 		panic(err)
@@ -57,9 +64,10 @@ func startComponents() (stopFn func()) {
 		Name: "mtf_net",
 	})
 
+	fmt.Println(s.sutEnv)
 	sutCom := sut.NewSUT(cli, sut.SutConfig{
-		Path: "/Users/Marek/Go/src/github.com/smallinsky/mtf/e2e/service/echo/",
-		Env:  []string{"ORACLE_ADDR=host.docker.internal:8002"},
+		Path: "/Users/marek/Go/src/github.com/smallinsky/mtf/e2e/service/echo/",
+		Env:  s.sutEnv,
 	})
 
 	dbConfig := mysql.MySQLConfig{

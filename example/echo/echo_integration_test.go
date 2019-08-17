@@ -10,7 +10,10 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	framework.NewSuite("suite_first", m).Run()
+	sutEnv := map[string]string{
+		"ORACLE_ADDR": "host.docker.internal:8002",
+	}
+	framework.NewSuite("suite_first", m).SUTEnv(sutEnv).Run()
 }
 
 func TestEchoService(t *testing.T) {

@@ -17,4 +17,6 @@ func init() {
 
 	flag.BoolVar(&Settings.StopComponentsAfterExit, "test.stop_components", false,
 		"Don't stop components after test execution have been finished")
+
+	flag.Parse()
 }
