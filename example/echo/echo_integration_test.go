@@ -13,7 +13,11 @@ func TestMain(m *testing.M) {
 	sutEnv := map[string]string{
 		"ORACLE_ADDR": "host.docker.internal:8002",
 	}
-	framework.NewSuite("suite_first", m).SUTEnv(sutEnv).Run()
+	framework.NewSuite("suite_first", m).
+		SUTEnv(sutEnv).
+		SetMigratePath("../../e2e/migrations").
+		SetSUTPath("/Users/marek/Go/src/github.com/smallinsky/mtf/e2e/service/echo/").
+		Run()
 }
 
 func TestEchoService(t *testing.T) {

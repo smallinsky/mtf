@@ -25,9 +25,11 @@ func NewSuite(testID string, m *testing.M) *Suite {
 }
 
 type Suite struct {
-	testID string
-	mRunFn runFn
-	sutEnv []string
+	testID      string
+	mRunFn      runFn
+	sutEnv      []string
+	migratePath string
+	sutPath     string
 }
 
 type Comper interface {
@@ -55,6 +57,16 @@ func (s *Suite) SUTEnv(m map[string]string) *Suite {
 	return s
 }
 
+func (s *Suite) SetMigratePath(path string) *Suite {
+	s.migratePath = path
+	return s
+}
+
+func (s *Suite) SetSUTPath(path string) *Suite {
+	s.sutPath = path
+	return s
+}
+
 func (s *Suite) startComponents() (stopFn func()) {
 	cli, err := client.NewEnvClient()
 	if err != nil {
@@ -67,7 +79,7 @@ func (s *Suite) startComponents() (stopFn func()) {
 
 	fmt.Println(s.sutEnv)
 	sutCom := sut.NewSUT(cli, sut.SutConfig{
-		Path: "/Users/marek/Go/src/github.com/smallinsky/mtf/e2e/service/echo/",
+		Path: s.sutPath,
 		Env:  s.sutEnv,
 	})
 
@@ -81,7 +93,7 @@ func (s *Suite) startComponents() (stopFn func()) {
 		Password: "test",
 	})
 	migrate := migrate.NewMigrate(cli, migrate.MigrateConfig{
-		Path:     "../../e2e/migrations",
+		Path:     s.migratePath,
 		Password: dbConfig.Password,
 		Port:     "3306",
 		Hostname: "mysql_mtf",

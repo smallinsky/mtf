@@ -40,6 +40,7 @@ func (c *SUT) Start() error {
 	if c.config.Path, err = filepath.Abs(c.config.Path); err != nil {
 		return fmt.Errorf("failed to get absolute path for %v path", c.config.Path)
 	}
+
 	if _, err := os.Stat(c.config.Path); os.IsNotExist(err) {
 		return fmt.Errorf("path '%v' doesn't exist", c.config.Path)
 	}
