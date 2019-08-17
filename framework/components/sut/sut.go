@@ -159,6 +159,14 @@ func (c *SUT) Ready() (err error) {
 	return nil
 }
 
+func (c *SUT) Logs() ([]byte, error) {
+	logs, err := c.container.Logs()
+	if err != nil {
+		return nil, err
+	}
+	return []byte(logs), nil
+}
+
 func (c *SUT) Stop() error {
 	return c.container.Stop()
 }

@@ -2,6 +2,7 @@ package framework
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"reflect"
 	"strings"
@@ -108,6 +109,18 @@ func (s *Suite) startComponents() (stopFn func()) {
 			}
 			var wg sync.WaitGroup
 			for _, c := range cc {
+				sutC, ok := c.(*sut.SUT)
+				if ok {
+					buff, err := sutC.Logs()
+					if err != nil {
+						fmt.Println("got error during sut logs call")
+					}
+
+					err = ioutil.WriteFile(fmt.Sprintf("%s/sut.logs", "runlogs"), buff, 0644)
+					if err != nil {
+						fmt.Println("failed to write sut logs: ", err)
+					}
+				}
 				wg.Add(1)
 				go func(c Comper) {
 					defer wg.Done()
