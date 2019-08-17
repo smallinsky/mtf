@@ -12,8 +12,6 @@ import (
 type MySQLConfig struct {
 	Database string
 	Password string
-	Pass     string
-	Port     string
 	Hostname string
 	Network  string
 }
@@ -27,12 +25,7 @@ func NewMySQL(cli *client.Client, config MySQLConfig) *MySQL {
 }
 
 type MySQL struct {
-	Pass     string
-	Port     string
-	Hostname string
-	Network  string
-	ready    chan struct{}
-
+	ready     chan struct{}
 	container *docker.Container
 	cli       *client.Client
 
@@ -41,11 +34,6 @@ type MySQL struct {
 
 func (c *MySQL) Start() error {
 	defer close(c.ready)
-
-	var (
-		database = "test_db"
-		password = "test"
-	)
 
 	cli, err := client.NewEnvClient()
 	if err != nil {
@@ -66,15 +54,15 @@ func (c *MySQL) Start() error {
 			"name=mysql_mtf",
 			"hostname=mysql_mtf",
 			"network=mtf_net",
-			fmt.Sprintf("MYSQL_DATABASE=%s", database),
-			fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", password),
+			fmt.Sprintf("MYSQL_DATABASE=%s", c.config.Database),
+			fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", c.config.Password),
 		},
 		Cmd: []string{
 			"--default-authentication-plugin=mysql_native_password",
 		},
 
 		Healtcheck: &docker.Healtcheck{
-			Test: []string{"CMD", "mysqladmin", "-h", "localhost", "status", fmt.Sprintf("--password=%s", password)},
+			Test: []string{"CMD", "mysqladmin", "-h", "localhost", "status", fmt.Sprintf("--password=%s", c.config.Password)},
 
 			Interval: time.Millisecond * 500,
 			Timeout:  time.Second * 40,

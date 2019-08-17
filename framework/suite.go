@@ -62,16 +62,21 @@ func startComponents() (stopFn func()) {
 		Env:  []string{"ORACLE_ADDR=host.docker.internal:8002"},
 	})
 
-	mysqlCom := mysql.NewMySQL(cli, mysql.MySQLConfig{})
+	dbConfig := mysql.MySQLConfig{
+		Database: "test_db",
+		Password: "test",
+	}
+
+	mysqlCom := mysql.NewMySQL(cli, dbConfig)
 	redisCom := redis.NewRedis(cli, redis.RedisConfig{
 		Password: "test",
 	})
 	migrate := migrate.NewMigrate(cli, migrate.MigrateConfig{
 		Path:     "../../e2e/migrations",
-		Password: "test",
+		Password: dbConfig.Password,
 		Port:     "3306",
 		Hostname: "mysql_mtf",
-		Database: "test_db",
+		Database: dbConfig.Database,
 	})
 
 	comps := []Comper{
