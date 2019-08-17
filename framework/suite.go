@@ -36,9 +36,18 @@ type Comper interface {
 }
 
 func (s *Suite) Run() {
-	fmt.Println("=== PREPERING TEST ENV")
 	start := time.Now()
 
+	fmt.Println("=== PREPERING TEST ENV")
+	stopFn := startComponents()
+	fmt.Printf("=== PREPERING TEST ENV DONE - %v\n\n", time.Now().Sub(start))
+
+	defer stopFn()
+
+	s.mRunFn()
+}
+
+func startComponents() (stopFn func()) {
 	cli, err := client.NewEnvClient()
 	if err != nil {
 		panic(err)
@@ -54,8 +63,16 @@ func (s *Suite) Run() {
 	})
 
 	mysqlCom := mysql.NewMySQL(cli, mysql.MySQLConfig{})
-	redisCom := redis.NewRedis(cli, redis.RedisConfig{Password: "test"})
-	migrate := migrate.NewMigrate(cli, migrate.MigrateConfig{})
+	redisCom := redis.NewRedis(cli, redis.RedisConfig{
+		Password: "test",
+	})
+	migrate := migrate.NewMigrate(cli, migrate.MigrateConfig{
+		Path:     "../../e2e/migrations",
+		Password: "test",
+		Port:     "3306",
+		Hostname: "mysql_mtf",
+		Database: "test_db",
+	})
 
 	comps := []Comper{
 		netCom,
@@ -70,7 +87,7 @@ func (s *Suite) Run() {
 		m[v.StartPriority()] = append(m[v.StartPriority()], v)
 	}
 
-	defer func() {
+	stopFn = func() {
 		for i := 9; i >= 0; i-- {
 			cc, ok := m[i]
 			if !ok {
@@ -88,7 +105,7 @@ func (s *Suite) Run() {
 			}
 			wg.Wait()
 		}
-	}()
+	}
 
 	for i := 0; i < 10; i++ {
 		cc, ok := m[i]
@@ -113,8 +130,8 @@ func (s *Suite) Run() {
 		}
 		wg.Wait()
 	}
-	fmt.Printf("=== PREPERING TEST ENV DONE - %v\n\n", time.Now().Sub(start))
-	s.mRunFn()
+
+	return stopFn
 }
 
 type runFn func() int
@@ -130,16 +147,15 @@ func Run(t *testing.T, i interface{}) {
 	if v, ok := i.(interface{ Init(*testing.T) }); ok {
 		v.Init(t)
 	}
-
 	context.CreateDirectory()
 
-	for _, test := range getTests(i) {
+	for _, test := range getInternalTests(i) {
 		t.Run(test.Name, test.F)
 	}
 }
 
-func getTests(i interface{}) []testing.InternalTest {
-	var out []testing.InternalTest
+func getInternalTests(i interface{}) []testing.InternalTest {
+	var tests []testing.InternalTest
 	v := reflect.ValueOf(i)
 	if v.Type().Kind() != reflect.Ptr && v.Type().Kind() != reflect.Struct {
 		panic("arg is not a ptr to a struct")
@@ -153,7 +169,7 @@ func getTests(i interface{}) []testing.InternalTest {
 		if _, ok := m.Interface().(func(*testing.T)); !ok {
 			continue
 		}
-		out = append(out, testing.InternalTest{
+		tests = append(tests, testing.InternalTest{
 			Name: tm.Name,
 			F: func(t *testing.T) {
 				// create test dir
@@ -164,5 +180,5 @@ func getTests(i interface{}) []testing.InternalTest {
 			},
 		})
 	}
-	return out
+	return tests
 }
