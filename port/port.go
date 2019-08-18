@@ -37,7 +37,7 @@ func (p *Port) Send(t *testing.T, i interface{}) error {
 func (p *Port) Receive(t *testing.T, i interface{}) error {
 	m, err := p.impl.Receive()
 	ctx := context.Get(t)
-	ctx.LogReceive(p.impl.Name(), i)
+	ctx.LogReceive(p.impl.Name(), m)
 	if err != nil {
 		t.Fatalf("failed to receive %T from %s: %v", i, p.impl.Name(), err)
 	}

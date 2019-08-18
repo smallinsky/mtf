@@ -77,7 +77,6 @@ func (s *Suite) startComponents() (stopFn func()) {
 		Name: "mtf_net",
 	})
 
-	fmt.Println(s.sutEnv)
 	sutCom := sut.NewSUT(cli, sut.SutConfig{
 		Path: s.sutPath,
 		Env:  s.sutEnv,

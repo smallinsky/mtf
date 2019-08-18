@@ -302,7 +302,7 @@ func genCertForHost(hosts []string) (*CertKey, error) {
 		BasicConstraintsValid: true,
 	}
 
-	hosts = append(hosts, []string{"localhost"}...)
+	hosts = append(hosts, []string{"localhost", "host.docker.internal"}...)
 	for _, h := range hosts {
 		if ip := net.ParseIP(h); ip != nil {
 			template.IPAddresses = append(template.IPAddresses, ip)

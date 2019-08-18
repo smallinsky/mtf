@@ -135,7 +135,6 @@ func registerInterface(server *grpc.Server, i interface{}, procCall processFunc,
 	mdv := nsv.Elem().FieldByName("md")
 	//TODO register handler for stream methods
 
-	z := reflect.New(mdv.Type().Elem().Elem())
 	mv := allocMap(mdv)
 
 	desc, err := getGrpcDetails(i)
@@ -143,12 +142,15 @@ func registerInterface(server *grpc.Server, i interface{}, procCall processFunc,
 		return nil, errors.Wrapf(err, "failed ot get grpc details")
 	}
 	for _, mdesc := range desc.methodsDesc {
+		mdesc := mdesc
 		fn := func(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 			v := reflect.New(mdesc.InType)
 			v.Elem().Set(reflect.New(mdesc.InType.Elem()))
 			dec(v.Elem().Interface())
 			return procCall(v.Elem().Interface())
 		}
+
+		z := reflect.New(mdv.Type().Elem().Elem())
 		z.Elem().FieldByName("MethodName").SetString(mdesc.Name)
 		z.Elem().FieldByName("Handler").Set(reflect.ValueOf(fn))
 

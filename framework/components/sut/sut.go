@@ -80,10 +80,10 @@ func (c *SUT) Start() error {
 		},
 		Env: append([]string{
 			fmt.Sprintf("SUT_BINARY_NAME=%s", binary),
-			//"ORACLE_ADDR=host.docker.internal:8002",
 		}, c.config.Env...),
 		PortMap: docker.PortMap{
 			8001: 8001,
+			8082: 8082,
 		},
 		Mounts: docker.Mounts{
 			docker.Mount{
