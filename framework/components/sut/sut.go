@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
 
 	"github.com/smallinsky/mtf/framework/core"
@@ -20,22 +19,21 @@ type SutConfig struct {
 	Env  []string
 }
 
-func NewSUT(cli *client.Client, config SutConfig) *SUT {
-	return &SUT{
-		cli:    cli,
-		config: config,
-	}
-}
-
 type SUT struct {
-	cli       *client.Client
+	cli       *docker.Client
 	container *docker.Container
 
 	config SutConfig
 }
 
-func (c *SUT) Start() error {
+func NewSUT(cli *docker.Client, config SutConfig) (*SUT, error) {
+	return &SUT{
+		config: config,
+		cli:    cli,
+	}, nil
+}
 
+func (c *SUT) Start() error {
 	var err error
 	if c.config.Path, err = filepath.Abs(c.config.Path); err != nil {
 		return fmt.Errorf("failed to get absolute path for %v path", c.config.Path)
@@ -65,12 +63,7 @@ func (c *SUT) Start() error {
 		"mkdir", "-p", "/tmp/mtf/cert",
 	})
 
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		return err
-	}
-
-	container, err := docker.NewContainer(cli, docker.Config{
+	result, err := c.cli.NewContainer(docker.Config{
 		Name:     "sut_mtf",
 		Image:    "run_sut",
 		Hostname: "sut_mtf",
@@ -106,12 +99,9 @@ func (c *SUT) Start() error {
 		return err
 	}
 
-	if err := container.Start(); err != nil {
-		return err
-	}
+	c.container = result
 
-	c.container = container
-	return nil
+	return c.container.Start()
 }
 
 func join(args []string) string {

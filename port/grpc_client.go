@@ -2,7 +2,6 @@ package port
 
 import (
 	"context"
-	"log"
 	"reflect"
 	"strings"
 	"sync"
@@ -40,7 +39,6 @@ func NewGRPCClient(i interface{}, target string, opts ...PortOpt) (*ClientPort, 
 			RespType: m.OutType,
 			Endpoint: d.Name + "/" + m.Name,
 		}
-		log.Printf("Endpoint url: %s\n", port.emd[m.InType].Endpoint)
 	}
 	if err := port.connect(target, options.clientCertPath); err != nil {
 		return nil, errors.Wrapf(err, "failed to connect")

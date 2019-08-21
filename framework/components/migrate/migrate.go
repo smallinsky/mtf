@@ -5,13 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/docker/docker/client"
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
 type MigrateDB struct {
 	config    MigrateConfig
-	cli       *client.Client
+	cli       *docker.Client
 	container *docker.Container
 }
 
@@ -22,13 +21,14 @@ type MigrateConfig struct {
 	Port     string
 	Hostname string
 	Database string
+	Labels   map[string]string
 }
 
 func (c *MigrateConfig) DBConnString() string {
 	return fmt.Sprintf("mysql://root:%s@tcp(%s:%s)/%s", c.Password, c.Hostname, c.Port, c.Database)
 }
 
-func NewMigrate(cli *client.Client, config MigrateConfig) *MigrateDB {
+func NewMigrate(cli *docker.Client, config MigrateConfig) *MigrateDB {
 	return &MigrateDB{
 		config: config,
 		cli:    cli,
@@ -44,12 +44,7 @@ func (m *MigrateDB) Start() error {
 		return fmt.Errorf("migraitn path: %v doesn't exist\n", m.config.Path)
 	}
 
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		return err
-	}
-
-	container, err := docker.NewContainer(cli, docker.Config{
+	result, err := m.cli.NewContainer(docker.Config{
 		Name:     "migrate_mtf",
 		Image:    "migrate/migrate",
 		Hostname: "migrate_mtf",
@@ -73,11 +68,8 @@ func (m *MigrateDB) Start() error {
 		return err
 	}
 
-	if err := container.Start(); err != nil {
-		return err
-	}
-	m.container = container
-	return nil
+	m.container = result
+	return m.container.Start()
 }
 
 func (m *MigrateDB) Stop() error {

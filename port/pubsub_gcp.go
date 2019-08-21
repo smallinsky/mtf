@@ -17,7 +17,7 @@ const (
 	queueSize = 100
 )
 
-func NewPubsub(projectID, topicName string, addr string) *Pubsub {
+func NewPubsub(projectID, topicName string, addr string) *Port {
 	if err := os.Setenv("PUBSUB_EMULATOR_HOST", addr); err != nil {
 		log.Fatalf("failed to set env: %v", err)
 	}
@@ -83,7 +83,18 @@ func NewPubsub(projectID, topicName string, addr string) *Pubsub {
 			panic(err)
 		}
 	}()
-	return ps
+
+	return &Port{
+		impl: ps,
+	}
+}
+
+func (ps *Pubsub) Kind() Kind {
+	return KIND_MESSAGE_QEUEU
+}
+
+func (ps *Pubsub) Name() string {
+	return "pubsub_message_queue"
 }
 
 type Pubsub struct {
@@ -92,43 +103,29 @@ type Pubsub struct {
 	topic    *pubsub.Topic
 }
 
-func (p *Pubsub) receive(i interface{}, opts ...Opt) {
-	expected, ok := i.(proto.Message)
-	if !ok {
-		panic("message is not a proto.Message")
-	}
-	for _, m := range p.queue {
-		if proto.Equal(expected, m) {
-			log.Info("Got expected message in queue")
-			return
-		}
-	}
+func (p *Pubsub) Receive() (interface{}, error) {
+	return p.Receive()
+}
 
-	deadlineC := time.Tick(time.Second * 30)
+func (p *Pubsub) Send(i interface{}) error {
+	return p.send(i)
+}
+
+func (p *Pubsub) receive(opts ...Opt) (interface{}, error) {
 	for {
 		select {
 		case msg := <-p.messages:
-			if proto.MessageName(msg) != proto.MessageName(expected) {
-				log.Debug("messge don't eq queueing message")
-				p.queue = append(p.queue, msg)
-				continue
-			}
-
-			if proto.Equal(expected, msg) {
-				log.Info("Message eq")
-				return
-			}
-
-		case <-deadlineC:
-			panic("timout during pubsub.receive")
+			return msg, nil
+		case <-time.Tick(time.Second * 5):
+			return nil, fmt.Errorf("timout during pubsub.receive")
 		}
 	}
 }
 
-func (p *Pubsub) send(i interface{}) {
+func (p *Pubsub) send(i interface{}) error {
 	msg, ok := i.(proto.Message)
 	if !ok {
-		panic("message is not a proto.Message")
+		return fmt.Errorf("message is not a proto.Message")
 	}
 
 	ctx := context.Background()
@@ -139,7 +136,7 @@ func (p *Pubsub) send(i interface{}) {
 
 	buf, err := proto.Marshal(anyMsg)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	m := &pubsub.Message{
@@ -147,20 +144,20 @@ func (p *Pubsub) send(i interface{}) {
 	}
 
 	if _, err := p.topic.Publish(ctx, m).Get(ctx); err != nil {
-		panic(err)
+		return err
 	}
 
+	timeout := time.After(time.Second * 5)
 	// TODO: stop other recivers
+	// resend recived message to queue.
 	for {
 		select {
 		case f := <-p.messages:
-			if proto.Equal(f, msg) {
-				log.Info("queue to messages")
-				return
-			} else {
-				log.Info("messages not eq")
+			if !proto.Equal(f, msg) {
+				continue
 			}
-			p.queue = append(p.queue, f)
+		case <-timeout:
+			return fmt.Errorf("failed to send message")
 		}
 	}
 }

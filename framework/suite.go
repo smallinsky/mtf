@@ -10,14 +10,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/docker/client"
+	"github.com/docker/docker/api/types"
 
 	"github.com/smallinsky/mtf/framework/components/migrate"
 	"github.com/smallinsky/mtf/framework/components/mysql"
 	"github.com/smallinsky/mtf/framework/components/network"
+	"github.com/smallinsky/mtf/framework/components/pubsub"
 	"github.com/smallinsky/mtf/framework/components/redis"
 	"github.com/smallinsky/mtf/framework/components/sut"
 	"github.com/smallinsky/mtf/framework/context"
+	"github.com/smallinsky/mtf/pkg/docker"
 )
 
 func NewSuite(testID string, m *testing.M) *Suite {
@@ -43,12 +45,18 @@ func (s *Suite) Run() {
 	start := time.Now()
 
 	fmt.Println("=== PREPERING TEST ENV")
-	stopFn := s.startComponents()
+	stopFn, err := s.startComponents()
+	if err != nil {
+		fmt.Println("failed to run components: ", err)
+		return
+	}
 	fmt.Printf("=== PREPERING TEST ENV DONE - %v\n\n", time.Now().Sub(start))
 
 	defer stopFn()
 
+	start = time.Now()
 	s.mRunFn()
+	fmt.Printf("=== TEST RUN DONE - %v\n", time.Now().Sub(start))
 }
 func (s *Suite) SUTEnv(m map[string]string) *Suite {
 	for k, v := range m {
@@ -67,30 +75,46 @@ func (s *Suite) SetSUTPath(path string) *Suite {
 	return s
 }
 
-func (s *Suite) startComponents() (stopFn func()) {
-	cli, err := client.NewEnvClient()
+type Attachable interface {
+	StartOrAttachIfAlreadyExits([]types.Container)
+}
+
+func (s *Suite) startComponents() (stopFn func(), err error) {
+	cli, err := docker.NewClient()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	netCom := network.New(cli, network.NetworkConfig{
-		Name: "mtf_net",
+		Name:          "mtf_net",
+		AttachIfExist: true,
 	})
 
-	sutCom := sut.NewSUT(cli, sut.SutConfig{
+	if err != nil {
+		return nil, err
+	}
+	pub := pubsub.NewPubsub(cli)
+
+	sutCom, err := sut.NewSUT(cli, sut.SutConfig{
 		Path: s.sutPath,
 		Env:  s.sutEnv,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	dbConfig := mysql.MySQLConfig{
-		Database: "test_db",
-		Password: "test",
+		Database:      "test_db",
+		Password:      "test",
+		AttachIfExist: true,
 	}
 
 	mysqlCom := mysql.NewMySQL(cli, dbConfig)
+
 	redisCom := redis.NewRedis(cli, redis.RedisConfig{
 		Password: "test",
 	})
+
 	migrate := migrate.NewMigrate(cli, migrate.MigrateConfig{
 		Path:     s.migratePath,
 		Password: dbConfig.Password,
@@ -98,13 +122,13 @@ func (s *Suite) startComponents() (stopFn func()) {
 		Hostname: "mysql_mtf",
 		Database: dbConfig.Database,
 	})
-
 	comps := []Comper{
 		netCom,
 		sutCom,
 		mysqlCom,
 		redisCom,
 		migrate,
+		pub,
 	}
 
 	m := make(map[int][]Comper)
@@ -113,6 +137,7 @@ func (s *Suite) startComponents() (stopFn func()) {
 	}
 
 	stopFn = func() {
+		start := time.Now()
 		for i := 9; i >= 0; i-- {
 			cc, ok := m[i]
 			if !ok {
@@ -142,6 +167,7 @@ func (s *Suite) startComponents() (stopFn func()) {
 			}
 			wg.Wait()
 		}
+		fmt.Printf("=== STOPING ENV DONE - %v\n", time.Since(start))
 	}
 
 	for i := 0; i < 10; i++ {
@@ -168,7 +194,7 @@ func (s *Suite) startComponents() (stopFn func()) {
 		wg.Wait()
 	}
 
-	return stopFn
+	return stopFn, nil
 }
 
 type runFn func() int

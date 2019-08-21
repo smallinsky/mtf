@@ -10,8 +10,9 @@ import (
 type Kind int
 
 const (
-	KIND_SERVER Kind = 1
-	KIND_CLIENT      = iota
+	KIND_SERVER        Kind = 1
+	KIND_CLIENT             = iota
+	KIND_MESSAGE_QEUEU      = iota
 )
 
 type PortImpl interface {

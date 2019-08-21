@@ -3,45 +3,37 @@ package redis
 import (
 	"fmt"
 
-	"github.com/docker/docker/client"
-
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
+type Redis struct {
+	container *docker.Container
+	cli       *docker.Client
+	cfg       RedisConfig
+
+	ready chan struct{}
+}
+
 type RedisConfig struct {
 	Password string
+	Labels   map[string]string
 }
 
-func NewRedis(cli *client.Client, config RedisConfig) *Redis {
+func NewRedis(cli *docker.Client, config RedisConfig) *Redis {
 	return &Redis{
-		cli:    cli,
-		config: config,
-		ready:  make(chan struct{}),
+		cfg:   config,
+		cli:   cli,
+		ready: make(chan struct{}),
 	}
-}
-
-type Redis struct {
-	Pass     string
-	Hostname string
-	Network  string
-	ready    chan struct{}
-
-	contianer *docker.Container
-	cli       *client.Client
-	config    RedisConfig
 }
 
 func (c *Redis) Start() error {
+	defer close(c.ready)
 	var (
 		image = "bitnami/redis:4.0"
 	)
-	defer close(c.ready)
 
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		return err
-	}
-	container, err := docker.NewContainer(cli, docker.Config{
+	result, err := c.cli.NewContainer(docker.Config{
 		Name:     "redis_mtf",
 		Image:    image,
 		Hostname: "redis_mtf",
@@ -53,25 +45,30 @@ func (c *Redis) Start() error {
 		},
 		NetworkName: "mtf_net",
 		Env: []string{
-			fmt.Sprintf("REDIS_PASSWORD=%s", c.config.Password),
+			fmt.Sprintf("REDIS_PASSWORD=%s", c.cfg.Password),
 		},
+		AttachIfExist: true,
 	})
 	if err != nil {
 		return err
 	}
-	if err := container.Start(); err != nil {
-		return err
-	}
-	c.contianer = container
 
-	return err
+	c.container = result
+
+	return c.container.Start()
 }
 
 func (c *Redis) Stop() error {
-	return c.contianer.Stop()
+	if c.container == nil {
+		return fmt.Errorf("container is not running")
+	}
+	return c.container.Stop()
 }
 
 func (c *Redis) Ready() error {
+	if c.container == nil {
+		return fmt.Errorf("container is not running")
+	}
 	<-c.ready
 	return nil
 }

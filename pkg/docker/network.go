@@ -8,35 +8,55 @@ import (
 )
 
 type NetworkConfig struct {
-	Name   string
-	Labels map[string]string
+	Name          string
+	Labels        map[string]string
+	AttachIfExist bool
 }
 
 type Network struct {
 	ID string
 	NetworkConfig
 
-	dockerClient *client.Client
+	cli *client.Client
 }
 
-func NewNetwork(dockerClient *client.Client, cfg NetworkConfig) (*Network, error) {
-	result, err := dockerClient.NetworkCreate(context.Background(), cfg.Name, types.NetworkCreate{
+func NewNetwork(client *Client, config NetworkConfig) (*Network, error) {
+	networks, err := client.cli.NetworkList(context.Background(), types.NetworkListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range networks {
+		if !config.AttachIfExist {
+			break
+		}
+		if v.Name != config.Name {
+			continue
+		}
+
+		return &Network{
+			NetworkConfig: config,
+			ID:            v.ID,
+			cli:           client.cli,
+		}, nil
+
+	}
+	result, err := client.cli.NetworkCreate(context.Background(), config.Name, types.NetworkCreate{
 		CheckDuplicate: true,
-		Labels:         cfg.Labels,
+		Labels:         config.Labels,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	net := &Network{
-		NetworkConfig: cfg,
+		NetworkConfig: config,
 		ID:            result.ID,
-		dockerClient:  dockerClient,
+		cli:           client.cli,
 	}
 
 	return net, nil
 }
 
 func (n *Network) Close() error {
-	return n.dockerClient.NetworkRemove(context.Background(), n.ID)
+	return n.cli.NetworkRemove(context.Background(), n.ID)
 }
