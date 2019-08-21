@@ -15,7 +15,7 @@ import (
 
 type serverDesc struct {
 	Name        string
-	methodsDesc []methodDesc
+	MethodsDesc []methodDesc
 }
 
 type methodDesc struct {
@@ -45,7 +45,7 @@ func getGrpcDetails(s interface{}) (*serverDesc, error) {
 	for i := 0; i < t.NumMethod(); i++ {
 		// TODO: distinguish stream methods
 		m := t.Method(i)
-		desc.methodsDesc = append(desc.methodsDesc, methodDesc{
+		desc.MethodsDesc = append(desc.MethodsDesc, methodDesc{
 			Name:    m.Name,
 			InType:  m.Type.In(1),
 			OutType: m.Type.Out(0),

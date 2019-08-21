@@ -38,6 +38,9 @@ type Config struct {
 	NetworkName string
 
 	Healtcheck *Healtcheck
+
+	AttachIfExist bool
+	AutoRemove    bool
 }
 
 type Healtcheck struct {
@@ -63,7 +66,40 @@ type Mount struct {
 
 type Mounts []Mount
 
-func NewContainer(cli *client.Client, config Config) (*Container, error) {
+type Options func(*options)
+
+type options struct {
+	ContainerID string
+}
+
+func (c *Client) NewContainer(config Config, opts ...Options) (*Container, error) {
+	var options options
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	for _, v := range c.containers {
+		if v.Names[0] != "/"+config.Name {
+			continue
+		}
+		container := &Container{
+			ID:     v.ID,
+			cli:    c.cli,
+			config: config,
+		}
+
+		// container already exists, check if it is healty and can be reused.
+		if v.State == "running" && config.AttachIfExist {
+			return container, nil
+		}
+		err := c.cli.ContainerRemove(context.Background(), config.Name, types.ContainerRemoveOptions{
+			Force: true,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	exposedPorts := make(nat.PortSet)
 	for k := range config.PortMap {
 		exposedPorts[toNatPort(k)] = struct{}{}
@@ -79,7 +115,7 @@ func NewContainer(cli *client.Client, config Config) (*Container, error) {
 		}
 	}
 
-	result, err := cli.ContainerCreate(
+	result, err := c.cli.ContainerCreate(
 		context.Background(),
 		&container.Config{
 			Hostname:     config.Hostname,
@@ -97,6 +133,7 @@ func NewContainer(cli *client.Client, config Config) (*Container, error) {
 			PortBindings: config.PortMap.toNatPortMap(),
 			Mounts:       config.Mounts.toDockerType(),
 			CapAdd:       config.CapAdd,
+			AutoRemove:   config.AutoRemove,
 		},
 		&network.NetworkingConfig{
 			EndpointsConfig: map[string]*network.EndpointSettings{
@@ -113,7 +150,7 @@ func NewContainer(cli *client.Client, config Config) (*Container, error) {
 
 	return &Container{
 		ID:     result.ID,
-		cli:    cli,
+		cli:    c.cli,
 		config: config,
 	}, nil
 }
@@ -150,6 +187,7 @@ func (c *Container) WaitForReady() (state *types.ContainerState, err error) {
 		}
 
 		if state.Health.Status == types.Starting {
+			time.Sleep(time.Millisecond * 100)
 			continue
 		}
 		break
@@ -184,6 +222,13 @@ func dump(i interface{}) string {
 }
 
 func (c *Container) Stop() error {
+	if c == nil {
+		return fmt.Errorf("container is nil")
+	}
+	if c.config.AttachIfExist {
+		return nil
+	}
+
 	err := c.cli.ContainerRemove(context.Background(), c.ID, types.ContainerRemoveOptions{
 		Force: true,
 	})
@@ -194,6 +239,9 @@ func (c *Container) Stop() error {
 }
 
 func (c *Container) Logs() (string, error) {
+	if c.cli == nil {
+		return "", fmt.Errorf("cli is nil")
+	}
 	r, err := c.cli.ContainerLogs(context.Background(), c.ID, types.ContainerLogsOptions{
 		ShowStderr: true,
 		ShowStdout: true,

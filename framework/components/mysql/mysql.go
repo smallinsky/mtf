@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/docker/docker/client"
-
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
@@ -14,9 +12,12 @@ type MySQLConfig struct {
 	Password string
 	Hostname string
 	Network  string
+
+	Labels        map[string]string
+	AttachIfExist bool
 }
 
-func NewMySQL(cli *client.Client, config MySQLConfig) *MySQL {
+func NewMySQL(cli *docker.Client, config MySQLConfig) *MySQL {
 	return &MySQL{
 		cli:    cli,
 		config: config,
@@ -27,7 +28,7 @@ func NewMySQL(cli *client.Client, config MySQLConfig) *MySQL {
 type MySQL struct {
 	ready     chan struct{}
 	container *docker.Container
-	cli       *client.Client
+	cli       *docker.Client
 
 	config MySQLConfig
 }
@@ -35,11 +36,7 @@ type MySQL struct {
 func (c *MySQL) Start() error {
 	defer close(c.ready)
 
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		return err
-	}
-	container, err := docker.NewContainer(cli, docker.Config{
+	result, err := c.cli.NewContainer(docker.Config{
 		Name:     "mysql_mtf",
 		Image:    "mysql",
 		Hostname: "mysql_mtf",
@@ -64,18 +61,17 @@ func (c *MySQL) Start() error {
 		Healtcheck: &docker.Healtcheck{
 			Test: []string{"CMD", "mysqladmin", "-h", "localhost", "status", fmt.Sprintf("--password=%s", c.config.Password)},
 
-			Interval: time.Millisecond * 500,
+			Interval: time.Millisecond * 100,
 			Timeout:  time.Second * 40,
 		},
+		AttachIfExist: c.config.AttachIfExist,
 	})
 	if err != nil {
 		return err
 	}
-	if err := container.Start(); err != nil {
-		return err
-	}
-	c.container = container
-	return nil
+	c.container = result
+
+	return c.container.Start()
 }
 
 func (c *MySQL) Stop() error {
@@ -95,5 +91,5 @@ func (c *MySQL) Ready() error {
 }
 
 func (m *MySQL) StartPriority() int {
-	return 2
+	return 1
 }

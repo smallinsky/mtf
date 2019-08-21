@@ -2,6 +2,7 @@ package port
 
 import (
 	"bytes"
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -45,7 +46,7 @@ func (p *HTTPPort) Name() string {
 	return "http_server"
 }
 
-func (p *HTTPPort) Send(i interface{}) error {
+func (p *HTTPPort) Send(ctx context.Context, i interface{}) error {
 	resp, ok := i.(*HTTPResponse)
 	if !ok {
 		return errors.Errorf("invalid type %T", i)
@@ -53,7 +54,7 @@ func (p *HTTPPort) Send(i interface{}) error {
 	return p.send(resp)
 }
 
-func (p *HTTPPort) Receive() (interface{}, error) {
+func (p *HTTPPort) Receive(ctx context.Context) (interface{}, error) {
 	return p.receive()
 }
 
@@ -191,25 +192,6 @@ func (p *HTTPPort) Handle(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(resp.Body))
 	p.sync <- struct{}{}
 }
-
-//func (p *HTTPPort) Receive(r *HTTPRequest, opts ...Opt) error {
-//	options := defaultPortOpts
-//	for _, o := range opts {
-//		o(&options)
-//	}
-//
-//	ctx := context.Get(options.t)
-//	select {
-//	case req := <-p.reqC:
-//		ctx.LogReceive("portHTTP", req)
-//		// Add matcher
-//		log.Printf("[DEBUG]: %T Received %v", p, req)
-//	case <-time.Tick(options.timeout):
-//		return errors.Errorf("failed to receive  message, deadline exeeded")
-//	}
-//
-//	return nil
-//}
 
 func (p *HTTPPort) receive(opts ...Opt) (*HTTPRequest, error) {
 	options := defaultPortOpts

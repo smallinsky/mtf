@@ -10,26 +10,75 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/docker/client"
+	"github.com/docker/docker/api/types"
 
 	"github.com/smallinsky/mtf/framework/components/migrate"
 	"github.com/smallinsky/mtf/framework/components/mysql"
 	"github.com/smallinsky/mtf/framework/components/network"
+	"github.com/smallinsky/mtf/framework/components/pubsub"
 	"github.com/smallinsky/mtf/framework/components/redis"
 	"github.com/smallinsky/mtf/framework/components/sut"
 	"github.com/smallinsky/mtf/framework/context"
+	"github.com/smallinsky/mtf/pkg/docker"
 )
 
-func NewSuite(testID string, m *testing.M) *Suite {
-	return newSuite(testID, m.Run)
+func NewSuite(m *testing.M) *Suite {
+	return newSuite(m.Run)
 }
 
 type Suite struct {
-	testID      string
 	mRunFn      runFn
 	sutEnv      []string
 	migratePath string
 	sutPath     string
+	settings    Settings
+}
+
+func (s *Suite) WithMySQL(c MysqlSettings) *Suite {
+	s.settings.mysql = &c
+	return s
+}
+
+func (s *Suite) WithSut(c SutSettings) *Suite {
+	s.settings.sut = &c
+	return s
+}
+
+func (s *Suite) WithPubSub(c PubSubSettings) *Suite {
+	s.settings.pubsub = &c
+	return s
+}
+
+func (s *Suite) WithRedis(c RedisSettings) *Suite {
+	s.settings.redis = &c
+	return s
+}
+
+type Settings struct {
+	mysql  *MysqlSettings
+	sut    *SutSettings
+	pubsub *PubSubSettings
+	redis  *RedisSettings
+}
+
+type MysqlSettings struct {
+	DatabaseName string
+	MigrationDir string
+	Password     string
+	Port         string
+}
+
+type SutSettings struct {
+	Envs []string
+	Dir  string
+}
+
+type PubSubSettings struct {
+}
+
+type RedisSettings struct {
+	Port     string
+	Password string
 }
 
 type Comper interface {
@@ -40,16 +89,18 @@ type Comper interface {
 }
 
 func (s *Suite) Run() {
+	components := s.getComponents()
+
 	start := time.Now()
-
 	fmt.Println("=== PREPERING TEST ENV")
-	stopFn := s.startComponents()
+	components.Start()
+	start = time.Now()
 	fmt.Printf("=== PREPERING TEST ENV DONE - %v\n\n", time.Now().Sub(start))
-
-	defer stopFn()
-
 	s.mRunFn()
+	fmt.Printf("=== TEST RUN DONE - %v\n", time.Now().Sub(start))
+	components.Stop()
 }
+
 func (s *Suite) SUTEnv(m map[string]string) *Suite {
 	for k, v := range m {
 		s.sutEnv = append(s.sutEnv, fmt.Sprintf("%s=%s", k, v))
@@ -67,85 +118,82 @@ func (s *Suite) SetSUTPath(path string) *Suite {
 	return s
 }
 
-func (s *Suite) startComponents() (stopFn func()) {
-	cli, err := client.NewEnvClient()
+type Attachable interface {
+	StartOrAttachIfAlreadyExits([]types.Container)
+}
+
+func (s *Suite) getComponents() Components {
+	cli, err := docker.NewClient()
 	if err != nil {
-		panic(err)
+		log.Fatalf("faield to get docker client: %v", err)
 	}
 
-	netCom := network.New(cli, network.NetworkConfig{
-		Name: "mtf_net",
-	})
-
-	sutCom := sut.NewSUT(cli, sut.SutConfig{
-		Path: s.sutPath,
-		Env:  s.sutEnv,
-	})
-
-	dbConfig := mysql.MySQLConfig{
-		Database: "test_db",
-		Password: "test",
+	components := Components{
+		m: make(map[startPriority][]Comper),
 	}
 
-	mysqlCom := mysql.NewMySQL(cli, dbConfig)
-	redisCom := redis.NewRedis(cli, redis.RedisConfig{
-		Password: "test",
-	})
-	migrate := migrate.NewMigrate(cli, migrate.MigrateConfig{
-		Path:     s.migratePath,
-		Password: dbConfig.Password,
-		Port:     "3306",
-		Hostname: "mysql_mtf",
-		Database: dbConfig.Database,
-	})
+	components.Add(network.New(cli, network.NetworkConfig{
+		Name:          "mtf_net",
+		AttachIfExist: true,
+	}))
 
-	comps := []Comper{
-		netCom,
-		sutCom,
-		mysqlCom,
-		redisCom,
-		migrate,
+	if s.settings.redis != nil {
+		components.Add(redis.NewRedis(cli, redis.RedisConfig{
+			Password: s.settings.redis.Password,
+		}))
 	}
 
-	m := make(map[int][]Comper)
-	for _, v := range comps {
-		m[v.StartPriority()] = append(m[v.StartPriority()], v)
+	if s.settings.pubsub != nil {
+		components.Add(pubsub.NewPubsub(cli))
 	}
 
-	stopFn = func() {
-		for i := 9; i >= 0; i-- {
-			cc, ok := m[i]
-			if !ok {
-				continue
-			}
-			var wg sync.WaitGroup
-			for _, c := range cc {
-				sutC, ok := c.(*sut.SUT)
-				if ok {
-					buff, err := sutC.Logs()
-					if err != nil {
-						fmt.Println("got error during sut logs call")
-					}
-
-					err = ioutil.WriteFile(fmt.Sprintf("%s/sut.logs", "runlogs"), buff, 0644)
-					if err != nil {
-						fmt.Println("failed to write sut logs: ", err)
-					}
-				}
-				wg.Add(1)
-				go func(c Comper) {
-					defer wg.Done()
-					if err := c.Stop(); err != nil {
-						fmt.Printf("failed to stop %T: %v", c, err)
-					}
-				}(c)
-			}
-			wg.Wait()
-		}
+	if s.settings.sut != nil {
+		s.settings.sut.Envs = append(s.settings.sut.Envs, "PUBSUB_EMULATOR_HOST=host.docker.internal:8085")
+		components.Add(sut.NewSUT(cli, sut.SutConfig{
+			Path: s.settings.sut.Dir,
+			Env:  s.settings.sut.Envs,
+		}))
 	}
 
-	for i := 0; i < 10; i++ {
-		cc, ok := m[i]
+	if cfg := s.settings.mysql; cfg != nil {
+		components.Add(mysql.NewMySQL(cli, mysql.MySQLConfig{
+			Database:      cfg.DatabaseName,
+			Password:      cfg.Password,
+			AttachIfExist: true,
+		}))
+	}
+
+	if cfg := s.settings.mysql; cfg != nil && cfg.MigrationDir != "" {
+		components.Add(migrate.NewMigrate(cli, migrate.MigrateConfig{
+			Path:     cfg.MigrationDir,
+			Password: cfg.Password,
+			Port:     "3306",
+			Hostname: "mysql_mtf",
+			Database: cfg.DatabaseName,
+		}))
+	}
+
+	return components
+}
+
+type startPriority int
+
+type Components struct {
+	m       map[startPriority][]Comper
+	maxPrio int
+}
+
+func (c *Components) Add(v Comper) {
+	if v.StartPriority() > c.maxPrio {
+		c.maxPrio = v.StartPriority()
+	}
+	c.m[startPriority(v.StartPriority())] = append(c.m[startPriority(v.StartPriority())], v)
+
+}
+
+func (c *Components) Start() {
+	for i := 0; i < c.maxPrio+1; i++ {
+		cc, ok := c.m[startPriority(i)]
 		if !ok {
 			continue
 		}
@@ -167,16 +215,51 @@ func (s *Suite) startComponents() (stopFn func()) {
 		}
 		wg.Wait()
 	}
+}
 
-	return stopFn
+func (co *Components) Stop() {
+	for i := co.maxPrio; i >= 0; i-- {
+		cc, ok := co.m[startPriority(i)]
+		if !ok {
+			continue
+		}
+
+		var wg sync.WaitGroup
+		for _, c := range cc {
+			if c == nil {
+				continue
+			}
+			sutC, ok := c.(*sut.SUT)
+			if ok {
+				buff, err := sutC.Logs()
+				if err != nil {
+					fmt.Println("got error during sut logs call")
+					return
+				}
+
+				err = ioutil.WriteFile(fmt.Sprintf("%s/sut.logs", "runlogs"), buff, 0644)
+				if err != nil {
+					fmt.Println("failed to write sut logs: ", err)
+					return
+				}
+			}
+			wg.Add(1)
+			go func(cp Comper) {
+				defer wg.Done()
+				if err := cp.Stop(); err != nil {
+					fmt.Printf("failed to stop %T: %v", cp, err)
+				}
+			}(c)
+		}
+		wg.Wait()
+	}
 }
 
 type runFn func() int
 
-func newSuite(testID string, run runFn) *Suite {
+func newSuite(run runFn) *Suite {
 	return &Suite{
 		mRunFn: run,
-		testID: testID,
 	}
 }
 

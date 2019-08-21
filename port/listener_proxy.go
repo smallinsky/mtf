@@ -37,7 +37,7 @@ func (l *listener) Accept() (net.Conn, error) {
 		return conn, err
 	}
 
-	startSync.Done()
+	//startSync.Done()
 	return conn, err
 }
 

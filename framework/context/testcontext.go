@@ -10,10 +10,17 @@ import (
 	"testing"
 )
 
-var contextMap = map[*testing.T]*TestContext{}
+var contextMap = map[string]*TestContext{}
+var mtx sync.Mutex
 
 func Get(t *testing.T) *TestContext {
-	return contextMap[t]
+	mtx.Lock()
+	defer mtx.Unlock()
+	return contextMap[getTestPrefix(t)]
+}
+
+func getTestPrefix(t *testing.T) string {
+	return strings.Split(t.Name(), "/")[0]
 }
 
 type TestContext struct {
@@ -50,11 +57,16 @@ func CreateTestContext(t *testing.T) {
 		panic(err)
 	}
 	c.log = log.New(c.file, "", log.Lmicroseconds)
-	contextMap[t] = c
+
+	mtx.Lock()
+	defer mtx.Unlock()
+	contextMap[getTestPrefix(t)] = c
 }
 
 func RemoveTextContext(t *testing.T) {
-	delete(contextMap, t)
+	mtx.Lock()
+	defer mtx.Unlock()
+	delete(contextMap, getTestPrefix(t))
 }
 
 func (c *TestContext) LogReceive(name string, i interface{}) {

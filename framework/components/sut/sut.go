@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
 
 	"github.com/smallinsky/mtf/framework/core"
@@ -20,22 +19,21 @@ type SutConfig struct {
 	Env  []string
 }
 
-func NewSUT(cli *client.Client, config SutConfig) *SUT {
-	return &SUT{
-		cli:    cli,
-		config: config,
-	}
-}
-
 type SUT struct {
-	cli       *client.Client
+	cli       *docker.Client
 	container *docker.Container
 
 	config SutConfig
 }
 
-func (c *SUT) Start() error {
+func NewSUT(cli *docker.Client, config SutConfig) *SUT {
+	return &SUT{
+		config: config,
+		cli:    cli,
+	}
+}
 
+func (c *SUT) Start() error {
 	var err error
 	if c.config.Path, err = filepath.Abs(c.config.Path); err != nil {
 		return fmt.Errorf("failed to get absolute path for %v path", c.config.Path)
@@ -65,13 +63,8 @@ func (c *SUT) Start() error {
 		"mkdir", "-p", "/tmp/mtf/cert",
 	})
 
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		return err
-	}
-
-	container, err := docker.NewContainer(cli, docker.Config{
-		Name:     "sut_mtf",
+	result, err := c.cli.NewContainer(docker.Config{
+		Name:     fmt.Sprintf("sut_mtf-%v", time.Now().Unix()),
 		Image:    "run_sut",
 		Hostname: "sut_mtf",
 		CapAdd:   []string{"NET_RAW", "NET_ADMIN"},
@@ -81,6 +74,7 @@ func (c *SUT) Start() error {
 		Env: append([]string{
 			fmt.Sprintf("SUT_BINARY_NAME=%s", binary),
 		}, c.config.Env...),
+
 		PortMap: docker.PortMap{
 			8001: 8001,
 			8082: 8082,
@@ -106,12 +100,9 @@ func (c *SUT) Start() error {
 		return err
 	}
 
-	if err := container.Start(); err != nil {
-		return err
-	}
+	c.container = result
 
-	c.container = container
-	return nil
+	return c.container.Start()
 }
 
 func join(args []string) string {
@@ -127,6 +118,15 @@ func BuildGoBinary(path string) error {
 		return errors.Wrapf(err, "dir doesn't exist")
 	}
 
+	pwd, err := os.Getwd()
+	if err != nil {
+		return errors.Wrapf(err, "failed to get current dir")
+	}
+
+	if err := os.Chdir(path); err != nil {
+		return errors.Wrapf(err, "failed to change working dir")
+	}
+
 	b := strings.Split(path, `/`)
 	bin := b[len(b)-1]
 
@@ -134,8 +134,12 @@ func BuildGoBinary(path string) error {
 		"go", "build", "-o", fmt.Sprintf("%s/%s", path, bin), path,
 	}
 
-	if err := exec.Run(cmd, exec.WithEnv("GOOS=linux", "GOARCH=amd64", "GO111MODULE=on")); err != nil {
+	if err := exec.Run(cmd, exec.WithEnv("GODEBUG=x509ignoreCN=1", "GOOS=linux", "GOARCH=amd64", "GO111MODULE=on")); err != nil {
 		return errors.Wrapf(err, "failed to run cmd")
+	}
+
+	if err := os.Chdir(pwd); err != nil {
+		return errors.Wrapf(err, "failed to restore working dir")
 	}
 	return nil
 }

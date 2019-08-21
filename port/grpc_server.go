@@ -2,6 +2,8 @@ package port
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"reflect"
 	"strings"
@@ -35,12 +37,22 @@ func (p *PortIn) Name() string {
 	return "grpc_server"
 }
 
-func (p *PortIn) Send(i interface{}) error {
+func (p *PortIn) Send(ctx context.Context, i interface{}) error {
 	return p.send(i)
 }
 
-func (p *PortIn) Receive() (interface{}, error) {
+func (p *PortIn) Receive(ctx context.Context) (interface{}, error) {
 	return p.receive()
+}
+
+func NewGRPCServersPort(ii []interface{}, port string, opts ...PortOpt) (*Port, error) {
+	p, err := NewGRPCServers(ii, port, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &Port{
+		impl: p,
+	}, nil
 }
 
 func NewGRPCServerPort(i interface{}, port string, opts ...PortOpt) (*Port, error) {
@@ -51,6 +63,47 @@ func NewGRPCServerPort(i interface{}, port string, opts ...PortOpt) (*Port, erro
 	return &Port{
 		impl: p,
 	}, nil
+}
+
+func NewGRPCServers(ii []interface{}, port string, opts ...PortOpt) (*PortIn, error) {
+	options := defaultPortOpts
+	for _, o := range opts {
+		o(&options)
+	}
+
+	portIn := &PortIn{
+		reqC:  make(chan interface{}),
+		respC: make(chan outValues),
+	}
+
+	// TODO Add tls support
+	lis, err := listen("tcp", port)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create net listener")
+	}
+
+	grpcOpts := []grpc.ServerOption{}
+	if options.serverCertPath != "" && options.serverKeyPath != "" {
+		creds, err := credentials.NewServerTLSFromFile(options.serverCertPath, options.serverKeyPath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to load TLS certs")
+		}
+		grpcOpts = append(grpcOpts, grpc.Creds(creds))
+	}
+
+	s, err := registerInterfaces(grpc.NewServer(grpcOpts...), ii, portIn.rpcCallHandler, options)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to reqigster server interface")
+	}
+
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("Failed to server %v", err)
+		}
+	}()
+
+	//	startSync.Add(3)
+	return portIn, nil
 }
 
 func NewGRPCServer(i interface{}, port string, opts ...PortOpt) (*PortIn, error) {
@@ -83,8 +136,6 @@ func NewGRPCServer(i interface{}, port string, opts ...PortOpt) (*PortIn, error)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to reqigster server interface")
 	}
-
-	startSync.Add(1)
 
 	go func() {
 		if err := s.Serve(lis); err != nil {
@@ -141,7 +192,7 @@ func registerInterface(server *grpc.Server, i interface{}, procCall processFunc,
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed ot get grpc details")
 	}
-	for _, mdesc := range desc.methodsDesc {
+	for _, mdesc := range desc.MethodsDesc {
 		mdesc := mdesc
 		fn := func(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 			v := reflect.New(mdesc.InType)
@@ -167,6 +218,61 @@ func registerInterface(server *grpc.Server, i interface{}, procCall processFunc,
 	mv = allocMap(sv)
 	mv.Elem().SetMapIndex(reflect.ValueOf(desc.Name), nsv)
 	return server, nil
+}
+
+func registerInterfaces(server *grpc.Server, ii []interface{}, procCall processFunc, opts portOpts) (*grpc.Server, error) {
+	sv := reflect.ValueOf(&server).Elem().Elem().FieldByName("m")
+
+	svm := allocMap(sv)
+
+	for _, i := range ii {
+		nsv := reflect.New(sv.Type().Elem().Elem())
+		mdv := nsv.Elem().FieldByName("md")
+		mv := allocMap(mdv)
+		//TODO register handler for stream methods
+
+		desc, err := getGrpcDetails(i)
+		//toJson(desc)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed ot get grpc details")
+		}
+		for _, mdesc := range desc.MethodsDesc {
+			mdesc := mdesc
+			fn := func(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+				v := reflect.New(mdesc.InType)
+				v.Elem().Set(reflect.New(mdesc.InType.Elem()))
+				dec(v.Elem().Interface())
+
+				return procCall(v.Elem().Interface())
+			}
+
+			z := reflect.New(mdv.Type().Elem().Elem())
+			z.Elem().FieldByName("MethodName").SetString(mdesc.Name)
+			z.Elem().FieldByName("Handler").Set(reflect.ValueOf(fn))
+
+			serverName := ""
+			// TODO: pkgName is probably not needed during server registartion, check it
+			if opts.pkgName != "" {
+				serverName = strings.Join([]string{opts.pkgName, mdesc.Name}, ".")
+			} else {
+				serverName = mdesc.Name
+			}
+			mv.Elem().SetMapIndex(reflect.ValueOf(serverName), z)
+		}
+
+		svm.Elem().SetMapIndex(reflect.ValueOf(desc.Name), nsv)
+	}
+
+	//toJson(server.GetServiceInfo())
+	return server, nil
+}
+
+func toJson(i interface{}) {
+	buff, err := json.MarshalIndent(i, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("DUMP %T:\n %v\n", i, string(buff))
 }
 
 func allocMap(v reflect.Value) reflect.Value {

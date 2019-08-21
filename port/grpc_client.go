@@ -2,7 +2,6 @@ package port
 
 import (
 	"context"
-	"log"
 	"reflect"
 	"strings"
 	"sync"
@@ -35,12 +34,11 @@ func NewGRPCClient(i interface{}, target string, opts ...PortOpt) (*ClientPort, 
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get grpc details")
 	}
-	for _, m := range d.methodsDesc {
+	for _, m := range d.MethodsDesc {
 		port.emd[m.InType] = EndpointRespTypePair{
 			RespType: m.OutType,
 			Endpoint: d.Name + "/" + m.Name,
 		}
-		log.Printf("Endpoint url: %s\n", port.emd[m.InType].Endpoint)
 	}
 	if err := port.connect(target, options.clientCertPath); err != nil {
 		return nil, errors.Wrapf(err, "failed to connect")
@@ -96,6 +94,7 @@ func (p *ClientPort) connect(addr, certfile string) error {
 	}
 	var err error
 	c, err := grpc.Dial(addr, options...)
+
 	if err != nil {
 		return errors.Wrapf(err, "failed to dial %s", addr)
 	}
@@ -112,12 +111,12 @@ type res struct {
 	msg interface{}
 }
 
-func (p *ClientPort) Receive() (interface{}, error) {
+func (p *ClientPort) Receive(ctx context.Context) (interface{}, error) {
 	return p.receive()
 }
 
-func (p *ClientPort) Send(i interface{}) error {
-	return p.send(i)
+func (p *ClientPort) Send(ctx context.Context, msg interface{}) error {
+	return p.send(ctx, msg)
 }
 
 func (p *ClientPort) receive(opts ...PortOpt) (interface{}, error) {
@@ -137,15 +136,15 @@ func (p *ClientPort) receive(opts ...PortOpt) (interface{}, error) {
 	}
 }
 
-func (p *ClientPort) send(msg interface{}) error {
-	startSync.Wait()
+func (p *ClientPort) send(ctx context.Context, msg interface{}) error {
+	//startSync.Wait()
 	v, ok := p.emd[reflect.TypeOf(msg)]
 	if !ok {
 		return errors.Errorf("port doesn't support message type %T", msg)
 	}
 	go func() {
 		out := reflect.New(v.RespType.Elem()).Interface()
-		if err := p.conn.Invoke(context.Background(), v.Endpoint, msg, out); err != nil {
+		if err := p.conn.Invoke(ctx, v.Endpoint, msg, out); err != nil {
 			go func() {
 				p.callResultC <- callResult{
 					err:  err,
