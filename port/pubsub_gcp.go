@@ -17,9 +17,18 @@ const (
 	queueSize = 100
 )
 
-func NewPubsub(projectID, topicName string, addr string) *Port {
+type PubSubConfig struct {
+	TopicSubscriptions []TopicSubscriptions
+}
+
+type TopicSubscriptions struct {
+	Topic         string
+	Subscriptions []string
+}
+
+func NewPubsub(projectID, addr string, config PubSubConfig) (*Port, error) {
 	if err := os.Setenv("PUBSUB_EMULATOR_HOST", addr); err != nil {
-		log.Fatalf("failed to set env: %v", err)
+		return nil, err
 	}
 
 	ps := &Pubsub{
@@ -28,65 +37,69 @@ func NewPubsub(projectID, topicName string, addr string) *Port {
 	ctx := context.Background()
 	conn, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	ps.topic = conn.Topic(topicName)
-	exists, err := ps.topic.Exists(ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	if !exists {
-		ps.topic, err = conn.CreateTopic(ctx, topicName)
+	for _, ts := range config.TopicSubscriptions {
+		ps.topic = conn.Topic(ts.Topic)
+		exists, err := ps.topic.Exists(ctx)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
-	}
-
-	subName := fmt.Sprintf("sub-%d", time.Now().Nanosecond()/100000)
-	sub := conn.Subscription(subName)
-	ok, err := sub.Exists(ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	if !ok {
-		sub, err = conn.CreateSubscription(ctx, subName, pubsub.SubscriptionConfig{
-			Topic:       ps.topic,
-			AckDeadline: time.Second * 10,
-		})
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	sub.ReceiveSettings.Synchronous = true
-	go func() {
-		err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-			m := any.Any{}
-			err := proto.Unmarshal(msg.Data, &m)
+		if !exists {
+			ps.topic, err = conn.CreateTopic(ctx, ts.Topic)
 			if err != nil {
-				log.Infof("recived messge ID: %v Data:%v\n", msg.ID, string(msg.Data))
-				panic(err)
+				return nil, err
 			}
-
-			dynAny := ptypes.DynamicAny{}
-			if err := ptypes.UnmarshalAny(&m, &dynAny); err != nil {
-				panic(err)
-			}
-			msg.Ack()
-			ps.messages <- dynAny.Message
-
-		})
-		if err != nil {
-			panic(err)
 		}
-	}()
+
+		for _, subscription := range ts.Subscriptions {
+			sub := conn.Subscription(subscription)
+			ok, err := sub.Exists(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			if !ok {
+				sub, err = conn.CreateSubscription(ctx, subscription, pubsub.SubscriptionConfig{
+					Topic:       ps.topic,
+					AckDeadline: time.Second * 10,
+				})
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			sub.ReceiveSettings.Synchronous = true
+			go func() {
+				err := sub.Receive(ctx, ps.handle)
+				if err != nil {
+					panic(err)
+				}
+			}()
+		}
+	}
 
 	return &Port{
 		impl: ps,
+	}, nil
+}
+
+func (ps *Pubsub) handle(ctx context.Context, msg *pubsub.Message) {
+	m := any.Any{}
+	err := proto.Unmarshal(msg.Data, &m)
+	if err != nil {
+		log.Infof("recived messge ID: %v Data:%v\n", msg.ID, string(msg.Data))
+		panic(err)
 	}
+
+	dynAny := ptypes.DynamicAny{}
+	if err := ptypes.UnmarshalAny(&m, &dynAny); err != nil {
+		panic(err)
+	}
+	msg.Ack()
+	ps.messages <- dynAny.Message
+
 }
 
 func (ps *Pubsub) Kind() Kind {
@@ -131,7 +144,7 @@ func (p *Pubsub) send(i interface{}) error {
 	ctx := context.Background()
 	anyMsg, err := ptypes.MarshalAny(msg)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	buf, err := proto.Marshal(anyMsg)

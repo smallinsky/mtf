@@ -15,7 +15,7 @@ import (
 	"github.com/smallinsky/mtf/framework/components/migrate"
 	"github.com/smallinsky/mtf/framework/components/mysql"
 	"github.com/smallinsky/mtf/framework/components/network"
-	"github.com/smallinsky/mtf/framework/components/pubsub"
+	//"github.com/smallinsky/mtf/framework/components/pubsub"
 	"github.com/smallinsky/mtf/framework/components/redis"
 	"github.com/smallinsky/mtf/framework/components/sut"
 	"github.com/smallinsky/mtf/framework/context"
@@ -93,7 +93,7 @@ func (s *Suite) startComponents() (stopFn func(), err error) {
 	if err != nil {
 		return nil, err
 	}
-	pub := pubsub.NewPubsub(cli)
+	//pub := pubsub.NewPubsub(cli)
 
 	sutCom, err := sut.NewSUT(cli, sut.SutConfig{
 		Path: s.sutPath,
@@ -128,7 +128,7 @@ func (s *Suite) startComponents() (stopFn func(), err error) {
 		mysqlCom,
 		redisCom,
 		migrate,
-		pub,
+		//pub,
 	}
 
 	m := make(map[int][]Comper)
