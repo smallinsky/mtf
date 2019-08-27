@@ -61,5 +61,5 @@ func WithTLSHost(hosts ...string) PortOpt {
 }
 
 var defaultPortOpts = portOpts{
-	timeout: time.Second * 5,
+	timeout: time.Second * 120,
 }

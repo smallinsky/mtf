@@ -61,7 +61,7 @@ func NewPubsub(projectID, addr string, config PubSubConfig) (*Port, error) {
 			}
 
 			if !ok {
-				sub, err = conn.CreateSubscription(ctx, subscription, pubsub.SubscriptionConfig{
+				_, err = conn.CreateSubscription(ctx, subscription, pubsub.SubscriptionConfig{
 					Topic:       ps.topic,
 					AckDeadline: time.Second * 10,
 				})
@@ -69,7 +69,23 @@ func NewPubsub(projectID, addr string, config PubSubConfig) (*Port, error) {
 					return nil, err
 				}
 			}
+			subtmp := subscription + "hash"
 
+			sub = conn.Subscription(subtmp)
+			ok, err = sub.Exists(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			if !ok {
+				_, err = conn.CreateSubscription(ctx, subtmp, pubsub.SubscriptionConfig{
+					Topic:       ps.topic,
+					AckDeadline: time.Second * 10,
+				})
+				if err != nil {
+					return nil, err
+				}
+			}
 			sub.ReceiveSettings.Synchronous = true
 			go func() {
 				err := sub.Receive(ctx, ps.handle)
@@ -117,7 +133,7 @@ type Pubsub struct {
 }
 
 func (p *Pubsub) Receive() (interface{}, error) {
-	return p.Receive()
+	return p.receive()
 }
 
 func (p *Pubsub) Send(i interface{}) error {
@@ -129,7 +145,7 @@ func (p *Pubsub) receive(opts ...Opt) (interface{}, error) {
 		select {
 		case msg := <-p.messages:
 			return msg, nil
-		case <-time.Tick(time.Second * 5):
+		case <-time.Tick(time.Second * 10):
 			return nil, fmt.Errorf("timout during pubsub.receive")
 		}
 	}
@@ -169,6 +185,8 @@ func (p *Pubsub) send(i interface{}) error {
 			if !proto.Equal(f, msg) {
 				continue
 			}
+			fmt.Println("receiving done from internal pubsub")
+			return nil
 		case <-timeout:
 			return fmt.Errorf("failed to send message")
 		}

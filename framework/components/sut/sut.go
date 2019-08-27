@@ -64,7 +64,7 @@ func (c *SUT) Start() error {
 	})
 
 	result, err := c.cli.NewContainer(docker.Config{
-		Name:     "sut_mtf",
+		Name:     fmt.Sprintf("sut_mtf-%v", time.Now().Unix()),
 		Image:    "run_sut",
 		Hostname: "sut_mtf",
 		CapAdd:   []string{"NET_RAW", "NET_ADMIN"},
