@@ -19,7 +19,20 @@ function forward_http() {
 }
 
 
-update_ca&
+update_ca
 forward_http
 
+mkdir -p ~/.config/gcloud
+cat > ~/.config/gcloud/application_default_credentials.json << 'EOF'
+{
+  "client_id": "foo_client_id",
+  "client_secret": "foo_client_secret",
+  "refresh_token": "foo_refresh_token",
+  "type": "authorized_user",
+  "auth_uri": "myauth.google.com",
+  "token_uri": "mytoken.google.com"
+}
+EOF
+
+echo "Run SUT"
 /component/$SUT_BINARY_NAME

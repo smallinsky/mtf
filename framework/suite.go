@@ -15,7 +15,7 @@ import (
 	"github.com/smallinsky/mtf/framework/components/migrate"
 	"github.com/smallinsky/mtf/framework/components/mysql"
 	"github.com/smallinsky/mtf/framework/components/network"
-	//"github.com/smallinsky/mtf/framework/components/pubsub"
+	"github.com/smallinsky/mtf/framework/components/pubsub"
 	"github.com/smallinsky/mtf/framework/components/redis"
 	"github.com/smallinsky/mtf/framework/components/sut"
 	"github.com/smallinsky/mtf/framework/context"
@@ -93,7 +93,8 @@ func (s *Suite) startComponents() (stopFn func(), err error) {
 	if err != nil {
 		return nil, err
 	}
-	//pub := pubsub.NewPubsub(cli)
+	pub := pubsub.NewPubsub(cli)
+	s.sutEnv = append(s.sutEnv, "PUBSUB_EMULATOR_HOST=host.docker.internal:8085")
 
 	sutCom, err := sut.NewSUT(cli, sut.SutConfig{
 		Path: s.sutPath,
@@ -125,10 +126,18 @@ func (s *Suite) startComponents() (stopFn func(), err error) {
 	comps := []Comper{
 		netCom,
 		sutCom,
-		mysqlCom,
-		redisCom,
-		migrate,
-		//pub,
+		pub,
+	}
+
+	if false {
+		comps = []Comper{
+			netCom,
+			sutCom,
+			mysqlCom,
+			redisCom,
+			migrate,
+			pub,
+		}
 	}
 
 	m := make(map[int][]Comper)
