@@ -47,7 +47,6 @@ func (c *Redis) Start() error {
 		Env: []string{
 			fmt.Sprintf("REDIS_PASSWORD=%s", c.cfg.Password),
 		},
-		AttachIfExist: true,
 	})
 	if err != nil {
 		return err

@@ -129,15 +129,13 @@ func (s *Suite) startComponents() (stopFn func(), err error) {
 		pub,
 	}
 
-	if false {
-		comps = []Comper{
-			netCom,
-			sutCom,
-			mysqlCom,
-			redisCom,
-			migrate,
-			pub,
-		}
+	comps = []Comper{
+		netCom,
+		sutCom,
+		mysqlCom,
+		redisCom,
+		migrate,
+		pub,
 	}
 
 	m := make(map[int][]Comper)

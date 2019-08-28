@@ -124,7 +124,7 @@ func BuildGoBinary(path string) error {
 		"go", "build", "-o", fmt.Sprintf("%s/%s", path, bin), path,
 	}
 
-	if err := exec.Run(cmd, exec.WithEnv("GOOS=linux", "GOARCH=amd64", "GO111MODULE=on")); err != nil {
+	if err := exec.Run(cmd, exec.WithEnv("GODEBUG=x509ignoreCN=1", "GOOS=linux", "GOARCH=amd64", "GO111MODULE=on")); err != nil {
 		return errors.Wrapf(err, "failed to run cmd")
 	}
 	return nil

@@ -40,6 +40,7 @@ type Config struct {
 	Healtcheck *Healtcheck
 
 	AttachIfExist bool
+	AutoRemove    bool
 }
 
 type Healtcheck struct {
@@ -129,6 +130,7 @@ func (c *Client) NewContainer(config Config, opts ...Options) (*Container, error
 			PortBindings: config.PortMap.toNatPortMap(),
 			Mounts:       config.Mounts.toDockerType(),
 			CapAdd:       config.CapAdd,
+			AutoRemove:   config.AutoRemove,
 		},
 		&network.NetworkingConfig{
 			EndpointsConfig: map[string]*network.EndpointSettings{

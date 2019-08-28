@@ -63,6 +63,7 @@ func (m *MigrateDB) Start() error {
 			"-path", "/migrations",
 			"-database", m.config.DBConnString(), "up",
 		},
+		//AutoRemove: true,
 	})
 	if err != nil {
 		return err
