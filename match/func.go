@@ -11,19 +11,17 @@ var (
 	ErrMatchFnInvalidArg = errors.New("match fn invalid arg")
 )
 
-type Any struct{}
-
-type FnMatcher struct {
+type FnType struct {
 	Args []interface{}
 }
 
-func Fn(args ...interface{}) *FnMatcher {
-	return &FnMatcher{
+func Fn(args ...interface{}) *FnType {
+	return &FnType{
 		Args: args,
 	}
 }
 
-func (m *FnMatcher) Match(err error, got interface{}) error {
+func (m *FnType) Match(err error, got interface{}) error {
 	var matchFuncs []func(interface{})
 	vmfs := reflect.ValueOf(&matchFuncs)
 
@@ -49,7 +47,7 @@ func (m *FnMatcher) Match(err error, got interface{}) error {
 }
 
 // TODO refactor error messages
-func (m *FnMatcher) Validate() error {
+func (m *FnType) Validate() error {
 	if m.Args == nil {
 		return errors.Wrap(ErrMatchFnInvalidArg, "got nil argument")
 	}

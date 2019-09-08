@@ -98,7 +98,6 @@ func TestFuncValidate(t *testing.T) {
 			if errors.Cause(err) != tc.err {
 				t.Fatalf("got '%v', exp '%v'", err, tc.err)
 			}
-			t.Logf("[DEBUG] err: '%v'", err)
 		})
 	}
 }

@@ -56,7 +56,7 @@ func (p *Port) Send(t *testing.T, i interface{}, opts ...SendOption) error {
 	return nil
 }
 
-func (p *Port) Receive(t *testing.T, i interface{}) error {
+func (p *Port) Receive(t *testing.T, i interface{}) (interface{}, error) {
 	ctx := context.Background()
 	m, err := p.impl.Receive(ctx)
 	mtfc := mtfctx.Get(t)
@@ -66,11 +66,21 @@ func (p *Port) Receive(t *testing.T, i interface{}) error {
 	}
 
 	switch t := i.(type) {
-	case match.FnMatcher:
-		t.Match(err, m)
-	case match.Any:
+	case *match.FnType:
+		err = t.Match(err, m)
+	case *match.TypeT:
+		err = t.Match(m)
+	case *match.DeepEqualType:
+		err = t.Match(m)
+	case *match.PayloadMatcher:
+		err = t.Match(err, m)
 	default:
+		err = match.DeepEqual(i).Match(m)
 	}
 
-	return nil
+	if err != nil {
+		t.Fatalf("Failed to receive %T:\n %v", i, err)
+	}
+
+	return m, nil
 }

@@ -8,5 +8,5 @@ type Matcher interface {
 
 var (
 	_ Matcher = (*PayloadMatcher)(nil)
-	_ Matcher = (*FnMatcher)(nil)
+	_ Matcher = (*FnType)(nil)
 )

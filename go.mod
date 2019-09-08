@@ -12,6 +12,7 @@ require (
 	github.com/go-test/deep v1.0.1
 	github.com/golang/protobuf v1.3.2
 	github.com/google/cel-go v0.3.0 // indirect
+	github.com/google/go-cmp v0.3.0
 	github.com/grpc-ecosystem/grpc-gateway v1.10.0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.9.0 // indirect
