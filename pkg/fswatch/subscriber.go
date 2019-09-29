@@ -11,8 +11,8 @@ import (
 	pb "github.com/smallinsky/mtf/pkg/fswatch/proto"
 )
 
-func Subscriber(addr string, handler func(event *pb.EventRequest)) {
-	l, err := net.Listen("tcp", ":4441")
+func Subscriber(port string, handler func(event *pb.EventRequest)) {
+	l, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("[ERR] (fswatcher) failed to listen: %v", err)
 	}
@@ -22,12 +22,9 @@ func Subscriber(addr string, handler func(event *pb.EventRequest)) {
 	}
 	pb.RegisterWatcherServer(s, &svc)
 
-	go func() {
-		if err := s.Serve(l); err != nil {
-			log.Fatalf("[ERR] (fswatcher) server stopped with err: %v", err)
-		}
-	}()
-
+	if err := s.Serve(l); err != nil {
+		log.Fatalf("[ERR] (fswatcher) server stopped with err: %v", err)
+	}
 }
 
 type subService struct {

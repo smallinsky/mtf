@@ -12,6 +12,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 
+	"github.com/smallinsky/mtf/framework/components/ftp"
 	"github.com/smallinsky/mtf/framework/components/migrate"
 	"github.com/smallinsky/mtf/framework/components/mysql"
 	"github.com/smallinsky/mtf/framework/components/network"
@@ -55,11 +56,17 @@ func (s *Suite) WithRedis(c RedisSettings) *Suite {
 	return s
 }
 
+func (s *Suite) WithFTP(c FTPSettings) *Suite {
+	s.settings.ftp = &c
+	return s
+}
+
 type Settings struct {
 	mysql  *MysqlSettings
 	sut    *SutSettings
 	pubsub *PubSubSettings
 	redis  *RedisSettings
+	ftp    *FTPSettings
 }
 
 type MysqlSettings struct {
@@ -80,6 +87,12 @@ type PubSubSettings struct {
 type RedisSettings struct {
 	Port     string
 	Password string
+}
+
+type FTPSettings struct {
+	Addr string
+	User string
+	Pass string
 }
 
 type Comper interface {
@@ -178,6 +191,10 @@ func (s *Suite) getComponents() Components {
 			Hostname: "mysql_mtf",
 			Database: cfg.DatabaseName,
 		}))
+	}
+
+	if cfg := s.settings.ftp; cfg != nil {
+		components.Add(ftp.NewFTP(cli))
 	}
 
 	return components

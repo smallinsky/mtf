@@ -1,0 +1,6 @@
+22:07:35.252231 ftp_server_port <- *watcher.EventRequest:
+{
+  "path": "/ftp/randomfile.txt",
+  "action": 1,
+  "content": "cmFuZG9tIGZpbGUgY29udGVudA=="
+}

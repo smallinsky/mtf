@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -14,7 +15,7 @@ import (
 )
 
 func Monitor(addr, dir string) {
-	client, err := newWatcherClient("localhost:4441")
+	client, err := newWatcherClient(addr)
 	if err != nil {
 		log.Fatalf("failed to create watcher client: %v", err)
 	}
@@ -60,6 +61,7 @@ func (g *ActionHandler) OnFileCreated(path string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open file '%v': %s", path, err)
 	}
+	time.Sleep(time.Millisecond * 100)
 
 	buff, err := ioutil.ReadAll(f)
 	if err != nil {

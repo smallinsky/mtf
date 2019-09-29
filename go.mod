@@ -14,6 +14,7 @@ require (
 	github.com/golang/protobuf v1.3.2
 	github.com/google/go-cmp v0.3.1
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
+	github.com/jlaffaye/ftp v0.0.0-20190828173736-6aaa91c7796e
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pretty v0.1.0 // indirect

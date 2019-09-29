@@ -18,14 +18,16 @@ func TestDirWatcher(t *testing.T) {
 	}
 
 	event := make(chan *pb.EventRequest)
-	Subscriber("localhost:11132", func(req *pb.EventRequest) {
-		event <- req
+	go func() {
+		Subscriber("localhost:11132", func(req *pb.EventRequest) {
+			event <- req
 
-	})
-
+		})
+	}()
 	go func() {
 		Monitor("localhost:11132", tmpDir)
 	}()
+
 	time.Sleep(time.Millisecond * 100)
 
 	tmpFile := fmt.Sprintf("%s/%s", tmpDir, "tmpFile.txt")
