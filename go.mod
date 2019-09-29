@@ -7,23 +7,29 @@ require (
 	github.com/docker/docker v1.13.1
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/go-redis/redis v6.15.2+incompatible
+	github.com/fsnotify/fsnotify v1.4.7
+	github.com/go-redis/redis v6.15.5+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-test/deep v1.0.1
 	github.com/golang/protobuf v1.3.2
-	github.com/google/cel-go v0.3.0 // indirect
-	github.com/google/go-cmp v0.3.0
-	github.com/grpc-ecosystem/grpc-gateway v1.10.0 // indirect
+	github.com/google/go-cmp v0.3.1
+	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/onsi/ginkgo v1.9.0 // indirect
-	github.com/onsi/gomega v1.6.0 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
+	github.com/kr/pretty v0.1.0 // indirect
+	github.com/onsi/ginkgo v1.10.1 // indirect
+	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/pkg/errors v0.8.1
-	github.com/shipwallet/carrier-air v0.0.0-20190827115205-76874224e203
-	github.com/shipwallet/proto v0.1.119
 	github.com/sirupsen/logrus v1.4.2
-	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
-	google.golang.org/grpc v1.22.1
+	github.com/stretchr/testify v1.4.0 // indirect
+	golang.org/x/net v0.0.0-20190827160401-ba9fcec4b297
+	golang.org/x/sys v0.0.0-20190904005037-43c01164e931 // indirect
+	google.golang.org/api v0.9.0 // indirect
+	google.golang.org/appengine v1.6.2 // indirect
+	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55 // indirect
+	google.golang.org/grpc v1.23.0
+	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )
 
 replace github.com/smallinsky/mtf => /Users/marek/Go/src/github.com/smallinsky/mtf

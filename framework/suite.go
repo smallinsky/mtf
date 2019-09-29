@@ -19,6 +19,7 @@ import (
 	"github.com/smallinsky/mtf/framework/components/redis"
 	"github.com/smallinsky/mtf/framework/components/sut"
 	"github.com/smallinsky/mtf/framework/context"
+	"github.com/smallinsky/mtf/pkg/cert"
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
@@ -89,6 +90,12 @@ type Comper interface {
 }
 
 func (s *Suite) Run() {
+
+	kvpair, err := cert.GenCert([]string{"localhost", "host.docker.internal"})
+	if err != nil {
+		log.Fatalf("[ERR] failed to generate certs")
+	}
+	cert.WriteCert(kvpair)
 	components := s.getComponents()
 
 	start := time.Now()

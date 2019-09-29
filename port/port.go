@@ -74,6 +74,10 @@ func (p *Port) Receive(t *testing.T, i interface{}) (interface{}, error) {
 		err = t.Match(m)
 	case *match.PayloadMatcher:
 		err = t.Match(err, m)
+	case *match.ProtoEqualType:
+		err = t.Match(m)
+	case *match.DiffType:
+		err = t.Match(m)
 	default:
 		err = match.DeepEqual(i).Match(m)
 	}
