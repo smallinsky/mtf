@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package watcher;
+
+service Watcher {
+  rpc Event(EventRequest) returns (google.protobuf.Empty);
+}
+
+message EventRequest {
+  string path = 1;
+  Action action = 2;
+  bytes content = 3;
+}
+
+enum Action {
+  UNKNOWN = 0;
+  ADDED = 1;
+  REMOVED = 2;
+  EDITED = 3;
+}
