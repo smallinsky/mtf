@@ -1,11 +1,11 @@
-16:52:23.230986 http_server <- *port.HTTPRequest:
+19:57:40.546338 http_server <- *port.HTTPRequest:
 {
   "Body": "",
   "Method": "GET",
   "Host": "example.com",
   "URL": "/urlpath"
 }
-16:52:23.331856 http_server -> *port.HTTPResponse:
+19:57:40.649257 http_server -> *port.HTTPResponse:
 {
   "Body": "eyJ2YWx1ZSI6eyJqb2tlIjoiNDIifX0=",
   "Status": 200

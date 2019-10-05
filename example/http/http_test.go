@@ -9,11 +9,11 @@ import (
 	"github.com/smallinsky/mtf/port"
 )
 
-func TestMain(m *testing.M) {
-	framework.NewSuite(m).WithSut(framework.SutSettings{
-		Dir: "./service",
-	}).Run()
-}
+//func TestMain(m *testing.M) {
+//	framework.NewSuite(m).WithSut(framework.SutSettings{
+//		Dir: "./service",
+//	}).Run()
+//}
 
 func TestEchoService(t *testing.T) {
 	framework.Run(t, new(SuiteTest))
