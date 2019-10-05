@@ -9,16 +9,16 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	sutEnv := map[string]string{
-		"ORACLE_ADDR": "host.docker.internal:8002",
-	}
+	//	sutEnv := map[string]string{
+	//		"ORACLE_ADDR": "host.docker.internal:8002",
+	//	}
 	framework.NewSuite(m).
 		SUTEnv(sutEnv).
 		SetSUTPath("./service").
 		Run()
 }
 
-func TestEchoService(t *testing.T) {
+func TestPubSub(t *testing.T) {
 	framework.Run(t, new(SuiteTest))
 }
 

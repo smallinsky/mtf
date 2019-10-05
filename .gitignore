@@ -13,3 +13,5 @@
 
 example/cos/*
 example/air/*
+**/runlogs/*
+**/.DS_STORE

@@ -3,11 +3,13 @@ module github.com/smallinsky/mtf
 require (
 	cloud.google.com/go v0.44.3
 	github.com/Microsoft/go-winio v0.4.14 // indirect
+	github.com/certifi/gocertifi v0.0.0-20190905060710-a5e0173ced67 // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v1.13.1
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7
+	github.com/getsentry/raven-go v0.2.0
 	github.com/go-redis/redis v6.15.5+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-test/deep v1.0.1
@@ -22,6 +24,7 @@ require (
 	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/pkg/errors v0.8.1
+	github.com/shipwallet/logrus_sentry v0.9.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0 // indirect
 	golang.org/x/net v0.0.0-20190827160401-ba9fcec4b297
@@ -34,3 +37,5 @@ require (
 )
 
 replace github.com/smallinsky/mtf => /Users/marek/Go/src/github.com/smallinsky/mtf
+
+go 1.13

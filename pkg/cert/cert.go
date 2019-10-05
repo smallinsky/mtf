@@ -18,20 +18,20 @@ import (
 	"time"
 )
 
-var (
-	serverCertFile = "/tmp/mtf/cert/server.crt"
-	serverKeyFile  = "/tmp/mtf/cert/server.key"
+const (
+	ServerCertFile = "/tmp/mtf/cert/server.crt"
+	ServerKeyFile  = "/tmp/mtf/cert/server.key"
 )
 
 func WriteCert(ck *CertKey) error {
-	dir := filepath.Dir(serverCertFile)
+	dir := filepath.Dir(ServerCertFile)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		return err
 	}
-	if err := ioutil.WriteFile(serverCertFile, ck.Cert, 0665); err != nil {
+	if err := ioutil.WriteFile(ServerCertFile, ck.Cert, 0665); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(serverKeyFile, ck.Key, 0665); err != nil {
+	if err := ioutil.WriteFile(ServerKeyFile, ck.Key, 0665); err != nil {
 		return err
 	}
 	return nil

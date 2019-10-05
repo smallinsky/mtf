@@ -11,16 +11,17 @@ import (
 )
 
 func main() {
+	time.Sleep(time.Second * 2)
 	conn, err := dialFTP("ftp_mtf:21", "test", "test")
 	if err != nil {
 		log.Fatalf("failed to connect to ftp server")
 	}
 
-	time.Sleep(time.Second * 1)
 	err = conn.Stor("randomfile.txt", strings.NewReader("random file content"))
 	if err != nil {
 		log.Fatalf("failed to upload file: %v", err)
 	}
+	fmt.Println("file uploaded")
 
 	conn = conn
 }

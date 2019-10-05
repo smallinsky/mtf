@@ -16,6 +16,7 @@ type Redis struct {
 
 type RedisConfig struct {
 	Password string
+	Port     string
 	Labels   map[string]string
 }
 

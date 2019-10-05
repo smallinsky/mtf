@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jlaffaye/ftp"
 	"github.com/pkg/errors"
@@ -62,6 +63,8 @@ type FTPEvent struct {
 	Payload []byte
 }
 
+//type FTPEvent pb.EventRequest
+
 func (p *FTPPort) Send(ctx context.Context, i interface{}) error {
 	event, ok := i.(*FTPEvent)
 	if !ok {
@@ -76,8 +79,15 @@ func (p *FTPPort) Send(ctx context.Context, i interface{}) error {
 }
 
 func (p *FTPPort) Receive(ctx context.Context) (interface{}, error) {
-	msg := <-p.ftpEventC
-	return msg, nil
+	select {
+	case msg := <-p.ftpEventC:
+		return &FTPEvent{
+			Path:    msg.GetPath(),
+			Payload: msg.GetContent(),
+		}, nil
+	case <-time.NewTimer(time.Second * 2).C:
+		return nil, errors.Errorf("fialed to recive message, deadline exeeded")
+	}
 }
 
 func dialFTP(addr string, user, pass string) (*ftp.ServerConn, error) {

@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -25,6 +26,7 @@ import (
 )
 
 func NewSuite(m *testing.M) *Suite {
+	flag.Parse()
 	return newSuite(m.Run)
 }
 
@@ -160,6 +162,7 @@ func (s *Suite) getComponents() Components {
 	if s.settings.redis != nil {
 		components.Add(redis.NewRedis(cli, redis.RedisConfig{
 			Password: s.settings.redis.Password,
+			Port:     s.settings.redis.Port,
 		}))
 	}
 

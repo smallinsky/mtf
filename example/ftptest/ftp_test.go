@@ -13,8 +13,11 @@ import (
 
 func TestMain(m *testing.M) {
 	framework.NewSuite(m).
-		//SetSUTPath("./service").
-		WithFTP(framework.FTPSettings{}).
+		WithFTP(framework.FTPSettings{
+			Addr: "mtf_ftp:21",
+			User: "test",
+			Pass: "test",
+		}).
 		WithSut(framework.SutSettings{
 			Dir: "./service",
 		}).
@@ -56,8 +59,5 @@ func dialFTP(addr string, user, pass string) (*ftp.ServerConn, error) {
 	if err := connection.Login(user, pass); err != nil {
 		return nil, fmt.Errorf("failed to login to %q: %v", addr, err)
 	}
-	//if err := connection.ChangeDir("/ftp"); err != nil {
-	//	return nil, errors.Wrapf(err, "failed to change path to %q", "/ftp")
-	//}
 	return connection, nil
 }

@@ -2,22 +2,27 @@ package framework
 
 import (
 	"testing"
+	"time"
 
-	pb "github.com/smallinsky/mtf/e2e/proto/echo"
-	pbo "github.com/smallinsky/mtf/e2e/proto/oracle"
+	pb "github.com/smallinsky/mtf/example/echo/service/proto/echo"
+	pbo "github.com/smallinsky/mtf/example/echo/service/proto/oracle"
 	"github.com/smallinsky/mtf/framework"
 	"github.com/smallinsky/mtf/port"
 )
 
 func TestMain(m *testing.M) {
-	sutEnv := map[string]string{
-		"ORACLE_ADDR": "host.docker.internal:8002",
-	}
-	framework.NewSuite(m).
-		SUTEnv(sutEnv).
-		SetMigratePath("../../e2e/migrations").
-		SetSUTPath("/Users/marek/Go/src/github.com/smallinsky/mtf/e2e/service/echo/").
-		Run()
+	framework.NewSuite(m).WithSut(framework.SutSettings{
+		Dir: "./service",
+		Envs: []string{
+			"ORACLE_ADDR=host.docker.internal:8002",
+		},
+	}).WithRedis(framework.RedisSettings{
+		Password: "test",
+	}).WithMySQL(framework.MysqlSettings{
+		DatabaseName: "test_db",
+		MigrationDir: "./service/migrations",
+		Password:     "test",
+	}).Run()
 }
 
 func TestEchoService(t *testing.T) {
@@ -35,6 +40,7 @@ func (st *SuiteTest) Init(t *testing.T) {
 	if st.oraclePort, err = port.NewGRPCServerPort((*pbo.OracleServer)(nil), ":8002"); err != nil {
 		t.Fatalf("failed to init grpc oracle server")
 	}
+	time.Sleep(time.Millisecond * 300)
 }
 
 type SuiteTest struct {
@@ -63,7 +69,10 @@ func (st *SuiteTest) TestHTTP(t *testing.T) {
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
 	st.httpPort.Receive(t, &port.HTTPRequest{
+		Body:   []byte{},
 		Method: "GET",
+		Host:   "api.icndb.com",
+		URL:    "/jokes/random?firstName=John\u0026amp;lastName=Doe",
 	})
 	st.httpPort.Send(t, &port.HTTPResponse{
 		Body: []byte(`{"value":{"joke":"42"}}`),
