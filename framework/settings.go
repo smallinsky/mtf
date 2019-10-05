@@ -23,6 +23,10 @@ func (s *Suite) WithMySQL(c MysqlSettings) *Suite {
 type SutSettings struct {
 	Envs []string
 	Dir  string
+
+	// RunForEachTest tells that binary should be executed for each test. Example for that
+	// behavior is testing command binary instead of servie that always returns after execution.
+	RunForEachTest bool
 }
 
 func (s *Suite) WithSut(c SutSettings) *Suite {

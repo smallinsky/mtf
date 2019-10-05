@@ -6,18 +6,21 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
-
-	//"github.com/docker/docker/api/types"
 
 	"github.com/smallinsky/mtf/framework/context"
 	"github.com/smallinsky/mtf/pkg/cert"
 )
 
+var mu sync.Mutex
+var suite *Suite
+
 func NewSuite(m *testing.M) *Suite {
 	flag.Parse()
-	return newSuite(m.Run)
+	s := newSuite(m.Run)
+	return s
 }
 
 type Suite struct {
@@ -26,6 +29,9 @@ type Suite struct {
 }
 
 func (s *Suite) Run() {
+	mu.Lock()
+	suite = s
+	defer mu.Unlock()
 
 	kvpair, err := cert.GenCert([]string{"localhost", "host.docker.internal"})
 	if err != nil {

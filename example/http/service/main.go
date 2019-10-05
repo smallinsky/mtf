@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	time.Sleep(time.Millisecond * 990)
+	time.Sleep(time.Millisecond * 900)
 	req, err := http.NewRequest(http.MethodGet, "https://example.com/urlpath", nil)
 	if err != nil {
 		log.Fatalf("failed to create http request: %v", err)
