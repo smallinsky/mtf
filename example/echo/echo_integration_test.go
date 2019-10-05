@@ -12,7 +12,8 @@ import (
 
 func TestMain(m *testing.M) {
 	framework.NewSuite(m).WithSut(framework.SutSettings{
-		Dir: "./service",
+		Dir:   "./service",
+		Ports: []int{8001},
 		Envs: []string{
 			"ORACLE_ADDR=host.docker.internal:8002",
 		},

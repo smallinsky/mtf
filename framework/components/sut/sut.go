@@ -15,8 +15,9 @@ import (
 )
 
 type SutConfig struct {
-	Path string
-	Env  []string
+	Path         string
+	Env          []string
+	ExposedPorts []int
 }
 
 type SUT struct {
@@ -63,6 +64,11 @@ func (c *SUT) Start() error {
 		"mkdir", "-p", "/tmp/mtf/cert",
 	})
 
+	ports := make(map[docker.ContainerPort]docker.HostPort)
+	for _, v := range c.config.ExposedPorts {
+		ports[docker.ContainerPort(v)] = docker.HostPort(v)
+	}
+
 	result, err := c.cli.NewContainer(docker.Config{
 		Name:     fmt.Sprintf("sut_mtf-%v", time.Now().Unix()),
 		Image:    "run_sut",
@@ -74,11 +80,6 @@ func (c *SUT) Start() error {
 		Env: append([]string{
 			fmt.Sprintf("SUT_BINARY_NAME=%s", binary),
 		}, c.config.Env...),
-
-		PortMap: docker.PortMap{
-			8001: 8001,
-			8082: 8082,
-		},
 		Mounts: docker.Mounts{
 			docker.Mount{
 				Source: path,
@@ -89,6 +90,7 @@ func (c *SUT) Start() error {
 				Target: "/usr/local/share/ca-certificates",
 			},
 		},
+		PortMap:     ports,
 		NetworkName: "mtf_net",
 		Healtcheck: &docker.Healtcheck{
 			Test:     []string{"CMD", "pgrep", binary, "||", "exit", "1"},

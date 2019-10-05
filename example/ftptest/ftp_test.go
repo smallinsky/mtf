@@ -47,7 +47,7 @@ func (s *SuiteTest) TestFTPUpload(t *testing.T) {
 	conn = conn
 	s.ftpPort.Receive(t, &port.FTPEvent{
 		Path:    "/ftp/randomfile.txt",
-		Payload: []byte("cmFuZG9tIGZpbGUgY29udGVudA=="),
+		Payload: []byte("random file content"),
 	})
 }
 

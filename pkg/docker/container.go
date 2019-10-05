@@ -24,16 +24,17 @@ type Container struct {
 }
 
 type Config struct {
-	Name       string
-	Image      string
-	PortMap    PortMap
-	EntryPoint []string
-	Cmd        []string
-	Hostname   string
-	CapAdd     []string
-	Labels     map[string]string
-	Env        []string
-	Mounts     Mounts
+	Name            string
+	Image           string
+	PortMap         PortMap
+	PublishAllPorts bool
+	EntryPoint      []string
+	Cmd             []string
+	Hostname        string
+	CapAdd          []string
+	Labels          map[string]string
+	Env             []string
+	Mounts          Mounts
 
 	NetworkName string
 
@@ -130,10 +131,11 @@ func (c *Client) NewContainer(config Config, opts ...Options) (*Container, error
 			Healthcheck:  hc,
 		},
 		&container.HostConfig{
-			PortBindings: config.PortMap.toNatPortMap(),
-			Mounts:       config.Mounts.toDockerType(),
-			CapAdd:       config.CapAdd,
-			AutoRemove:   config.AutoRemove,
+			PortBindings:    config.PortMap.toNatPortMap(),
+			Mounts:          config.Mounts.toDockerType(),
+			CapAdd:          config.CapAdd,
+			AutoRemove:      config.AutoRemove,
+			PublishAllPorts: config.PublishAllPorts,
 		},
 		&network.NetworkingConfig{
 			EndpointsConfig: map[string]*network.EndpointSettings{
