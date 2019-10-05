@@ -1,5 +1,0 @@
-14:20:43.872366 ftp_server_port <- *port.FTPEvent:
-{
-  "Path": "/ftp/randomfile.txt",
-  "Payload": "cmFuZG9tIGZpbGUgY29udGVudA=="
-}
