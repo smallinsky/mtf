@@ -46,7 +46,6 @@ func (m *FnType) Match(err error, got interface{}) error {
 	return nil
 }
 
-// TODO refactor error messages
 func (m *FnType) Validate() error {
 	if m.Args == nil {
 		return errors.Wrap(ErrMatchFnInvalidArg, "got nil argument")

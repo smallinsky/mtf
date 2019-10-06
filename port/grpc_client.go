@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	//	"github.com/go-test/deep"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -85,7 +84,6 @@ func (p *ClientPort) Name() string {
 func (p *ClientPort) connect(addr, certfile string) error {
 	options := []grpc.DialOption{grpc.WithInsecure()}
 	if certfile != "" {
-		// TODO: set dynamic authority header file.
 		creds, err := credentials.NewClientTLSFromFile(certfile, strings.Split(addr, ":")[0])
 		if err != nil {
 			return errors.Wrapf(err, "failed to load cert from file %v", certfile)
@@ -137,7 +135,6 @@ func (p *ClientPort) receive(opts ...PortOpt) (interface{}, error) {
 }
 
 func (p *ClientPort) send(ctx context.Context, msg interface{}) error {
-	//startSync.Wait()
 	v, ok := p.emd[reflect.TypeOf(msg)]
 	if !ok {
 		return errors.Errorf("port doesn't support message type %T", msg)

@@ -2,19 +2,15 @@ package port
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"log"
 	"reflect"
 	"strings"
 	"time"
 	"unsafe"
 
-	//"github.com/go-test/deep"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	//"github.com/smallinsky/mtf/match"
 )
 
 type processFunc func(i interface{}) (interface{}, error)
@@ -76,7 +72,6 @@ func NewGRPCServers(ii []interface{}, port string, opts ...PortOpt) (*PortIn, er
 		respC: make(chan outValues),
 	}
 
-	// TODO Add tls support
 	lis, err := listen("tcp", port)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create net listener")
@@ -102,7 +97,6 @@ func NewGRPCServers(ii []interface{}, port string, opts ...PortOpt) (*PortIn, er
 		}
 	}()
 
-	//	startSync.Add(3)
 	return portIn, nil
 }
 
@@ -117,7 +111,6 @@ func NewGRPCServer(i interface{}, port string, opts ...PortOpt) (*PortIn, error)
 		respC: make(chan outValues),
 	}
 
-	// TODO Add tls support
 	lis, err := listen("tcp", port)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create net listener")
@@ -206,7 +199,6 @@ func registerInterface(server *grpc.Server, i interface{}, procCall processFunc,
 		z.Elem().FieldByName("Handler").Set(reflect.ValueOf(fn))
 
 		serverName := ""
-		// TODO: pkgName is probably not needed during server registartion, check it
 		if opts.pkgName != "" {
 			serverName = strings.Join([]string{opts.pkgName, mdesc.Name}, ".")
 		} else {
@@ -232,7 +224,6 @@ func registerInterfaces(server *grpc.Server, ii []interface{}, procCall processF
 		//TODO register handler for stream methods
 
 		desc, err := getGrpcDetails(i)
-		//toJson(desc)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed ot get grpc details")
 		}
@@ -251,7 +242,6 @@ func registerInterfaces(server *grpc.Server, ii []interface{}, procCall processF
 			z.Elem().FieldByName("Handler").Set(reflect.ValueOf(fn))
 
 			serverName := ""
-			// TODO: pkgName is probably not needed during server registartion, check it
 			if opts.pkgName != "" {
 				serverName = strings.Join([]string{opts.pkgName, mdesc.Name}, ".")
 			} else {
@@ -263,16 +253,7 @@ func registerInterfaces(server *grpc.Server, ii []interface{}, procCall processF
 		svm.Elem().SetMapIndex(reflect.ValueOf(desc.Name), nsv)
 	}
 
-	//toJson(server.GetServiceInfo())
 	return server, nil
-}
-
-func toJson(i interface{}) {
-	buff, err := json.MarshalIndent(i, "", "  ")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("DUMP %T:\n %v\n", i, string(buff))
 }
 
 func allocMap(v reflect.Value) reflect.Value {

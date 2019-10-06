@@ -63,8 +63,6 @@ type FTPEvent struct {
 	Payload []byte
 }
 
-//type FTPEvent pb.EventRequest
-
 func (p *FTPPort) Send(ctx context.Context, i interface{}) error {
 	event, ok := i.(*FTPEvent)
 	if !ok {
@@ -98,8 +96,5 @@ func dialFTP(addr string, user, pass string) (*ftp.ServerConn, error) {
 	if err := connection.Login(user, pass); err != nil {
 		return nil, fmt.Errorf("failed to login to %q: %v", addr, err)
 	}
-	//	if err := connection.ChangeDir("/ftp"); err != nil {
-	//		return nil, errors.Wrapf(err, "failed to change path to %q", "/ftp")
-	//	}
 	return connection, nil
 }
