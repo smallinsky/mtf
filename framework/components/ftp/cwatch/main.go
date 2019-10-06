@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/smallinsky/mtf/pkg/fswatch"
-	pb "github.com/smallinsky/mtf/pkg/fswatch/proto"
+	pb "github.com/smallinsky/mtf/proto/fswatch"
 )
 
 func main() {

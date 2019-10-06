@@ -51,16 +51,19 @@ func (p *Port) Send(t *testing.T, i interface{}, opts ...SendOption) error {
 	if err := p.impl.Send(defOpts.ctx, i); err != nil {
 		t.Fatalf("failed to send %T from %s, err: %v", i, p.impl.Name(), err)
 	}
-	mtfc := mtfctx.Get(t)
-	mtfc.LogSend(p.impl.Name(), i)
+
+	if mtfc := mtfctx.Get(t); mtfc != nil {
+		mtfc.LogSend(p.impl.Name(), i)
+	}
 	return nil
 }
 
 func (p *Port) Receive(t *testing.T, i interface{}) (interface{}, error) {
 	ctx := context.Background()
 	m, err := p.impl.Receive(ctx)
-	mtfc := mtfctx.Get(t)
-	mtfc.LogReceive(p.impl.Name(), m)
+	if mtfc := mtfctx.Get(t); mtfc != nil {
+		mtfc.LogReceive(p.impl.Name(), m)
+	}
 	if err != nil {
 		t.Fatalf("failed to receive %T from %s: %v", i, p.impl.Name(), err)
 	}

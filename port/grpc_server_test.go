@@ -8,8 +8,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/smallinsky/mtf/e2e/proto/oracle"
 	"github.com/smallinsky/mtf/match"
+	"github.com/smallinsky/mtf/proto/oracle"
 )
 
 func TestGRPCServer(t *testing.T) {
@@ -119,7 +119,7 @@ func TestGRPCServerStart(t *testing.T) {
 		client := oracle.NewOracleClient(conn)
 
 		// Value 1s are causing causes client grpc.Dial error call.
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Second * 0)
 		svr, _ := NewGRPCServerPort((*oracle.OracleServer)(nil), ":9991")
 		go func() {
 			svr.Receive(t, &oracle.AskDeepThroughRequest{

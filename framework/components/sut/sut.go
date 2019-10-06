@@ -49,7 +49,7 @@ func (c *SUT) Start() error {
 
 	if core.Settings.BuildBinary {
 		if err := BuildGoBinary(c.config.Path); err != nil {
-			return fmt.Errorf("failed to build sut binary from %s, err %v", c.config, err)
+			return fmt.Errorf("failed to build sut binary from %s, err %v", c.config.Path, err)
 		}
 	}
 

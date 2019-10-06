@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	pb "github.com/smallinsky/mtf/protofswatch"
+	pb "github.com/smallinsky/mtf/proto/fswatch"
 )
 
 func Subscriber(port string, handler func(event *pb.EventRequest)) {

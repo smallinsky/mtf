@@ -1,3 +1,5 @@
+// +build docker
+
 package sut
 
 import (
@@ -18,12 +20,9 @@ func TestSUT(t *testing.T) {
 
 	t.Logf("Create docker client - %v\n", time.Since(start))
 	start = time.Now()
-	sut, err := NewSUT(cli, SutConfig{
+	sut := NewSUT(cli, SutConfig{
 		Path: "./test_service/",
 	})
-	if err != nil {
-		t.Fatalf("failed to create container %v", err)
-	}
 	t.Logf("NetSut - %v\n", time.Since(start))
 	start = time.Now()
 	if err := sut.Start(); err != nil {
