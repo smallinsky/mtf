@@ -14,8 +14,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pb "github.com/smallinsky/mtf/example/echo/service/proto/echo"
-	pbo "github.com/smallinsky/mtf/example/echo/service/proto/oracle"
+	pb "github.com/smallinsky/mtf/proto/echo"
+	pbo "github.com/smallinsky/mtf/proto/oracle"
 )
 
 type server struct {

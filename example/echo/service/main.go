@@ -10,8 +10,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"google.golang.org/grpc"
 
-	pb "github.com/smallinsky/mtf/example/echo/service/proto/echo"
-	pbo "github.com/smallinsky/mtf/example/echo/service/proto/oracle"
+	pb "github.com/smallinsky/mtf/proto/echo"
+	pbo "github.com/smallinsky/mtf/proto/oracle"
 )
 
 type config struct {

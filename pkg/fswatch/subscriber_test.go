@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	pb "github.com/smallinsky/mtf/pkg/fswatch/proto"
+	pb "github.com/smallinsky/mtf/proto/fswatch"
 )
 
 func TestDirWatcher(t *testing.T) {

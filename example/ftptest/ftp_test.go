@@ -1,3 +1,5 @@
+// +build mtf
+
 package ftptest
 
 import (

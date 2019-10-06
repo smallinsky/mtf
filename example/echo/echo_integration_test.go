@@ -1,13 +1,15 @@
+// +build mtf
+
 package framework
 
 import (
 	"testing"
 	"time"
 
-	pb "github.com/smallinsky/mtf/example/echo/service/proto/echo"
-	pbo "github.com/smallinsky/mtf/example/echo/service/proto/oracle"
 	"github.com/smallinsky/mtf/framework"
 	"github.com/smallinsky/mtf/port"
+	pb "github.com/smallinsky/mtf/proto/echo"
+	pbo "github.com/smallinsky/mtf/proto/oracle"
 )
 
 func TestMain(m *testing.M) {
