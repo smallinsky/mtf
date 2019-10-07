@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"strconv"
 	"time"
 
@@ -77,6 +78,18 @@ func (c *Client) NewContainer(config Config, opts ...Options) (*Container, error
 	var options options
 	for _, opt := range opts {
 		opt(&options)
+	}
+
+	_, _, err := c.cli.ImageInspectWithRaw(context.Background(), config.Image)
+	if client.IsErrNotFound(err) {
+		log.Printf("%s image not found, fetching image...", config.Image)
+		pull, err := c.cli.ImagePull(context.Background(), "docker.io/library/"+config.Image, types.ImagePullOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to pull image: %v", err)
+		}
+		if _, err := ioutil.ReadAll(pull); err != nil {
+			return nil, err
+		}
 	}
 
 	for _, v := range c.containers {

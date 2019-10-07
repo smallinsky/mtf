@@ -4,7 +4,6 @@ WORKDIR /go/fswatch
 RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go buld -o fswatch .
 
-
 FROM alpine:3.4
 
 RUN apk update \
