@@ -27,7 +27,8 @@ func (c *FTP) Start() error {
 	defer close(c.ready)
 
 	var (
-		image = "ftpwithwatcher"
+		image = "smallinsky/ftpserver"
+		//image = "ftpwithwatcher"
 	)
 
 	result, err := c.cli.NewContainer(docker.Config{

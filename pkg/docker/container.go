@@ -83,7 +83,7 @@ func (c *Client) NewContainer(config Config, opts ...Options) (*Container, error
 	_, _, err := c.cli.ImageInspectWithRaw(context.Background(), config.Image)
 	if client.IsErrNotFound(err) {
 		log.Printf("%s image not found, fetching image...", config.Image)
-		pull, err := c.cli.ImagePull(context.Background(), "docker.io/library/"+config.Image, types.ImagePullOptions{})
+		pull, err := c.cli.ImagePull(context.Background(), "docker.io/"+config.Image, types.ImagePullOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to pull image: %v", err)
 		}
