@@ -54,7 +54,6 @@ func (w *Watcher) Run() error {
 				}
 			}
 		case err := <-watcher.Errors:
-			fmt.Println("error ", err)
 			return fmt.Errorf("watcher got err: %v", err)
 		case <-w.stop:
 			log.Printf("[INFO] stopping watcher")

@@ -50,7 +50,7 @@ func (c *TestContext) Clear() {
 func CreateTestContext(t *testing.T) {
 	c := &TestContext{}
 
-	name := strings.ReplaceAll(t.Name(), "/", "_")
+	name := strings.Replace(t.Name(), "/", "_", -1)
 	var err error
 	c.file, err = os.Create(fmt.Sprintf("%s/%s.log", logDir, name))
 	if err != nil {

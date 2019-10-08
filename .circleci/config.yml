@@ -1,14 +1,19 @@
-# Golang CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-go/ for more details
-version: 2
+version: 2.1
 jobs:
   build:
-    docker:
-    - image: golang:1.13.1-alpine3.10
-    working_directory: /go/src/github.com/smallinsky/mtf
+    machine:
+      enabled: true
     steps:
       - checkout
-      - run: apk add make
-      - run: go get -v -t -d ./...
-      - run: make test
+      - run:
+          name: "Updating Golang Version"
+          command: |
+              wget https://dl.google.com/go/go1.13.1.linux-amd64.tar.gz
+              tar -xvf go1.13.1.linux-amd64.tar.gz
+              sudo rm -rf /usr/local/go && sudo mv go /usr/local/
+      - run:
+          name: "Fetching Deps"
+          command: go mod download
+      - run:
+          name: "Running Tests"
+          command: make test
