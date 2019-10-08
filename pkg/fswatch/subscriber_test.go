@@ -21,7 +21,6 @@ func TestDirWatcher(t *testing.T) {
 	go func() {
 		Subscriber("localhost:11132", func(req *pb.EventRequest) {
 			event <- req
-
 		})
 	}()
 	go func() {

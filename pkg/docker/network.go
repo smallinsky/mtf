@@ -21,25 +21,14 @@ type Network struct {
 }
 
 func NewNetwork(client *Client, config NetworkConfig) (*Network, error) {
-	networks, err := client.cli.NetworkList(context.Background(), types.NetworkListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, v := range networks {
-		if !config.AttachIfExist {
-			break
-		}
-		if v.Name != config.Name {
-			continue
-		}
-
+	if result, err := client.cli.NetworkInspect(context.Background(), config.Name); err == nil && config.AttachIfExist {
 		return &Network{
+			ID:            result.ID,
 			NetworkConfig: config,
-			ID:            v.ID,
 			cli:           client.cli,
 		}, nil
-
 	}
+
 	result, err := client.cli.NetworkCreate(context.Background(), config.Name, types.NetworkCreate{
 		CheckDuplicate: true,
 		Labels:         config.Labels,
@@ -48,13 +37,11 @@ func NewNetwork(client *Client, config NetworkConfig) (*Network, error) {
 		return nil, err
 	}
 
-	net := &Network{
+	return &Network{
 		NetworkConfig: config,
 		ID:            result.ID,
 		cli:           client.cli,
-	}
-
-	return net, nil
+	}, nil
 }
 
 func (n *Network) Close() error {

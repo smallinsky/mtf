@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"strconv"
 	"time"
 
@@ -68,28 +67,56 @@ type Mount struct {
 
 type Mounts []Mount
 
-type Options func(*options)
-
-type options struct {
-	ContainerID string
+// ImagePull fetch image from docker.io registry.
+func (c *Client) ImagePull(ctx context.Context, image string) error {
+	pull, err := c.cli.ImagePull(ctx, "docker.io/"+image, types.ImagePullOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to pull %s image: %v", image, err)
+	}
+	if _, err := ioutil.ReadAll(pull); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (c *Client) NewContainer(config Config, opts ...Options) (*Container, error) {
-	var options options
-	for _, opt := range opts {
-		opt(&options)
-	}
+// ImageExists return if image is already present.
+func (c Client) ImageExists(ctx context.Context, image string) bool {
+	_, _, err := c.cli.ImageInspectWithRaw(ctx, image)
+	return !client.IsErrNotFound(err)
+}
 
-	_, _, err := c.cli.ImageInspectWithRaw(context.Background(), config.Image)
-	if client.IsErrNotFound(err) {
-		log.Printf("%s image not found, fetching image...", config.Image)
-		pull, err := c.cli.ImagePull(context.Background(), "docker.io/"+config.Image, types.ImagePullOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to pull image: %v", err)
-		}
-		if _, err := ioutil.ReadAll(pull); err != nil {
-			return nil, err
-		}
+// ImageExists return if image is already present.
+func (c Client) ContainerExists(ctx context.Context, containerID string) bool {
+	result, err := c.cli.ContainerInspect(ctx, containerID)
+	fmt.Printf("%s\n", toJson(result.ContainerJSONBase))
+	return !client.IsErrContainerNotFound(err)
+}
+
+func toJson(i interface{}) string {
+	buff, err := json.MarshalIndent(i, "", " ")
+	if err != nil {
+		panic(err)
+	}
+	return string(buff)
+}
+
+// PullImageIfNotExist fetch image from remote repository if not exits.
+func (c *Client) PullImageIfNotExist(ctx context.Context, image string) error {
+	if c.ImageExists(ctx, image) {
+		return nil
+	}
+	return c.ImagePull(ctx, image)
+}
+
+func (c *Client) RemoveContainer(ctx context.Context, id string) error {
+	return c.cli.ContainerRemove(context.Background(), id, types.ContainerRemoveOptions{
+		Force: true,
+	})
+}
+
+func (c *Client) NewContainer(config Config) (*Container, error) {
+	if err := c.PullImageIfNotExist(context.Background(), config.Image); err != nil {
+		return nil, fmt.Errorf("failed to pull image: %v", err)
 	}
 
 	for _, v := range c.containers {
@@ -229,11 +256,6 @@ func (c *Container) WaitForStatusHealthly() (state *types.ContainerState, err er
 		break
 	}
 	return state, nil
-}
-
-func dump(i interface{}) string {
-	buff, _ := json.MarshalIndent(i, "", " ")
-	return string(buff)
 }
 
 func (c *Container) Stop() error {
