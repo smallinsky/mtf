@@ -38,7 +38,7 @@ func (c *MySQL) Start() error {
 
 	result, err := c.cli.NewContainer(docker.Config{
 		Name:     "mysql_mtf",
-		Image:    "mysql",
+		Image:    "library/mysql",
 		Hostname: "mysql_mtf",
 		Labels: map[string]string{
 			"mtf": "mtf",

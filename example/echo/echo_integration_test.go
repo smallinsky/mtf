@@ -17,7 +17,7 @@ func TestMain(m *testing.M) {
 		Dir:   "./service",
 		Ports: []int{8001},
 		Envs: []string{
-			"ORACLE_ADDR=host.docker.internal:8002",
+			"ORACLE_ADDR=" + framework.GetDockerHostAddr(8002),
 		},
 	}).WithRedis(framework.RedisSettings{
 		Password: "test",
@@ -86,6 +86,7 @@ func (st *SuiteTest) TestHTTP(t *testing.T) {
 }
 
 func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
+	time.Sleep(time.Second * 2)
 	st.echoPort.Send(t, &pb.AskOracleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})

@@ -44,7 +44,7 @@ func (s *Suite) getComponents() Components {
 	}
 
 	if s.settings.sut != nil {
-		s.settings.sut.Envs = append(s.settings.sut.Envs, "PUBSUB_EMULATOR_HOST=host.docker.internal:8085")
+		s.settings.sut.Envs = append(s.settings.sut.Envs, "PUBSUB_EMULATOR_HOST="+GetDockerHostAddr(8085))
 		components.Add(sut.NewSUT(cli, sut.SutConfig{
 			Path:         s.settings.sut.Dir,
 			Env:          s.settings.sut.Envs,

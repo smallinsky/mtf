@@ -17,3 +17,6 @@ jobs:
       - run:
           name: "Running Tests"
           command: make test
+      - run:
+          name: "Running Test e2e"
+          command: make test-e2e

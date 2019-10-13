@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/smallinsky/mtf/pkg/fswatch"
 )
@@ -14,5 +15,6 @@ var (
 
 func main() {
 	flag.Parse()
+	fmt.Println("[INFO] watcher remote addr: ", *addr)
 	fswatch.Monitor(*addr, *dir)
 }

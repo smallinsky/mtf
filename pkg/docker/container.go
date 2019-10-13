@@ -155,6 +155,7 @@ func (c *Client) NewContainer(config Config) (*Container, error) {
 			Retries:  config.Healtcheck.Retries,
 		}
 	}
+	env := append(config.Env, "DOCKER_HOST_ADDR="+hostAddr)
 
 	result, err := c.cli.ContainerCreate(
 		context.Background(),
@@ -163,7 +164,7 @@ func (c *Client) NewContainer(config Config) (*Container, error) {
 			AttachStdin:  true,
 			AttachStdout: true,
 			ExposedPorts: exposedPorts,
-			Env:          config.Env,
+			Env:          env,
 			Image:        config.Image,
 			Entrypoint:   config.EntryPoint,
 			Labels:       config.Labels,

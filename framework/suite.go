@@ -12,10 +12,13 @@ import (
 
 	"github.com/smallinsky/mtf/framework/context"
 	"github.com/smallinsky/mtf/pkg/cert"
+	"github.com/smallinsky/mtf/pkg/docker"
 )
 
 var mu sync.Mutex
 var suite *Suite
+
+var GetDockerHostAddr = docker.HostAddr
 
 func NewSuite(m *testing.M) *Suite {
 	flag.Parse()
