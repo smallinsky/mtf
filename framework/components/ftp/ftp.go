@@ -1,13 +1,10 @@
 package ftp
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
-func NewFTP(cli *docker.Client) *FTP {
+func NewFTP(cli *docker.Docker) *FTP {
 	return &FTP{
 		cli:   cli,
 		ready: make(chan struct{}),
@@ -19,24 +16,25 @@ type FTPConfig struct {
 
 type FTP struct {
 	ready     chan struct{}
-	cli       *docker.Client
-	container *docker.Container
+	cli       *docker.Docker
+	container *docker.ContainerType
 }
 
 func (c *FTP) Start() error {
 	defer close(c.ready)
 
 	var (
-		image = "smallinsky/ftpserver"
+		image    = "smallinsky/ftpserver"
+		name     = "ftp_mtf"
+		hostname = "ftp_mtf"
+		network  = "mtf_net"
 	)
 
-	result, err := c.cli.NewContainer(docker.Config{
-		Name:     "ftp_mtf",
-		Image:    image,
-		Hostname: "ftp_mtf",
-		Labels: map[string]string{
-			"mtf": "mtf",
-		},
+	result, err := c.cli.NewContainer(docker.ContainerConfig{
+		Image:       image,
+		Name:        name,
+		Hostname:    hostname,
+		NetworkName: network,
 		Env: []string{
 			"FTP_USER=test",
 			"FTP_PASS=test",
@@ -56,13 +54,8 @@ func (c *FTP) Start() error {
 			21109: 21109,
 			21110: 21110,
 		},
-		NetworkName: "mtf_net",
-		Healtcheck: &docker.Healtcheck{
-			Test:     []string{"nc -z localhost:21"},
-			Interval: time.Millisecond * 100,
-			Timeout:  time.Second * 3,
-		},
 		AttachIfExist: false,
+		WaitPolicy:    &docker.WaitForPort{Port: 21},
 	})
 	if err != nil {
 		return err
@@ -79,14 +72,6 @@ func (c *FTP) Stop() error {
 }
 
 func (c *FTP) Ready() error {
-	state, err := c.container.GetState()
-	if err != nil {
-		return err
-	}
-
-	if state.Status != "running" {
-		return fmt.Errorf("container is in wrong state %v", state.Status)
-	}
 	return nil
 }
 

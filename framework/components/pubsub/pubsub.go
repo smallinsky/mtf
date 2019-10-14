@@ -1,13 +1,12 @@
 package pubsub
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
-func NewPubsub(cli *docker.Client) *Pubsub {
+func NewPubsub(cli *docker.Docker) *Pubsub {
 	return &Pubsub{
 		cli:   cli,
 		ready: make(chan struct{}),
@@ -16,34 +15,37 @@ func NewPubsub(cli *docker.Client) *Pubsub {
 
 type Pubsub struct {
 	ready     chan struct{}
-	cli       *docker.Client
-	container *docker.Container
+	cli       *docker.Docker
+	container *docker.ContainerType
 }
 
 func (c *Pubsub) Start() error {
 	defer close(c.ready)
 
 	var (
-		image = "adilsoncarvalho/gcloud-pubsub-emulator"
+		image    = "adilsoncarvalho/gcloud-pubsub-emulator"
+		name     = "pubsub_mtf"
+		hostname = "pubsub_mtf"
+		network  = "mtf_net"
 	)
 
-	result, err := c.cli.NewContainer(docker.Config{
-		Name:     "pubsub_mtf",
+	healtcheck := &docker.HealthCheckConfig{
+		Test:     []string{"nc -z localhost:8085"},
+		Interval: time.Millisecond * 100,
+		Timeout:  time.Second * 3,
+	}
+
+	result, err := c.cli.NewContainer(docker.ContainerConfig{
 		Image:    image,
-		Hostname: "pubsub_mtf",
-		Labels: map[string]string{
-			"mtf": "mtf",
-		},
+		Name:     name,
+		Hostname: hostname,
 		PortMap: docker.PortMap{
 			8085: 8085,
 		},
-		NetworkName: "mtf_net",
-		Healtcheck: &docker.Healtcheck{
-			Test:     []string{"nc -z localhost:8085"},
-			Interval: time.Millisecond * 100,
-			Timeout:  time.Second * 3,
-		},
+		NetworkName:   network,
+		Healtcheck:    healtcheck,
 		AttachIfExist: false,
+		WaitPolicy:    &docker.WaitForPort{Port: 8085},
 	})
 	if err != nil {
 		return err
@@ -60,14 +62,6 @@ func (c *Pubsub) Stop() error {
 }
 
 func (c *Pubsub) Ready() error {
-	state, err := c.container.GetState()
-	if err != nil {
-		return err
-	}
-
-	if state.Status != "running" {
-		return fmt.Errorf("container is in wrong state %v", state.Status)
-	}
 	return nil
 }
 

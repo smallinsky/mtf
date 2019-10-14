@@ -20,7 +20,7 @@ type Network struct {
 	cli *client.Client
 }
 
-func NewNetwork(client *Client, config NetworkConfig) (*Network, error) {
+func NewNetwork(client *Docker, config NetworkConfig) (*Network, error) {
 	if result, err := client.cli.NetworkInspect(context.Background(), config.Name); err == nil && config.AttachIfExist {
 		return &Network{
 			ID:            result.ID,

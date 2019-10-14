@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/smallinsky/mtf/pkg/docker"
 )
@@ -17,7 +16,7 @@ type MySQLConfig struct {
 	AttachIfExist bool
 }
 
-func NewMySQL(cli *docker.Client, config MySQLConfig) *MySQL {
+func NewMySQL(cli *docker.Docker, config MySQLConfig) *MySQL {
 	return &MySQL{
 		cli:    cli,
 		config: config,
@@ -27,8 +26,8 @@ func NewMySQL(cli *docker.Client, config MySQLConfig) *MySQL {
 
 type MySQL struct {
 	ready     chan struct{}
-	container *docker.Container
-	cli       *docker.Client
+	container *docker.ContainerType
+	cli       *docker.Docker
 
 	config MySQLConfig
 }
@@ -36,35 +35,32 @@ type MySQL struct {
 func (c *MySQL) Start() error {
 	defer close(c.ready)
 
-	result, err := c.cli.NewContainer(docker.Config{
-		Name:     "mysql_mtf",
-		Image:    "library/mysql",
-		Hostname: "mysql_mtf",
-		Labels: map[string]string{
-			"mtf": "mtf",
-		},
+	var (
+		image    = "library/mysql"
+		name     = "mysql_mtf"
+		hostname = "mysql_mtf"
+		network  = "mtf_net"
+	)
+
+	cmd := fmt.Sprintf("mysqladmin -h localhost status --password=%s", c.config.Password)
+
+	result, err := c.cli.NewContainer(docker.ContainerConfig{
+		Image:       image,
+		Name:        name,
+		Hostname:    hostname,
+		NetworkName: network,
 		PortMap: docker.PortMap{
 			3306: 3306,
 		},
-		NetworkName: "mtf_net",
 		Env: []string{
-			"name=mysql_mtf",
-			"hostname=mysql_mtf",
-			"network=mtf_net",
 			fmt.Sprintf("MYSQL_DATABASE=%s", c.config.Database),
 			fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", c.config.Password),
 		},
 		Cmd: []string{
 			"--default-authentication-plugin=mysql_native_password",
 		},
-
-		Healtcheck: &docker.Healtcheck{
-			Test: []string{"CMD", "mysqladmin", "-h", "localhost", "status", fmt.Sprintf("--password=%s", c.config.Password)},
-
-			Interval: time.Millisecond * 100,
-			Timeout:  time.Second * 40,
-		},
 		AttachIfExist: c.config.AttachIfExist,
+		WaitPolicy:    &docker.WaitForCommand{Command: cmd},
 	})
 	if err != nil {
 		return err
@@ -79,13 +75,6 @@ func (c *MySQL) Stop() error {
 }
 
 func (c *MySQL) Ready() error {
-	state, err := c.container.WaitForStatusHealthly()
-	if err != nil {
-		return err
-	}
-	if state.Status != "running" {
-		return fmt.Errorf("container is in wrong state %v", state.Status)
-	}
 	<-c.ready
 	return nil
 }

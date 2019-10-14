@@ -7,7 +7,7 @@ import (
 type Network struct {
 	startC chan struct{}
 	net    *docker.Network
-	cli    *docker.Client
+	cli    *docker.Docker
 	config NetworkConfig
 }
 
@@ -17,7 +17,7 @@ type NetworkConfig struct {
 	AttachIfExist bool
 }
 
-func New(cli *docker.Client, config NetworkConfig) *Network {
+func New(cli *docker.Docker, config NetworkConfig) *Network {
 	return &Network{
 		startC: make(chan struct{}),
 		cli:    cli,

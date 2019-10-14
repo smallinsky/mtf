@@ -10,8 +10,8 @@ import (
 
 type MigrateDB struct {
 	config    MigrateConfig
-	cli       *docker.Client
-	container *docker.Container
+	cli       *docker.Docker
+	container *docker.ContainerType
 }
 
 type MigrateConfig struct {
@@ -28,7 +28,7 @@ func (c *MigrateConfig) DBConnString() string {
 	return fmt.Sprintf("mysql://root:%s@tcp(%s:%s)/%s", c.Password, c.Hostname, c.Port, c.Database)
 }
 
-func NewMigrate(cli *docker.Client, config MigrateConfig) *MigrateDB {
+func NewMigrate(cli *docker.Docker, config MigrateConfig) *MigrateDB {
 	return &MigrateDB{
 		config: config,
 		cli:    cli,
@@ -44,26 +44,29 @@ func (m *MigrateDB) Start() error {
 		return fmt.Errorf("migraitn path: %v doesn't exist\n", m.config.Path)
 	}
 
-	result, err := m.cli.NewContainer(docker.Config{
-		Name:     "migrate_mtf",
-		Image:    "migrate/migrate",
-		Hostname: "migrate_mtf",
-		CapAdd:   []string{"NET_RAW", "NET_ADMIN"},
-		Labels: map[string]string{
-			"mtf": "mtf",
-		},
+	var (
+		image    = "migrate/migrate"
+		name     = "migrate_mtf"
+		hostname = "migrate_mtf"
+		network  = "mtf_net"
+	)
+
+	result, err := m.cli.NewContainer(docker.ContainerConfig{
+		Image:       image,
+		Name:        name,
+		Hostname:    hostname,
+		NetworkName: network,
+		CapAdd:      []string{"NET_RAW", "NET_ADMIN"},
 		Mounts: docker.Mounts{
 			docker.Mount{
 				Source: m.config.Path,
 				Target: "/migrations",
 			},
 		},
-		NetworkName: "mtf_net",
 		Cmd: []string{
 			"-path", "/migrations",
 			"-database", m.config.DBConnString(), "up",
 		},
-		//AutoRemove: true,
 	})
 	if err != nil {
 		return err

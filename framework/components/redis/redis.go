@@ -7,8 +7,8 @@ import (
 )
 
 type Redis struct {
-	container *docker.Container
-	cli       *docker.Client
+	container *docker.ContainerType
+	cli       *docker.Docker
 	cfg       RedisConfig
 
 	ready chan struct{}
@@ -20,7 +20,7 @@ type RedisConfig struct {
 	Labels   map[string]string
 }
 
-func NewRedis(cli *docker.Client, config RedisConfig) *Redis {
+func NewRedis(cli *docker.Docker, config RedisConfig) *Redis {
 	return &Redis{
 		cfg:   config,
 		cli:   cli,
@@ -31,24 +31,26 @@ func NewRedis(cli *docker.Client, config RedisConfig) *Redis {
 func (c *Redis) Start() error {
 	defer close(c.ready)
 	var (
-		image = "bitnami/redis:4.0"
+		image    = "bitnami/redis:4.0"
+		name     = "redis_mtf"
+		hostname = "redis_mtf"
+		network  = "mtf_net"
 	)
 
-	result, err := c.cli.NewContainer(docker.Config{
-		Name:     "redis_mtf",
+	dockerConf := docker.ContainerConfig{
+		Name:     name,
 		Image:    image,
-		Hostname: "redis_mtf",
-		Labels: map[string]string{
-			"mtf": "mtf",
-		},
+		Hostname: hostname,
 		PortMap: docker.PortMap{
 			6379: 6379,
 		},
-		NetworkName: "mtf_net",
+		NetworkName: network,
 		Env: []string{
 			fmt.Sprintf("REDIS_PASSWORD=%s", c.cfg.Password),
 		},
-	})
+	}
+
+	result, err := c.cli.NewContainer(dockerConf)
 	if err != nil {
 		return err
 	}
@@ -66,9 +68,6 @@ func (c *Redis) Stop() error {
 }
 
 func (c *Redis) Ready() error {
-	if c.container == nil {
-		return fmt.Errorf("container is not running")
-	}
 	<-c.ready
 	return nil
 }

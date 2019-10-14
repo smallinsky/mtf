@@ -18,7 +18,7 @@ import (
 )
 
 func (s *Suite) getComponents() Components {
-	cli, err := docker.NewClient()
+	cli, err := docker.New()
 	if err != nil {
 		log.Fatalf("faield to get docker client: %v", err)
 	}

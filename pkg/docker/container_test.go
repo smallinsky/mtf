@@ -8,7 +8,7 @@ import (
 )
 
 func TestContainer(t *testing.T) {
-	cli, err := NewClient()
+	cli, err := New()
 	if err != nil {
 		t.Fatalf("failed to create docker client: %v", err)
 	}
@@ -25,7 +25,7 @@ func TestContainer(t *testing.T) {
 }
 
 func TestFoo(t *testing.T) {
-	cli, err := NewClient()
+	cli, err := New()
 	if err != nil {
 		t.Fatalf("failed to create docker client: %v", err)
 	}
