@@ -45,6 +45,16 @@ func (s *Suite) Run() {
 		log.Fatalf("[ERR] failed to write certs: %v ", err)
 	}
 
+	docker, err := docker.New()
+	if err != nil {
+		panic(err)
+	}
+	network, err := docker.CreateNetwork("mtf_net")
+	if err != nil {
+		log.Fatalf("faield to get docker client: %v", err)
+	}
+	defer network.Remove()
+
 	components := s.getComponents()
 
 	start := time.Now()

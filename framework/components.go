@@ -10,7 +10,6 @@ import (
 	"github.com/smallinsky/mtf/framework/components/ftp"
 	"github.com/smallinsky/mtf/framework/components/migrate"
 	"github.com/smallinsky/mtf/framework/components/mysql"
-	"github.com/smallinsky/mtf/framework/components/network"
 	"github.com/smallinsky/mtf/framework/components/pubsub"
 	"github.com/smallinsky/mtf/framework/components/redis"
 	"github.com/smallinsky/mtf/framework/components/sut"
@@ -27,10 +26,10 @@ func (s *Suite) getComponents() Components {
 		m: make(map[startPriority][]Comper),
 	}
 
-	components.Add(network.New(cli, network.NetworkConfig{
-		Name:          "mtf_net",
-		AttachIfExist: true,
-	}))
+	//components.Add(network.New(cli, network.NetworkConfig{
+	//	Name:          "mtf_net",
+	//	AttachIfExist: true,
+	//}))
 
 	if s.settings.redis != nil {
 		components.Add(redis.NewRedis(cli, redis.RedisConfig{
