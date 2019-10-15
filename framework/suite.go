@@ -38,9 +38,13 @@ func (s *Suite) Run() {
 
 	kvpair, err := cert.GenCert([]string{"localhost", "host.docker.internal"})
 	if err != nil {
-		log.Fatalf("[ERR] failed to generate certs")
+		log.Fatalf("[ERR] failed to generate certs: %v", err)
 	}
-	cert.WriteCert(kvpair)
+
+	if err := cert.WriteCert(kvpair); err != nil {
+		log.Fatalf("[ERR] failed to write certs: %v ", err)
+	}
+
 	components := s.getComponents()
 
 	start := time.Now()
