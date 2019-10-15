@@ -34,6 +34,10 @@ type ContainerType struct {
 	config ContainerConfig
 }
 
+func (c *ContainerType) Name() string {
+	return c.config.Name
+}
+
 type State struct {
 	ExitCode int
 	Status   string

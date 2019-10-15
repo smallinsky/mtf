@@ -15,8 +15,7 @@ type MigrateDB struct {
 }
 
 type MigrateConfig struct {
-	Path string
-
+	Path     string
 	Password string
 	Port     string
 	Hostname string
@@ -33,6 +32,41 @@ func NewMigrate(cli *docker.Docker, config MigrateConfig) *MigrateDB {
 		config: config,
 		cli:    cli,
 	}
+}
+
+func BuildContainerConfig(config MigrateConfig) (*docker.ContainerConfig, error) {
+	var err error
+	if config.Path, err = filepath.Abs(config.Path); err != nil {
+		return nil, fmt.Errorf("failed to get absolute path for %v path", config.Path)
+	}
+	if _, err := os.Stat(config.Path); os.IsNotExist(err) {
+		return nil, fmt.Errorf("migraitn path: %v doesn't exist\n", config.Path)
+	}
+
+	var (
+		image    = "migrate/migrate"
+		name     = "migrate_mtf"
+		hostname = "migrate_mtf"
+		network  = "mtf_net"
+	)
+
+	return &docker.ContainerConfig{
+		Image:       image,
+		Name:        name,
+		Hostname:    hostname,
+		NetworkName: network,
+		CapAdd:      []string{"NET_RAW", "NET_ADMIN"},
+		Mounts: docker.Mounts{
+			docker.Mount{
+				Source: config.Path,
+				Target: "/migrations",
+			},
+		},
+		Cmd: []string{
+			"-path", "/migrations",
+			"-database", config.DBConnString(), "up",
+		},
+	}, nil
 }
 
 func (m *MigrateDB) Start() error {

@@ -18,6 +18,28 @@ type RedisConfig struct {
 	Labels   map[string]string
 }
 
+func BuildContainerConfig(config RedisConfig) (*docker.ContainerConfig, error) {
+	var (
+		image    = "bitnami/redis:4.0"
+		name     = "redis_mtf"
+		hostname = "redis_mtf"
+		network  = "mtf_net"
+	)
+
+	return &docker.ContainerConfig{
+		Name:     name,
+		Image:    image,
+		Hostname: hostname,
+		PortMap: docker.PortMap{
+			6379: 6379,
+		},
+		NetworkName: network,
+		Env: []string{
+			fmt.Sprintf("REDIS_PASSWORD=%s", config.Password),
+		},
+	}, nil
+}
+
 func NewRedis(cli *docker.Docker, config RedisConfig) *Redis {
 	return &Redis{
 		cfg: config,
