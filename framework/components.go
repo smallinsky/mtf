@@ -96,9 +96,9 @@ func StartWithSamePrio(cc []Comper) {
 			if err := c.Start(); err != nil {
 				log.Fatalf("failed to start %T, err %v\n", c, err)
 			}
-			if err := c.Ready(); err != nil {
-				log.Fatalf("faield to call ready for %T, err: %v", c, err)
-			}
+			//if err := c.Ready(); err != nil {
+			//	log.Fatalf("faield to call ready for %T, err: %v", c, err)
+			//}
 			fmt.Printf("%T is ready - %v\n", c, time.Since(start))
 		}(c)
 	}

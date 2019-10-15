@@ -5,7 +5,6 @@ import (
 )
 
 type Network struct {
-	startC chan struct{}
 	net    *docker.Network
 	cli    *docker.Docker
 	config NetworkConfig
@@ -19,7 +18,6 @@ type NetworkConfig struct {
 
 func New(cli *docker.Docker, config NetworkConfig) *Network {
 	return &Network{
-		startC: make(chan struct{}),
 		cli:    cli,
 		config: config,
 	}
@@ -34,7 +32,6 @@ func (n *Network) Start() error {
 		return err
 	}
 	n.net = net
-	close(n.startC)
 	return nil
 }
 
@@ -43,11 +40,6 @@ func (n *Network) Stop() error {
 		return nil
 	}
 	return n.net.Close()
-}
-
-func (n *Network) Ready() error {
-	<-n.startC
-	return nil
 }
 
 func (n *Network) StartPriority() int {

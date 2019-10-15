@@ -80,21 +80,6 @@ func (m *MigrateDB) Stop() error {
 	return m.container.Stop()
 }
 
-func (m *MigrateDB) Ready() error {
-	if m.container == nil {
-		return fmt.Errorf("got nil container")
-	}
-	state, err := m.container.GetState()
-	if err != nil {
-		return err
-	}
-	if state.ExitCode != 0 {
-		return fmt.Errorf("container has finished with status code %v", state.ExitCode)
-	}
-
-	return nil
-}
-
 func (m *MigrateDB) StartPriority() int {
 	return 3
 }

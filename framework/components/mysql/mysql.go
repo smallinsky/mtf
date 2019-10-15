@@ -20,12 +20,10 @@ func NewMySQL(cli *docker.Docker, config MySQLConfig) *MySQL {
 	return &MySQL{
 		cli:    cli,
 		config: config,
-		ready:  make(chan struct{}),
 	}
 }
 
 type MySQL struct {
-	ready     chan struct{}
 	container *docker.ContainerType
 	cli       *docker.Docker
 
@@ -33,8 +31,6 @@ type MySQL struct {
 }
 
 func (c *MySQL) Start() error {
-	defer close(c.ready)
-
 	var (
 		image    = "library/mysql"
 		name     = "mysql_mtf"
@@ -72,11 +68,6 @@ func (c *MySQL) Start() error {
 
 func (c *MySQL) Stop() error {
 	return c.container.Stop()
-}
-
-func (c *MySQL) Ready() error {
-	<-c.ready
-	return nil
 }
 
 func (m *MySQL) StartPriority() int {

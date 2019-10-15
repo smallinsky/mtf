@@ -6,8 +6,7 @@ import (
 
 func NewFTP(cli *docker.Docker) *FTP {
 	return &FTP{
-		cli:   cli,
-		ready: make(chan struct{}),
+		cli: cli,
 	}
 }
 
@@ -15,14 +14,11 @@ type FTPConfig struct {
 }
 
 type FTP struct {
-	ready     chan struct{}
 	cli       *docker.Docker
 	container *docker.ContainerType
 }
 
 func (c *FTP) Start() error {
-	defer close(c.ready)
-
 	var (
 		image    = "smallinsky/ftpserver"
 		name     = "ftp_mtf"
@@ -69,10 +65,6 @@ func (c *FTP) Start() error {
 
 func (c *FTP) Stop() error {
 	return c.container.Stop()
-}
-
-func (c *FTP) Ready() error {
-	return nil
 }
 
 func (m *FTP) StartPriority() int {

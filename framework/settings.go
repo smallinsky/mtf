@@ -66,6 +66,5 @@ func (s *Suite) WithFTP(c FTPSettings) *Suite {
 type Comper interface {
 	Start() error
 	Stop() error
-	Ready() error
 	StartPriority() int
 }

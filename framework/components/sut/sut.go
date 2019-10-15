@@ -22,8 +22,7 @@ type SutConfig struct {
 type SUT struct {
 	cli       *docker.Docker
 	container *docker.ContainerType
-
-	config SutConfig
+	config    SutConfig
 }
 
 func NewSUT(cli *docker.Docker, config SutConfig) *SUT {
@@ -103,10 +102,6 @@ func (c *SUT) Start() error {
 	c.container = result
 
 	return c.container.Start()
-}
-
-func (c *SUT) Ready() (err error) {
-	return nil
 }
 
 func (c *SUT) Logs() ([]byte, error) {

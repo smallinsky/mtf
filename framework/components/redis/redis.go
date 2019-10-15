@@ -10,8 +10,6 @@ type Redis struct {
 	container *docker.ContainerType
 	cli       *docker.Docker
 	cfg       RedisConfig
-
-	ready chan struct{}
 }
 
 type RedisConfig struct {
@@ -22,14 +20,12 @@ type RedisConfig struct {
 
 func NewRedis(cli *docker.Docker, config RedisConfig) *Redis {
 	return &Redis{
-		cfg:   config,
-		cli:   cli,
-		ready: make(chan struct{}),
+		cfg: config,
+		cli: cli,
 	}
 }
 
 func (c *Redis) Start() error {
-	defer close(c.ready)
 	var (
 		image    = "bitnami/redis:4.0"
 		name     = "redis_mtf"
@@ -68,7 +64,6 @@ func (c *Redis) Stop() error {
 }
 
 func (c *Redis) Ready() error {
-	<-c.ready
 	return nil
 }
 
