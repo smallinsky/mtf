@@ -25,18 +25,18 @@ func TestGRPCServer(t *testing.T) {
 		go func() {
 			svr.Receive(t,
 				match.Payload(
-					&oracle.AskDeepThroughRequest{
+					&oracle.AskDeepThoughtRequest{
 						Data: "Ultimate question",
 					},
 				),
 			)
 
-			svr.Send(t, &oracle.AskDeepThroughRespnse{
+			svr.Send(t, &oracle.AskDeepThoughtResponse{
 				Data: "42",
 			})
 		}()
 
-		resp, err := client.AskDeepThrough(context.Background(), &oracle.AskDeepThroughRequest{
+		resp, err := client.AskDeepThought(context.Background(), &oracle.AskDeepThoughtRequest{
 			Data: "Ultimate question",
 		})
 		if err != nil {
@@ -55,17 +55,17 @@ func TestGRPCServer(t *testing.T) {
 
 		go func() {
 			for i := 0; i < N; i++ {
-				svr.Receive(t, &oracle.AskDeepThroughRequest{
+				svr.Receive(t, &oracle.AskDeepThoughtRequest{
 					Data: fmt.Sprintf("Request: %v", i),
 				})
-				svr.Send(t, &oracle.AskDeepThroughRespnse{
+				svr.Send(t, &oracle.AskDeepThoughtResponse{
 					Data: fmt.Sprintf("Response: %v", i),
 				})
 			}
 		}()
 
 		for i := 0; i < N; i++ {
-			resp, err := client.AskDeepThrough(context.Background(), &oracle.AskDeepThroughRequest{
+			resp, err := client.AskDeepThought(context.Background(), &oracle.AskDeepThoughtRequest{
 				Data: fmt.Sprintf("Request: %v", i),
 			})
 			if err != nil {
@@ -81,21 +81,21 @@ func TestGRPCServer(t *testing.T) {
 	t.Run("ReciveMatchFn", func(t *testing.T) {
 		go func() {
 			svr.Receive(t, match.Fn(
-				func(r *oracle.AskDeepThroughRequest) {
+				func(r *oracle.AskDeepThoughtRequest) {
 					if r.Data != "Ultimate question" {
 						t.Fatalf("unexpected payload: %v", r.Data)
 					}
 				},
 			))
 
-			svr.Send(t, &oracle.AskDeepThroughRespnse{
+			svr.Send(t, &oracle.AskDeepThoughtResponse{
 				Data: "42",
 			})
 		}()
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 		defer cancel()
-		resp, err := client.AskDeepThrough(ctx, &oracle.AskDeepThroughRequest{
+		resp, err := client.AskDeepThought(ctx, &oracle.AskDeepThoughtRequest{
 			Data: "Ultimate question",
 		})
 		if err != nil {
@@ -122,16 +122,16 @@ func TestGRPCServerStart(t *testing.T) {
 		time.Sleep(time.Second * 0)
 		svr, _ := NewGRPCServerPort((*oracle.OracleServer)(nil), ":9991")
 		go func() {
-			svr.Receive(t, &oracle.AskDeepThroughRequest{
+			svr.Receive(t, &oracle.AskDeepThoughtRequest{
 				Data: "Ultimate question",
 			})
 
-			svr.Send(t, &oracle.AskDeepThroughRespnse{
+			svr.Send(t, &oracle.AskDeepThoughtResponse{
 				Data: "42",
 			})
 		}()
 
-		resp, err := client.AskDeepThrough(context.Background(), &oracle.AskDeepThroughRequest{
+		resp, err := client.AskDeepThought(context.Background(), &oracle.AskDeepThoughtRequest{
 			Data: "Ultimate question",
 		})
 		if err != nil {
