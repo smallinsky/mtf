@@ -17,16 +17,14 @@ type Pubsub struct {
 
 func BuildContainerConfig() (*docker.ContainerConfig, error) {
 	var (
-		image    = "adilsoncarvalho/gcloud-pubsub-emulator"
-		name     = "pubsub_mtf"
-		hostname = "pubsub_mtf"
-		network  = "mtf_net"
+		image   = "adilsoncarvalho/gcloud-pubsub-emulator"
+		name    = "pubsub_mtf"
+		network = "mtf_net"
 	)
 
 	return &docker.ContainerConfig{
-		Image:    image,
-		Name:     name,
-		Hostname: hostname,
+		Image: image,
+		Name:  name,
 		PortMap: docker.PortMap{
 			8085: 8085,
 		},
@@ -34,39 +32,6 @@ func BuildContainerConfig() (*docker.ContainerConfig, error) {
 		AttachIfExist: false,
 		WaitPolicy:    &docker.WaitForPort{Port: 8085},
 	}, nil
-}
-
-func (c *Pubsub) Start() error {
-	var (
-		image    = "adilsoncarvalho/gcloud-pubsub-emulator"
-		name     = "pubsub_mtf"
-		hostname = "pubsub_mtf"
-		network  = "mtf_net"
-	)
-
-	result, err := c.cli.NewContainer(docker.ContainerConfig{
-		Image:    image,
-		Name:     name,
-		Hostname: hostname,
-		PortMap: docker.PortMap{
-			8085: 8085,
-		},
-		NetworkName:   network,
-		AttachIfExist: false,
-		WaitPolicy:    &docker.WaitForPort{Port: 8085},
-	})
-	if err != nil {
-		return err
-	}
-
-	c.container = result
-
-	return c.container.Start()
-
-}
-
-func (c *Pubsub) Stop() error {
-	return c.container.Stop()
 }
 
 func (m *Pubsub) StartPriority() int {

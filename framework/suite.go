@@ -66,14 +66,14 @@ func (s *Suite) Run() {
 
 	for _, container := range containers {
 		start := time.Now()
-		fmt.Printf("    Starting %s ", container.Name())
+		fmt.Printf("  - Starting %s ", container.Name())
 		err := container.Start()
 		if err != nil {
 			log.Fatalf("\nstart err: %v", err)
 		}
 		fmt.Printf("-  %v\n", time.Now().Sub(start))
 	}
-	fmt.Printf("=== TEST RUN DONE - %v\n", time.Now().Sub(start))
+	fmt.Printf("=== TEST RUN DONE - %v\n\n", time.Now().Sub(start))
 	s.mRunFn()
 
 	for _, container := range containers {

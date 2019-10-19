@@ -133,6 +133,10 @@ func (c *Docker) NewContainer(config ContainerConfig) (*ContainerType, error) {
 
 	env := append(config.Env, "DOCKER_HOST_ADDR="+hostAddr)
 
+	if config.Hostname == "" {
+		config.Hostname = config.Name
+	}
+
 	createConf := &container.Config{
 		Hostname:     config.Hostname,
 		AttachStdin:  true,
