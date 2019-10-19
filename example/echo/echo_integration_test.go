@@ -93,7 +93,7 @@ func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
 	st.oraclePort.Receive(t, &pbo.AskDeepThroughRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	st.oraclePort.Send(t, &pbo.AskDeepThroughRespnse{
+	st.oraclePort.Send(t, &pbo.AskDeepThrougResponse{
 		Data: "42",
 	})
 	st.echoPort.Receive(t, &pb.AskOracleResponse{

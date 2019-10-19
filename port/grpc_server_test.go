@@ -31,7 +31,7 @@ func TestGRPCServer(t *testing.T) {
 				),
 			)
 
-			svr.Send(t, &oracle.AskDeepThroughRespnse{
+			svr.Send(t, &oracle.AskDeepThroughResponse{
 				Data: "42",
 			})
 		}()
@@ -58,7 +58,7 @@ func TestGRPCServer(t *testing.T) {
 				svr.Receive(t, &oracle.AskDeepThroughRequest{
 					Data: fmt.Sprintf("Request: %v", i),
 				})
-				svr.Send(t, &oracle.AskDeepThroughRespnse{
+				svr.Send(t, &oracle.AskDeepThroughResponse{
 					Data: fmt.Sprintf("Response: %v", i),
 				})
 			}
@@ -88,7 +88,7 @@ func TestGRPCServer(t *testing.T) {
 				},
 			))
 
-			svr.Send(t, &oracle.AskDeepThroughRespnse{
+			svr.Send(t, &oracle.AskDeepThroughResponse{
 				Data: "42",
 			})
 		}()
@@ -126,7 +126,7 @@ func TestGRPCServerStart(t *testing.T) {
 				Data: "Ultimate question",
 			})
 
-			svr.Send(t, &oracle.AskDeepThroughRespnse{
+			svr.Send(t, &oracle.AskDeepThroughResponse{
 				Data: "42",
 			})
 		}()
