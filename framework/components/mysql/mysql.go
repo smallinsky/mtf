@@ -12,15 +12,7 @@ type MySQLConfig struct {
 	Hostname string
 	Network  string
 
-	Labels        map[string]string
 	AttachIfExist bool
-}
-
-type MySQL struct {
-	container *docker.ContainerType
-	cli       *docker.Docker
-
-	config MySQLConfig
 }
 
 func BuildContainerConfig(config MySQLConfig) (*docker.ContainerConfig, error) {

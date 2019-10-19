@@ -9,7 +9,6 @@ import (
 type RedisConfig struct {
 	Password string
 	Port     string
-	Labels   map[string]string
 }
 
 func BuildContainerConfig(config RedisConfig) (*docker.ContainerConfig, error) {

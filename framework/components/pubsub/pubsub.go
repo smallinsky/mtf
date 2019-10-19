@@ -4,17 +4,6 @@ import (
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
-func NewPubsub(cli *docker.Docker) *Pubsub {
-	return &Pubsub{
-		cli: cli,
-	}
-}
-
-type Pubsub struct {
-	cli       *docker.Docker
-	container *docker.ContainerType
-}
-
 func BuildContainerConfig() (*docker.ContainerConfig, error) {
 	var (
 		image   = "adilsoncarvalho/gcloud-pubsub-emulator"
@@ -32,8 +21,4 @@ func BuildContainerConfig() (*docker.ContainerConfig, error) {
 		AttachIfExist: false,
 		WaitPolicy:    &docker.WaitForPort{Port: 8085},
 	}, nil
-}
-
-func (m *Pubsub) StartPriority() int {
-	return 1
 }
