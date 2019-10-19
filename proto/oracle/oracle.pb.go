@@ -23,76 +23,76 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-type AskDeepThroughRequest struct {
+type AskDeepThoughtRequest struct {
 	Data                 string   `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *AskDeepThroughRequest) Reset()         { *m = AskDeepThroughRequest{} }
-func (m *AskDeepThroughRequest) String() string { return proto.CompactTextString(m) }
-func (*AskDeepThroughRequest) ProtoMessage()    {}
-func (*AskDeepThroughRequest) Descriptor() ([]byte, []int) {
+func (m *AskDeepThoughtRequest) Reset()         { *m = AskDeepThoughtRequest{} }
+func (m *AskDeepThoughtRequest) String() string { return proto.CompactTextString(m) }
+func (*AskDeepThoughtRequest) ProtoMessage()    {}
+func (*AskDeepThoughtRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_oracle_d776b047493fce65, []int{0}
 }
-func (m *AskDeepThroughRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_AskDeepThroughRequest.Unmarshal(m, b)
+func (m *AskDeepThoughtRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AskDeepThoughtRequest.Unmarshal(m, b)
 }
-func (m *AskDeepThroughRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_AskDeepThroughRequest.Marshal(b, m, deterministic)
+func (m *AskDeepThoughtRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AskDeepThoughtRequest.Marshal(b, m, deterministic)
 }
-func (dst *AskDeepThroughRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AskDeepThroughRequest.Merge(dst, src)
+func (dst *AskDeepThoughtRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AskDeepThoughtRequest.Merge(dst, src)
 }
-func (m *AskDeepThroughRequest) XXX_Size() int {
-	return xxx_messageInfo_AskDeepThroughRequest.Size(m)
+func (m *AskDeepThoughtRequest) XXX_Size() int {
+	return xxx_messageInfo_AskDeepThoughtRequest.Size(m)
 }
-func (m *AskDeepThroughRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_AskDeepThroughRequest.DiscardUnknown(m)
+func (m *AskDeepThoughtRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_AskDeepThoughtRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AskDeepThroughRequest proto.InternalMessageInfo
+var xxx_messageInfo_AskDeepThoughtRequest proto.InternalMessageInfo
 
-func (m *AskDeepThroughRequest) GetData() string {
+func (m *AskDeepThoughtRequest) GetData() string {
 	if m != nil {
 		return m.Data
 	}
 	return ""
 }
 
-type AskDeepThroughResponse struct {
+type AskDeepThoughtResponse struct {
 	Data                 string   `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *AskDeepThroughResponse) Reset()         { *m = AskDeepThroughResponse{} }
-func (m *AskDeepThroughResponse) String() string { return proto.CompactTextString(m) }
-func (*AskDeepThroughResponse) ProtoMessage()    {}
-func (*AskDeepThroughResponse) Descriptor() ([]byte, []int) {
+func (m *AskDeepThoughtResponse) Reset()         { *m = AskDeepThoughtResponse{} }
+func (m *AskDeepThoughtResponse) String() string { return proto.CompactTextString(m) }
+func (*AskDeepThoughtResponse) ProtoMessage()    {}
+func (*AskDeepThoughtResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_oracle_d776b047493fce65, []int{1}
 }
-func (m *AskDeepThroughResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_AskDeepThroughResponse.Unmarshal(m, b)
+func (m *AskDeepThoughtResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AskDeepThoughtResponse.Unmarshal(m, b)
 }
-func (m *AskDeepThroughResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_AskDeepThroughResponse.Marshal(b, m, deterministic)
+func (m *AskDeepThoughtResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AskDeepThoughtResponse.Marshal(b, m, deterministic)
 }
-func (dst *AskDeepThroughResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AskDeepThroughResponse.Merge(dst, src)
+func (dst *AskDeepThoughtResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AskDeepThoughtResponse.Merge(dst, src)
 }
-func (m *AskDeepThroughResponse) XXX_Size() int {
-	return xxx_messageInfo_AskDeepThroughResponse.Size(m)
+func (m *AskDeepThoughtResponse) XXX_Size() int {
+	return xxx_messageInfo_AskDeepThoughtResponse.Size(m)
 }
-func (m *AskDeepThroughResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_AskDeepThroughResponse.DiscardUnknown(m)
+func (m *AskDeepThoughtResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_AskDeepThoughtResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AskDeepThroughResponse proto.InternalMessageInfo
+var xxx_messageInfo_AskDeepThoughtResponse proto.InternalMessageInfo
 
-func (m *AskDeepThroughResponse) GetData() string {
+func (m *AskDeepThoughtResponse) GetData() string {
 	if m != nil {
 		return m.Data
 	}
@@ -100,8 +100,8 @@ func (m *AskDeepThroughResponse) GetData() string {
 }
 
 func init() {
-	proto.RegisterType((*AskDeepThroughRequest)(nil), "oracle.AskDeepThroughRequest")
-	proto.RegisterType((*AskDeepThroughResponse)(nil), "oracle.AskDeepThroughResponse")
+	proto.RegisterType((*AskDeepThoughtRequest)(nil), "oracle.AskDeepThoughtRequest")
+	proto.RegisterType((*AskDeepThoughtResponse)(nil), "oracle.AskDeepThoughtResponse")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -116,7 +116,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type OracleClient interface {
-	AskDeepThrough(ctx context.Context, in *AskDeepThroughRequest, opts ...grpc.CallOption) (*AskDeepThroughResponse, error)
+	AskDeepThought(ctx context.Context, in *AskDeepThoughtRequest, opts ...grpc.CallOption) (*AskDeepThoughtResponse, error)
 }
 
 type oracleClient struct {
@@ -127,9 +127,9 @@ func NewOracleClient(cc *grpc.ClientConn) OracleClient {
 	return &oracleClient{cc}
 }
 
-func (c *oracleClient) AskDeepThrough(ctx context.Context, in *AskDeepThroughRequest, opts ...grpc.CallOption) (*AskDeepThroughResponse, error) {
-	out := new(AskDeepThroughResponse)
-	err := c.cc.Invoke(ctx, "/oracle.Oracle/AskDeepThrough", in, out, opts...)
+func (c *oracleClient) AskDeepThought(ctx context.Context, in *AskDeepThoughtRequest, opts ...grpc.CallOption) (*AskDeepThoughtResponse, error) {
+	out := new(AskDeepThoughtResponse)
+	err := c.cc.Invoke(ctx, "/oracle.Oracle/AskDeepThought", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -138,27 +138,27 @@ func (c *oracleClient) AskDeepThrough(ctx context.Context, in *AskDeepThroughReq
 
 // OracleServer is the server API for Oracle service.
 type OracleServer interface {
-	AskDeepThrough(context.Context, *AskDeepThroughRequest) (*AskDeepThroughResponse, error)
+	AskDeepThought(context.Context, *AskDeepThoughtRequest) (*AskDeepThoughtResponse, error)
 }
 
 func RegisterOracleServer(s *grpc.Server, srv OracleServer) {
 	s.RegisterService(&_Oracle_serviceDesc, srv)
 }
 
-func _Oracle_AskDeepThrough_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AskDeepThroughRequest)
+func _Oracle_AskDeepThought_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AskDeepThoughtRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(OracleServer).AskDeepThrough(ctx, in)
+		return srv.(OracleServer).AskDeepThought(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/oracle.Oracle/AskDeepThrough",
+		FullMethod: "/oracle.Oracle/AskDeepThought",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OracleServer).AskDeepThrough(ctx, req.(*AskDeepThroughRequest))
+		return srv.(OracleServer).AskDeepThought(ctx, req.(*AskDeepThoughtRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -168,8 +168,8 @@ var _Oracle_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*OracleServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "AskDeepThrough",
-			Handler:    _Oracle_AskDeepThrough_Handler,
+			MethodName: "AskDeepThought",
+			Handler:    _Oracle_AskDeepThought_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

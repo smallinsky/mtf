@@ -3,13 +3,13 @@ syntax = "proto3";
 package oracle;
 
 service Oracle {
-	rpc AskDeepThrough(AskDeepThroughRequest) returns (AskDeepThroughResponse) {}
+	rpc AskDeepThought(AskDeepThoughtRequest) returns (AskDeepThoughtResponse) {}
 }
 
-message AskDeepThroughRequest {
+message AskDeepThoughtRequest {
 	string data = 1;
 }
 
-message AskDeepThroughResponse {
+message AskDeepThoughtResponse {
 	string data = 1;
 }

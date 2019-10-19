@@ -104,7 +104,7 @@ func (s *server) AskRedis(ctx context.Context, req *pb.AskRedisRequest) (*pb.Ask
 
 func (s *server) AskOracle(ctx context.Context, req *pb.AskOracleRequest) (*pb.AskOracleResponse, error) {
 	log.Println("AskOrace ongoing....")
-	resp, err := s.OracleClient.AskDeepThrough(context.Background(), &pbo.AskDeepThroughRequest{
+	resp, err := s.OracleClient.AskDeepThought(context.Background(), &pbo.AskDeepThoughtRequest{
 		Data: req.GetData(),
 	})
 	if err != nil {
