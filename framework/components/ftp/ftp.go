@@ -4,36 +4,21 @@ import (
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
-func NewFTP(cli *docker.Docker) *FTP {
-	return &FTP{
-		cli:   cli,
-		ready: make(chan struct{}),
-	}
-}
-
 type FTPConfig struct {
+	User     string
+	Password string
 }
 
-type FTP struct {
-	ready     chan struct{}
-	cli       *docker.Docker
-	container *docker.ContainerType
-}
-
-func (c *FTP) Start() error {
-	defer close(c.ready)
-
+func BuildContainerConfig(cfg FTPConfig) (*docker.ContainerConfig, error) {
 	var (
-		image    = "smallinsky/ftpserver"
-		name     = "ftp_mtf"
-		hostname = "ftp_mtf"
-		network  = "mtf_net"
+		image   = "smallinsky/ftpserver"
+		name    = "ftp_mtf"
+		network = "mtf_net"
 	)
 
-	result, err := c.cli.NewContainer(docker.ContainerConfig{
+	return &docker.ContainerConfig{
 		Image:       image,
 		Name:        name,
-		Hostname:    hostname,
 		NetworkName: network,
 		Env: []string{
 			"FTP_USER=test",
@@ -56,25 +41,5 @@ func (c *FTP) Start() error {
 		},
 		AttachIfExist: false,
 		WaitPolicy:    &docker.WaitForPort{Port: 21},
-	})
-	if err != nil {
-		return err
-	}
-
-	c.container = result
-
-	return c.container.Start()
-
-}
-
-func (c *FTP) Stop() error {
-	return c.container.Stop()
-}
-
-func (c *FTP) Ready() error {
-	return nil
-}
-
-func (m *FTP) StartPriority() int {
-	return 1
+	}, nil
 }

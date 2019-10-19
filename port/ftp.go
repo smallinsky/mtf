@@ -83,7 +83,7 @@ func (p *FTPPort) Receive(ctx context.Context) (interface{}, error) {
 			Path:    msg.GetPath(),
 			Payload: msg.GetContent(),
 		}, nil
-	case <-time.NewTimer(time.Second * 2).C:
+	case <-time.NewTimer(time.Second * 6).C:
 		return nil, errors.Errorf("fialed to recive message, deadline exeeded")
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"log"
 	"reflect"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -14,9 +13,6 @@ import (
 	"github.com/smallinsky/mtf/pkg/cert"
 	"github.com/smallinsky/mtf/pkg/docker"
 )
-
-var mu sync.Mutex
-var suite *Suite
 
 var GetDockerHostAddr = docker.HostAddr
 
@@ -32,9 +28,8 @@ type Suite struct {
 }
 
 func (s *Suite) Run() {
-	mu.Lock()
-	suite = s
-	defer mu.Unlock()
+	fmt.Println("=== PREPERING TEST ENV")
+	start := time.Now()
 
 	kvpair, err := cert.GenCert([]string{"localhost", "host.docker.internal"})
 	if err != nil {
@@ -45,16 +40,49 @@ func (s *Suite) Run() {
 		log.Fatalf("[ERR] failed to write certs: %v ", err)
 	}
 
-	components := s.getComponents()
+	cli, err := docker.New()
+	if err != nil {
+		panic(err)
+	}
+	network, err := cli.CreateNetwork("mtf_net")
+	if err != nil {
+		log.Fatalf("faield to get docker client: %v", err)
+	}
+	defer network.Remove()
 
-	start := time.Now()
-	fmt.Println("=== PREPERING TEST ENV")
-	components.Start()
-	start = time.Now()
-	fmt.Printf("=== PREPERING TEST ENV DONE - %v\n\n", time.Now().Sub(start))
+	containersConfig, err := s.GetContainersConfig()
+	if err != nil {
+		log.Fatalf("faield to get containers settings: %v", err)
+	}
+
+	var containers []*docker.ContainerType
+	for _, conf := range containersConfig {
+		container, err := cli.NewContainer(*conf)
+		if err != nil {
+			log.Fatalf("[ERR] failed to run container: %v", err)
+		}
+		containers = append(containers, container)
+	}
+
+	for _, container := range containers {
+		start := time.Now()
+		fmt.Printf("  - Starting %s ", container.Name())
+		err := container.Start()
+		if err != nil {
+			log.Fatalf("\nstart err: %v", err)
+		}
+		fmt.Printf("-  %v\n", time.Now().Sub(start))
+	}
+	fmt.Printf("=== TEST RUN DONE - %v\n\n", time.Now().Sub(start))
 	s.mRunFn()
-	fmt.Printf("=== TEST RUN DONE - %v\n", time.Now().Sub(start))
-	components.Stop()
+
+	for _, container := range containers {
+		err := container.Stop()
+		if err != nil {
+			log.Fatalf("stop err: %v", err)
+		}
+	}
+
 }
 
 type runFn func() int

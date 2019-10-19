@@ -16,69 +16,37 @@ type MySQLConfig struct {
 	AttachIfExist bool
 }
 
-func NewMySQL(cli *docker.Docker, config MySQLConfig) *MySQL {
-	return &MySQL{
-		cli:    cli,
-		config: config,
-		ready:  make(chan struct{}),
-	}
-}
-
 type MySQL struct {
-	ready     chan struct{}
 	container *docker.ContainerType
 	cli       *docker.Docker
 
 	config MySQLConfig
 }
 
-func (c *MySQL) Start() error {
-	defer close(c.ready)
-
+func BuildContainerConfig(config MySQLConfig) (*docker.ContainerConfig, error) {
 	var (
-		image    = "library/mysql"
-		name     = "mysql_mtf"
-		hostname = "mysql_mtf"
-		network  = "mtf_net"
+		image   = "library/mysql"
+		name    = "mysql_mtf"
+		network = "mtf_net"
 	)
 
-	cmd := fmt.Sprintf("mysqladmin -h localhost status --password=%s", c.config.Password)
+	cmd := fmt.Sprintf("mysqladmin -h localhost status --password=%s", config.Password)
 
-	result, err := c.cli.NewContainer(docker.ContainerConfig{
+	return &docker.ContainerConfig{
 		Image:       image,
 		Name:        name,
-		Hostname:    hostname,
 		NetworkName: network,
 		PortMap: docker.PortMap{
 			3306: 3306,
 		},
 		Env: []string{
-			fmt.Sprintf("MYSQL_DATABASE=%s", c.config.Database),
-			fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", c.config.Password),
+			fmt.Sprintf("MYSQL_DATABASE=%s", config.Database),
+			fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", config.Password),
 		},
 		Cmd: []string{
 			"--default-authentication-plugin=mysql_native_password",
 		},
-		AttachIfExist: c.config.AttachIfExist,
+		AttachIfExist: config.AttachIfExist,
 		WaitPolicy:    &docker.WaitForCommand{Command: cmd},
-	})
-	if err != nil {
-		return err
-	}
-	c.container = result
-
-	return c.container.Start()
-}
-
-func (c *MySQL) Stop() error {
-	return c.container.Stop()
-}
-
-func (c *MySQL) Ready() error {
-	<-c.ready
-	return nil
-}
-
-func (m *MySQL) StartPriority() int {
-	return 1
+	}, nil
 }

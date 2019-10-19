@@ -133,6 +133,10 @@ func (c *Docker) NewContainer(config ContainerConfig) (*ContainerType, error) {
 
 	env := append(config.Env, "DOCKER_HOST_ADDR="+hostAddr)
 
+	if config.Hostname == "" {
+		config.Hostname = config.Name
+	}
+
 	createConf := &container.Config{
 		Hostname:     config.Hostname,
 		AttachStdin:  true,
@@ -173,4 +177,29 @@ func (c *Docker) NewContainer(config ContainerConfig) (*ContainerType, error) {
 		config:     config,
 		WaitPolicy: config.WaitPolicy,
 	}, nil
+}
+
+func (c *Docker) CreateNetwork(name string) (*Network, error) {
+	result, err := c.cli.NetworkInspect(context.Background(), name)
+	if err == nil {
+		return &Network{
+			ID:  result.ID,
+			cli: c.cli,
+		}, nil
+	} else if !client.IsErrNotFound(err) {
+		return nil, err
+	}
+
+	net, err := c.cli.NetworkCreate(context.Background(), name, types.NetworkCreate{
+		CheckDuplicate: true,
+	})
+	return &Network{
+		ID:  net.ID,
+		cli: c.cli,
+	}, nil
+}
+
+func (n *Network) Remove() error {
+	//	return n.cli.NetworkRemove(context.Background(), n.ID)
+	return nil
 }
