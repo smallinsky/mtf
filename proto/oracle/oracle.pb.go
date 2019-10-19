@@ -34,7 +34,7 @@ func (m *AskDeepThroughRequest) Reset()         { *m = AskDeepThroughRequest{} }
 func (m *AskDeepThroughRequest) String() string { return proto.CompactTextString(m) }
 func (*AskDeepThroughRequest) ProtoMessage()    {}
 func (*AskDeepThroughRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_oracle_50eff865dd064971, []int{0}
+	return fileDescriptor_oracle_d776b047493fce65, []int{0}
 }
 func (m *AskDeepThroughRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AskDeepThroughRequest.Unmarshal(m, b)
@@ -61,38 +61,38 @@ func (m *AskDeepThroughRequest) GetData() string {
 	return ""
 }
 
-type AskDeepThroughRespnse struct {
+type AskDeepThroughResponse struct {
 	Data                 string   `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *AskDeepThroughRespnse) Reset()         { *m = AskDeepThroughRespnse{} }
-func (m *AskDeepThroughRespnse) String() string { return proto.CompactTextString(m) }
-func (*AskDeepThroughRespnse) ProtoMessage()    {}
-func (*AskDeepThroughRespnse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_oracle_50eff865dd064971, []int{1}
+func (m *AskDeepThroughResponse) Reset()         { *m = AskDeepThroughResponse{} }
+func (m *AskDeepThroughResponse) String() string { return proto.CompactTextString(m) }
+func (*AskDeepThroughResponse) ProtoMessage()    {}
+func (*AskDeepThroughResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_oracle_d776b047493fce65, []int{1}
 }
-func (m *AskDeepThroughRespnse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_AskDeepThroughRespnse.Unmarshal(m, b)
+func (m *AskDeepThroughResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AskDeepThroughResponse.Unmarshal(m, b)
 }
-func (m *AskDeepThroughRespnse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_AskDeepThroughRespnse.Marshal(b, m, deterministic)
+func (m *AskDeepThroughResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AskDeepThroughResponse.Marshal(b, m, deterministic)
 }
-func (dst *AskDeepThroughRespnse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AskDeepThroughRespnse.Merge(dst, src)
+func (dst *AskDeepThroughResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AskDeepThroughResponse.Merge(dst, src)
 }
-func (m *AskDeepThroughRespnse) XXX_Size() int {
-	return xxx_messageInfo_AskDeepThroughRespnse.Size(m)
+func (m *AskDeepThroughResponse) XXX_Size() int {
+	return xxx_messageInfo_AskDeepThroughResponse.Size(m)
 }
-func (m *AskDeepThroughRespnse) XXX_DiscardUnknown() {
-	xxx_messageInfo_AskDeepThroughRespnse.DiscardUnknown(m)
+func (m *AskDeepThroughResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_AskDeepThroughResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AskDeepThroughRespnse proto.InternalMessageInfo
+var xxx_messageInfo_AskDeepThroughResponse proto.InternalMessageInfo
 
-func (m *AskDeepThroughRespnse) GetData() string {
+func (m *AskDeepThroughResponse) GetData() string {
 	if m != nil {
 		return m.Data
 	}
@@ -101,7 +101,7 @@ func (m *AskDeepThroughRespnse) GetData() string {
 
 func init() {
 	proto.RegisterType((*AskDeepThroughRequest)(nil), "oracle.AskDeepThroughRequest")
-	proto.RegisterType((*AskDeepThroughRespnse)(nil), "oracle.AskDeepThroughRespnse")
+	proto.RegisterType((*AskDeepThroughResponse)(nil), "oracle.AskDeepThroughResponse")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -116,7 +116,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type OracleClient interface {
-	AskDeepThrough(ctx context.Context, in *AskDeepThroughRequest, opts ...grpc.CallOption) (*AskDeepThroughRespnse, error)
+	AskDeepThrough(ctx context.Context, in *AskDeepThroughRequest, opts ...grpc.CallOption) (*AskDeepThroughResponse, error)
 }
 
 type oracleClient struct {
@@ -127,8 +127,8 @@ func NewOracleClient(cc *grpc.ClientConn) OracleClient {
 	return &oracleClient{cc}
 }
 
-func (c *oracleClient) AskDeepThrough(ctx context.Context, in *AskDeepThroughRequest, opts ...grpc.CallOption) (*AskDeepThroughRespnse, error) {
-	out := new(AskDeepThroughRespnse)
+func (c *oracleClient) AskDeepThrough(ctx context.Context, in *AskDeepThroughRequest, opts ...grpc.CallOption) (*AskDeepThroughResponse, error) {
+	out := new(AskDeepThroughResponse)
 	err := c.cc.Invoke(ctx, "/oracle.Oracle/AskDeepThrough", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -138,7 +138,7 @@ func (c *oracleClient) AskDeepThrough(ctx context.Context, in *AskDeepThroughReq
 
 // OracleServer is the server API for Oracle service.
 type OracleServer interface {
-	AskDeepThrough(context.Context, *AskDeepThroughRequest) (*AskDeepThroughRespnse, error)
+	AskDeepThrough(context.Context, *AskDeepThroughRequest) (*AskDeepThroughResponse, error)
 }
 
 func RegisterOracleServer(s *grpc.Server, srv OracleServer) {
@@ -176,17 +176,17 @@ var _Oracle_serviceDesc = grpc.ServiceDesc{
 	Metadata: "proto/oracle/oracle.proto",
 }
 
-func init() { proto.RegisterFile("proto/oracle/oracle.proto", fileDescriptor_oracle_50eff865dd064971) }
+func init() { proto.RegisterFile("proto/oracle/oracle.proto", fileDescriptor_oracle_d776b047493fce65) }
 
-var fileDescriptor_oracle_50eff865dd064971 = []byte{
-	// 131 bytes of a gzipped FileDescriptorProto
+var fileDescriptor_oracle_d776b047493fce65 = []byte{
+	// 137 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x2c, 0x28, 0xca, 0x2f,
 	0xc9, 0xd7, 0xcf, 0x2f, 0x4a, 0x4c, 0xce, 0x49, 0x85, 0x52, 0x7a, 0x60, 0x31, 0x21, 0x36, 0x08,
 	0x4f, 0x49, 0x9b, 0x4b, 0xd4, 0xb1, 0x38, 0xdb, 0x25, 0x35, 0xb5, 0x20, 0x24, 0xa3, 0x28, 0xbf,
 	0x34, 0x3d, 0x23, 0x28, 0xb5, 0xb0, 0x34, 0xb5, 0xb8, 0x44, 0x48, 0x88, 0x8b, 0x25, 0x25, 0xb1,
-	0x24, 0x51, 0x82, 0x51, 0x81, 0x51, 0x83, 0x33, 0x08, 0xcc, 0xc6, 0xa6, 0xb8, 0xb8, 0x20, 0xaf,
-	0x38, 0x15, 0x9b, 0x62, 0xa3, 0x28, 0x2e, 0x36, 0x7f, 0xb0, 0x1d, 0x42, 0x01, 0x5c, 0x7c, 0xa8,
-	0xda, 0x84, 0x64, 0xf5, 0xa0, 0x8e, 0xc1, 0x6a, 0xb7, 0x14, 0x4e, 0x69, 0xb0, 0x6d, 0x4a, 0x0c,
-	0x49, 0x6c, 0x60, 0x4f, 0x18, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0xe5, 0xca, 0x24, 0xd0, 0xe1,
-	0x00, 0x00, 0x00,
+	0x24, 0x51, 0x82, 0x51, 0x81, 0x51, 0x83, 0x33, 0x08, 0xcc, 0x56, 0xd2, 0xe1, 0x12, 0x43, 0x57,
+	0x5c, 0x5c, 0x90, 0x9f, 0x57, 0x9c, 0x8a, 0x4d, 0xb5, 0x51, 0x34, 0x17, 0x9b, 0x3f, 0xd8, 0x12,
+	0xa1, 0x40, 0x2e, 0x3e, 0x54, 0x7d, 0x42, 0xb2, 0x7a, 0x50, 0xd7, 0x60, 0xb5, 0x5c, 0x4a, 0x0e,
+	0x97, 0x34, 0xc4, 0x3a, 0x25, 0x86, 0x24, 0x36, 0xb0, 0x37, 0x8c, 0x01, 0x01, 0x00, 0x00, 0xff,
+	0xff, 0xa5, 0x41, 0xe2, 0x6f, 0xe3, 0x00, 0x00, 0x00,
 }
