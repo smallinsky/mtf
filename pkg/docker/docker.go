@@ -131,7 +131,7 @@ func (c *Docker) NewContainer(config ContainerConfig) (*ContainerType, error) {
 		}
 	}
 
-	env := append(config.Env, "DOCKER_HOST_ADDR="+hostAddr)
+	config.Env = append(config.Env, "DOCKER_HOST_ADDR="+hostAddr)
 
 	if config.Hostname == "" {
 		config.Hostname = config.Name
@@ -142,12 +142,16 @@ func (c *Docker) NewContainer(config ContainerConfig) (*ContainerType, error) {
 		AttachStdin:  true,
 		AttachStdout: true,
 		ExposedPorts: exposedPorts,
-		Env:          env,
+		Env:          config.Env,
 		Image:        config.Image,
 		Entrypoint:   config.EntryPoint,
 		Labels:       config.Labels,
 		Cmd:          config.Cmd,
 		Healthcheck:  hc,
+	}
+
+	if config.Priviliged {
+		config.CapAdd = append(config.CapAdd, []string{"NET_RAW", "NET_ADMIN"}...)
 	}
 
 	hostConf := &container.HostConfig{

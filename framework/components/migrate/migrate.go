@@ -15,6 +15,24 @@ type MigrateConfig struct {
 	Hostname string
 	Database string
 	Labels   map[string]string
+
+	absoltePath string
+}
+
+func (c *MigrateConfig) Build() error {
+	stat, err := os.Stat(c.Path)
+	if err != nil {
+		return err
+	}
+	if !stat.IsDir() {
+		return fmt.Errorf("path is not directory")
+	}
+
+	c.absoltePath, err = filepath.Abs(c.Path)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *MigrateConfig) DBConnString() string {
@@ -22,12 +40,8 @@ func (c *MigrateConfig) DBConnString() string {
 }
 
 func BuildContainerConfig(config MigrateConfig) (*docker.ContainerConfig, error) {
-	var err error
-	if config.Path, err = filepath.Abs(config.Path); err != nil {
-		return nil, fmt.Errorf("failed to get absolute path for %v path", config.Path)
-	}
-	if _, err := os.Stat(config.Path); os.IsNotExist(err) {
-		return nil, fmt.Errorf("migraitn path: %v doesn't exist\n", config.Path)
+	if err := config.Build(); err != nil {
+		return nil, err
 	}
 
 	var (
@@ -43,7 +57,7 @@ func BuildContainerConfig(config MigrateConfig) (*docker.ContainerConfig, error)
 		CapAdd:      []string{"NET_RAW", "NET_ADMIN"},
 		Mounts: docker.Mounts{
 			docker.Mount{
-				Source: config.Path,
+				Source: config.absoltePath,
 				Target: "/migrations",
 			},
 		},
