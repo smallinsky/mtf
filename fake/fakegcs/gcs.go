@@ -2,7 +2,6 @@ package fakegcs
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -17,9 +16,8 @@ type GCStorage struct {
 }
 
 func (f *GCStorage) handleInsert(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	switch vars["uploadType"] {
+	uploadType := r.URL.Query().Get("uploadType")
+	switch uploadType {
 	case "multipart":
 		if err := f.handleMultipart(w, r); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -30,7 +28,6 @@ func (f *GCStorage) handleInsert(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "not supported content", http.StatusBadRequest)
 	}
-	w.WriteHeader(http.StatusNoContent)
 }
 
 func (f *GCStorage) handleMultipart(rw http.ResponseWriter, r *http.Request) error {
@@ -56,6 +53,7 @@ func (f *GCStorage) handleMultipart(rw http.ResponseWriter, r *http.Request) err
 		}
 		return err
 	}
+
 	defer partContent.Close()
 	if f.OnObjectInsert != nil {
 		f.OnObjectInsert(BucketObject{
@@ -63,7 +61,6 @@ func (f *GCStorage) handleMultipart(rw http.ResponseWriter, r *http.Request) err
 			Bucket: obj.Bucket,
 		}, partContent)
 	}
-	fmt.Println("handle write")
 	return nil
 }
 
@@ -104,9 +101,13 @@ func (f GCStorage) handleToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func (f GCStorage) AddMuxRoute(r *mux.Router) *mux.Router {
-	r.Path("/b/{bucket:.+}/{object}/o").Methods(http.MethodPost).HandlerFunc(f.handleInsert)
+	r.Path("/b/{bucket:.+}/o").Methods(http.MethodPost).HandlerFunc(f.handleInsert)
 	r.Path("/{bucket:.+}/{object}").Methods(http.MethodGet).HandlerFunc(f.handleGet)
 	r.Path("/token").Methods(http.MethodPost).HandlerFunc(f.handleToken)
+
+	r.NotFoundHandler = http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		panic("not found")
+	})
 	return r
 }
 
