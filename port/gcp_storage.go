@@ -13,11 +13,10 @@ import (
 )
 
 func NewGCStoragePort() *GCStorage {
-	p := &GCStorage{
+	return &GCStorage{
 		inEvent:  make(chan interface{}),
 		outEvent: make(chan interface{}),
 	}
-	return p
 }
 
 func (s GCStorage) onObjectInsert(bo fakegcs.BucketObject, r io.Reader) error {

@@ -101,13 +101,9 @@ func (f GCStorage) handleToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func (f GCStorage) AddMuxRoute(r *mux.Router) *mux.Router {
-	r.Path("/b/{bucket:.+}/o").Methods(http.MethodPost).HandlerFunc(f.handleInsert)
+	r.Path("/b/{bucket:.+}/o").Queries("uploadType", "{uploadType}").Methods(http.MethodPost).HandlerFunc(f.handleInsert)
 	r.Path("/{bucket:.+}/{object}").Methods(http.MethodGet).HandlerFunc(f.handleGet)
 	r.Path("/token").Methods(http.MethodPost).HandlerFunc(f.handleToken)
-
-	r.NotFoundHandler = http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		panic("not found")
-	})
 	return r
 }
 
