@@ -33,6 +33,7 @@ func NewPubsub(projectID, addr string, config PubSubConfig) (*Port, error) {
 
 	ps := &Pubsub{
 		messages: make(chan proto.Message, queueSize),
+		topicMap: make(map[string]*pubsub.Topic),
 	}
 	ctx := context.Background()
 	conn, err := pubsub.NewClient(ctx, projectID)
@@ -41,17 +42,21 @@ func NewPubsub(projectID, addr string, config PubSubConfig) (*Port, error) {
 	}
 
 	for _, ts := range config.TopicSubscriptions {
-		ps.topic = conn.Topic(ts.Topic)
-		exists, err := ps.topic.Exists(ctx)
+		var topic *pubsub.Topic
+		topic = conn.Topic(ts.Topic)
+		exists, err := topic.Exists(ctx)
 		if err != nil {
 			return nil, err
 		}
 		if !exists {
-			ps.topic, err = conn.CreateTopic(ctx, ts.Topic)
+			fmt.Println("creating", ts.Topic)
+			topic, err = conn.CreateTopic(ctx, ts.Topic)
 			if err != nil {
 				return nil, err
 			}
 		}
+		ps.topicMap[ts.Topic] = topic
+		ps.topic = topic
 
 		for _, subscription := range ts.Subscriptions {
 			sub := conn.Subscription(subscription)
@@ -62,7 +67,7 @@ func NewPubsub(projectID, addr string, config PubSubConfig) (*Port, error) {
 
 			if !ok {
 				_, err = conn.CreateSubscription(ctx, subscription, pubsub.SubscriptionConfig{
-					Topic:       ps.topic,
+					Topic:       topic,
 					AckDeadline: time.Second * 10,
 				})
 				if err != nil {
@@ -79,7 +84,7 @@ func NewPubsub(projectID, addr string, config PubSubConfig) (*Port, error) {
 
 			if !ok {
 				_, err = conn.CreateSubscription(ctx, subtmp, pubsub.SubscriptionConfig{
-					Topic:       ps.topic,
+					Topic:       topic,
 					AckDeadline: time.Second * 10,
 				})
 				if err != nil {
@@ -100,6 +105,40 @@ func NewPubsub(projectID, addr string, config PubSubConfig) (*Port, error) {
 		impl: ps,
 	}, nil
 }
+
+//func waitForTopicCreated(cli *pubsub.Client, cfg PubSubConfig) error {
+//	var wg sync.WaitGroup
+//
+//	ctx, cancel := context.WithTimeout(context.Background(), time.Second*4)
+//	defer cancel()
+//
+//	for _, v := range cfg.TopicSubscriptions {
+//		wg.Add(1)
+//		go func(topic string) {
+//			defer wg.Done()
+//			for {
+//				select {
+//				case <-ctx.Done():
+//					return
+//				default:
+//					exists, err := cli.Topic(topic).Exists(context.Background())
+//					if err != nil {
+//						log.Fatalf("failed to check if topic exists: %v", err)
+//					}
+//					if !exists {
+//						continue
+//					}
+//					fmt.Println("topic exists")
+//					return
+//				}
+//			}
+//
+//		}(v.Topic)
+//	}
+//
+//	wg.Wait()
+//	return nil
+//}
 
 func (ps *Pubsub) handle(ctx context.Context, msg *pubsub.Message) {
 	m := any.Any{}
@@ -130,6 +169,7 @@ type Pubsub struct {
 	messages chan proto.Message
 	queue    []proto.Message
 	topic    *pubsub.Topic
+	topicMap map[string]*pubsub.Topic
 }
 
 func (p *Pubsub) Receive(ctx context.Context) (interface{}, error) {
@@ -151,7 +191,56 @@ func (p *Pubsub) receive(opts ...Opt) (interface{}, error) {
 	}
 }
 
+type PubSubSendRequest struct {
+	Topic   string
+	Message proto.Message
+}
+
+func (p *Pubsub) sendToTopic(msg *PubSubSendRequest) error {
+	ctx := context.Background()
+	anyMsg, err := ptypes.MarshalAny(msg.Message)
+	if err != nil {
+		return err
+	}
+
+	buf, err := proto.Marshal(anyMsg)
+	if err != nil {
+		return err
+	}
+
+	m := &pubsub.Message{
+		Data: buf,
+	}
+
+	topic, ok := p.topicMap[msg.Topic]
+	if !ok {
+		return fmt.Errorf("topic not found")
+	}
+
+	if _, err := topic.Publish(ctx, m).Get(ctx); err != nil {
+		return err
+	}
+
+	timeout := time.After(time.Second * 2)
+	for {
+		select {
+		case f := <-p.messages:
+			if !proto.Equal(f, msg.Message) {
+				continue
+			}
+			fmt.Println("receiving done from internal pubsub")
+			return nil
+		case <-timeout:
+			return fmt.Errorf("failed to send message")
+		}
+	}
+}
+
 func (p *Pubsub) send(i interface{}) error {
+	if msg, ok := i.(*PubSubSendRequest); ok {
+		return p.sendToTopic(msg)
+	}
+
 	msg, ok := i.(proto.Message)
 	if !ok {
 		return fmt.Errorf("message is not a proto.Message")
@@ -176,7 +265,7 @@ func (p *Pubsub) send(i interface{}) error {
 		return err
 	}
 
-	timeout := time.After(time.Second * 5)
+	timeout := time.After(time.Second * 2)
 	for {
 		select {
 		case f := <-p.messages:

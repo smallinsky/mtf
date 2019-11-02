@@ -11,8 +11,8 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	framework.NewSuite(m).
-		WithSut(framework.SutSettings{
+	framework.TestEnv(m).
+		WithSUT(framework.SutSettings{
 			Envs: []string{
 				"ORACLE_ADDR=" + framework.GetDockerHostAddr(8002),
 			},

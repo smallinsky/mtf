@@ -13,7 +13,7 @@ import (
 
 func main() {
 	// fix pbusub Healthcheck
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 3)
 	ctx := context.Background()
 	client, err := pubsub.NewClient(ctx, "test-project-id")
 	if err != nil {
@@ -21,7 +21,6 @@ func main() {
 	}
 	sub := client.Subscription("testsub")
 
-	sub.ReceiveSettings.Synchronous = true
 	fmt.Println("receiveing ...")
 	c := make(chan struct{})
 	go func() {
@@ -32,13 +31,11 @@ func main() {
 		})
 	}()
 	<-c
-	fmt.Println("after receive")
 	if err != nil {
 		fmt.Println("failed to receive from sub: ", err)
 		panic(err)
 	}
 
-	fmt.Println("after creating topic")
 	topic := client.Topic("testtopic")
 
 	pb := &proto3_proto.Message{

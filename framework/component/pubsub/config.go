@@ -4,8 +4,12 @@ import (
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
+type Config struct {
+}
+
 func BuildContainerConfig() (*docker.ContainerConfig, error) {
 	var (
+		//image   = "smallinsky/pubsub_emulator"
 		image   = "adilsoncarvalho/gcloud-pubsub-emulator"
 		name    = "pubsub_mtf"
 		network = "mtf_net"
