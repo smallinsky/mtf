@@ -19,20 +19,22 @@ import (
 )
 
 func TestStorageInsert(t *testing.T) {
+	sync := make(chan struct{})
 	fakeStorage := &GCStorage{
 		OnObjectInsert: func(o BucketObject, r io.Reader) error {
+			close(sync)
 			return nil
 		},
 	}
 	r := mux.NewRouter()
 	r = fakeStorage.AddMuxRoute(r)
-	handler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		ioutil.ReadAll(req.Body)
-		req.Body.Close()
-		rw.WriteHeader(http.StatusNoContent)
-	})
-	cst := httptest.NewServer(handler)
+	cst := httptest.NewServer(r)
 	defer cst.Close()
+
+	readHostEnv := strings.Replace(cst.URL, "http://", "", -1)
+	if err := os.Setenv("STORAGE_EMULATOR_HOST", readHostEnv); err != nil {
+		t.Fatalf("failed to set readHost env: %v", err)
+	}
 
 	hc := &http.Client{
 		Transport: &oauth2.Transport{
@@ -61,6 +63,7 @@ func TestStorageInsert(t *testing.T) {
 	if err := w.Close(); err != nil {
 		t.Fatalf("got close error: %v", err)
 	}
+	<-sync
 }
 
 func TestHandleGet(t *testing.T) {
