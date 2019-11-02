@@ -5,12 +5,18 @@ import (
 )
 
 type Config struct {
+	ProjectID          string
+	TopicSubscriptions []TopicSubscriptions
+}
+
+type TopicSubscriptions struct {
+	Topic         string
+	Subscriptions []string
 }
 
 func BuildContainerConfig() (*docker.ContainerConfig, error) {
 	var (
-		//image   = "smallinsky/pubsub_emulator"
-		image   = "adilsoncarvalho/gcloud-pubsub-emulator"
+		image   = "smallinsky/pubsub_emulator"
 		name    = "pubsub_mtf"
 		network = "mtf_net"
 	)

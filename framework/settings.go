@@ -25,7 +25,15 @@ type SutSettings struct {
 	RunForEachTest bool
 }
 
-type PubSubSettings struct{}
+type PubSubSettings struct {
+	ProjectID          string
+	TopicSubscriptions []TopicSubscriptions
+}
+
+type TopicSubscriptions struct {
+	Topic         string
+	Subscriptions []string
+}
 
 type RedisSettings struct {
 	Port     string

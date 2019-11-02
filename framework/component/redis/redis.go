@@ -9,7 +9,7 @@ type Component struct {
 	Container docker.Container
 }
 
-func New(cli docker.Docker, config RedisConfig) (*Component, error) {
+func New(cli *docker.Docker, config RedisConfig) (*Component, error) {
 	containerConf, err := BuildContainerConfig(config)
 	if err != nil {
 		return nil, err

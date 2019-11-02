@@ -1,11 +1,14 @@
 package framework
 
 import (
+	"flag"
 	"fmt"
 	"log"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/smallinsky/mtf/framework/component"
 	"github.com/smallinsky/mtf/framework/component/ftp"
 	"github.com/smallinsky/mtf/framework/component/migrate"
 	"github.com/smallinsky/mtf/framework/component/mysql"
@@ -28,13 +31,15 @@ type TestEnviorment struct {
 	Redis  *RedisSettings
 	FTP    *FTPSettings
 
-	containers []*docker.ContainerType
+	components []component.Component
 	network    *docker.Network
 
 	M *testing.M
 }
 
 func TestEnv(m *testing.M) *TestEnviorment {
+	flag.Parse()
+
 	testenv = &TestEnviorment{
 		M: m,
 	}
@@ -74,22 +79,13 @@ func (env *TestEnviorment) Start() error {
 		log.Fatalf("faield to get docker client: %v", err)
 	}
 
-	containersConfig, err := env.Prepare()
-	if err != nil {
+	if err := env.Prepare(); err != nil {
 		panic(err)
 	}
 
-	for _, conf := range containersConfig {
-		container, err := cli.NewContainer(*conf)
-		if err != nil {
-			log.Fatalf("[ERR] failed to run container: %v", err)
-		}
-		env.containers = append(env.containers, container)
-	}
-
-	for _, container := range env.containers {
+	for _, container := range env.components {
 		start := time.Now()
-		fmt.Printf("  - Starting %s ", container.Name())
+		fmt.Printf("  - Starting %s ", getComponentName(container))
 		err := container.Start()
 		if err != nil {
 			log.Fatalf("\nstart err: %v", err)
@@ -101,10 +97,20 @@ func (env *TestEnviorment) Start() error {
 	return nil
 }
 
+func getComponentName(c component.Component) string {
+	name := fmt.Sprintf("%T", c)
+	name = strings.ReplaceAll(name, "*", "")
+	ss := strings.Split(name, ".")
+	if len(ss) != 2 {
+		return name
+	}
+	return fmt.Sprintf("[%s %s]", strings.ToUpper(ss[0]), ss[1])
+}
+
 func (env *TestEnviorment) Stop() error {
 	defer env.network.Remove()
 
-	for _, container := range env.containers {
+	for _, container := range env.components {
 		err := container.Stop()
 		if err != nil {
 			log.Fatalf("stop err: %v", err)
@@ -114,42 +120,55 @@ func (env *TestEnviorment) Stop() error {
 	return nil
 }
 
-func (env *TestEnviorment) Prepare() ([]*docker.ContainerConfig, error) {
-	var components []*docker.ContainerConfig
+func (env *TestEnviorment) Prepare() error {
+	cli, err := docker.New()
+	if err != nil {
+		panic(err)
+	}
+	var components []component.Component
 
 	if env.Redis != nil {
-		conf, err := redis.BuildContainerConfig(redis.RedisConfig{
+		comp, err := redis.New(cli, redis.RedisConfig{
 			Password: env.Redis.Password,
 			Port:     env.Redis.Port,
 		})
 		if err != nil {
-			return nil, err
+			return err
 		}
-		components = append(components, conf)
+		components = append(components, comp)
 	}
 
 	if env.PubSub != nil {
-		conf, err := pubsub.BuildContainerConfig()
-		if err != nil {
-			return nil, err
+		cfg := pubsub.Config{
+			ProjectID: env.PubSub.ProjectID,
 		}
-		components = append(components, conf)
+		for _, v := range env.PubSub.TopicSubscriptions {
+			cfg.TopicSubscriptions = append(cfg.TopicSubscriptions, pubsub.TopicSubscriptions{
+				Topic:         v.Topic,
+				Subscriptions: v.Subscriptions,
+			})
+		}
+		comp, err := pubsub.New(cli, cfg)
+		if err != nil {
+			return err
+		}
+		components = append(components, comp)
 	}
 
 	if cfg := env.MySQL; cfg != nil {
-		conf, err := mysql.BuildContainerConfig(mysql.MySQLConfig{
+		comp, err := mysql.New(cli, mysql.MySQLConfig{
 			Database:      cfg.DatabaseName,
 			Password:      cfg.Password,
 			AttachIfExist: true,
 		})
 		if err != nil {
-			return nil, err
+			return err
 		}
-		components = append(components, conf)
+		components = append(components, comp)
 	}
 
 	if cfg := env.MySQL; cfg != nil && cfg.MigrationDir != "" {
-		conf, err := migrate.BuildContainerConfig(migrate.MigrateConfig{
+		comp, err := migrate.New(cli, migrate.MigrateConfig{
 			Path:     cfg.MigrationDir,
 			Password: cfg.Password,
 			Port:     "3306",
@@ -157,33 +176,34 @@ func (env *TestEnviorment) Prepare() ([]*docker.ContainerConfig, error) {
 			Database: cfg.DatabaseName,
 		})
 		if err != nil {
-			return nil, err
+			return err
 		}
-		components = append(components, conf)
+		components = append(components, comp)
 	}
 
 	if cfg := env.FTP; cfg != nil {
-		conf, err := ftp.BuildContainerConfig(ftp.FTPConfig{})
+		comp, err := ftp.New(cli, ftp.FTPConfig{})
 		if err != nil {
 			panic(err)
 		}
-		components = append(components, conf)
+		components = append(components, comp)
 	}
 
 	if env.SUT != nil {
 		env.SUT.Envs = append(env.SUT.Envs, "PUBSUB_EMULATOR_HOST="+GetDockerHostAddr(8085))
-		conf, err := sut.BuildContainerConfig(sut.SutConfig{
+		comp, err := sut.New(cli, sut.SutConfig{
 			Path:         env.SUT.Dir,
 			Env:          env.SUT.Envs,
 			ExposedPorts: env.SUT.Ports,
 		})
 		if err != nil {
-			return nil, err
+			return err
 		}
-		components = append(components, conf)
+		components = append(components, comp)
 	}
 
-	return components, nil
+	env.components = components
+	return nil
 }
 
 func (env *TestEnviorment) WithMySQL(settings MysqlSettings) *TestEnviorment {

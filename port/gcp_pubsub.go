@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -11,22 +12,14 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/api/iterator"
 )
 
 const (
 	queueSize = 100
 )
 
-type PubSubConfig struct {
-	TopicSubscriptions []TopicSubscriptions
-}
-
-type TopicSubscriptions struct {
-	Topic         string
-	Subscriptions []string
-}
-
-func NewPubsub(projectID, addr string, config PubSubConfig) (*Port, error) {
+func NewPubsub(projectID, addr string) (*Port, error) {
 	if err := os.Setenv("PUBSUB_EMULATOR_HOST", addr); err != nil {
 		return nil, err
 	}
@@ -41,59 +34,39 @@ func NewPubsub(projectID, addr string, config PubSubConfig) (*Port, error) {
 		return nil, err
 	}
 
-	for _, ts := range config.TopicSubscriptions {
-		var topic *pubsub.Topic
-		topic = conn.Topic(ts.Topic)
-		exists, err := topic.Exists(ctx)
+	titer := conn.Topics(ctx)
+	for {
+		t, err := titer.Next()
 		if err != nil {
-			return nil, err
+			if err == iterator.Done {
+				break
+			}
+			panic(err)
 		}
-		if !exists {
-			fmt.Println("creating", ts.Topic)
-			topic, err = conn.CreateTopic(ctx, ts.Topic)
-			if err != nil {
-				return nil, err
-			}
-		}
-		ps.topicMap[ts.Topic] = topic
-		ps.topic = topic
 
-		for _, subscription := range ts.Subscriptions {
-			sub := conn.Subscription(subscription)
-			ok, err := sub.Exists(ctx)
-			if err != nil {
-				return nil, err
-			}
+		ps.topicMap[portTopicName(t.String())] = t
+		ps.topic = t
 
-			if !ok {
-				_, err = conn.CreateSubscription(ctx, subscription, pubsub.SubscriptionConfig{
-					Topic:       topic,
-					AckDeadline: time.Second * 10,
-				})
-				if err != nil {
-					return nil, err
+		siter := t.Subscriptions(ctx)
+
+		for {
+			sub, err := siter.Next()
+			if err != nil {
+				if err == iterator.Done {
+					break
 				}
+				panic(err)
 			}
-			subtmp := subscription + "hash"
 
-			sub = conn.Subscription(subtmp)
-			ok, err = sub.Exists(ctx)
+			sm, err := conn.CreateSubscription(ctx, portSubscriptionName(sub.String()), pubsub.SubscriptionConfig{
+				Topic:       t,
+				AckDeadline: time.Second * 10,
+			})
 			if err != nil {
 				return nil, err
 			}
-
-			if !ok {
-				_, err = conn.CreateSubscription(ctx, subtmp, pubsub.SubscriptionConfig{
-					Topic:       topic,
-					AckDeadline: time.Second * 10,
-				})
-				if err != nil {
-					return nil, err
-				}
-			}
-			sub.ReceiveSettings.Synchronous = true
 			go func() {
-				err := sub.Receive(ctx, ps.handle)
+				err := sm.Receive(ctx, ps.handle)
 				if err != nil {
 					panic(err)
 				}
@@ -106,39 +79,21 @@ func NewPubsub(projectID, addr string, config PubSubConfig) (*Port, error) {
 	}, nil
 }
 
-//func waitForTopicCreated(cli *pubsub.Client, cfg PubSubConfig) error {
-//	var wg sync.WaitGroup
-//
-//	ctx, cancel := context.WithTimeout(context.Background(), time.Second*4)
-//	defer cancel()
-//
-//	for _, v := range cfg.TopicSubscriptions {
-//		wg.Add(1)
-//		go func(topic string) {
-//			defer wg.Done()
-//			for {
-//				select {
-//				case <-ctx.Done():
-//					return
-//				default:
-//					exists, err := cli.Topic(topic).Exists(context.Background())
-//					if err != nil {
-//						log.Fatalf("failed to check if topic exists: %v", err)
-//					}
-//					if !exists {
-//						continue
-//					}
-//					fmt.Println("topic exists")
-//					return
-//				}
-//			}
-//
-//		}(v.Topic)
-//	}
-//
-//	wg.Wait()
-//	return nil
-//}
+func portSubscriptionName(s string) string {
+	ss := strings.SplitAfter(s, "/subscriptions/")
+	if len(ss) != 2 {
+		panic("corupted subscription name")
+	}
+	return fmt.Sprintf("%s_mtf_port_receiver", ss[1])
+}
+
+func portTopicName(s string) string {
+	ss := strings.SplitAfter(s, "/topics/")
+	if len(ss) != 2 {
+		panic("corupted topic name")
+	}
+	return ss[1]
+}
 
 func (ps *Pubsub) handle(ctx context.Context, msg *pubsub.Message) {
 	m := any.Any{}
@@ -228,7 +183,6 @@ func (p *Pubsub) sendToTopic(msg *PubSubSendRequest) error {
 			if !proto.Equal(f, msg.Message) {
 				continue
 			}
-			fmt.Println("receiving done from internal pubsub")
 			return nil
 		case <-timeout:
 			return fmt.Errorf("failed to send message")
@@ -272,7 +226,6 @@ func (p *Pubsub) send(i interface{}) error {
 			if !proto.Equal(f, msg) {
 				continue
 			}
-			fmt.Println("receiving done from internal pubsub")
 			return nil
 		case <-timeout:
 			return fmt.Errorf("failed to send message")
