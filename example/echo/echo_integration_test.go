@@ -13,19 +13,21 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	framework.NewSuite(m).WithSut(framework.SutSettings{
-		Dir:   "./service",
-		Ports: []int{8001},
-		Envs: []string{
-			"ORACLE_ADDR=" + framework.GetDockerHostAddr(8002),
-		},
-	}).WithRedis(framework.RedisSettings{
-		Password: "test",
-	}).WithMySQL(framework.MysqlSettings{
-		DatabaseName: "test_db",
-		MigrationDir: "./service/migrations",
-		Password:     "test",
-	}).Run()
+	framework.TestEnv(m).
+		WithSUT(framework.SutSettings{
+			Dir:   "./service",
+			Ports: []int{8001},
+			Envs: []string{
+				"ORACLE_ADDR=" + framework.GetDockerHostAddr(8002),
+			}}).
+		WithRedis(framework.RedisSettings{
+			Password: "test",
+		}).
+		WithMySQL(framework.MysqlSettings{
+			DatabaseName: "test_db",
+			MigrationDir: "./service/migrations",
+			Password:     "test",
+		}).Run()
 }
 
 func TestEchoService(t *testing.T) {

@@ -3,7 +3,6 @@ package docker
 import (
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"strconv"
 	"time"
@@ -15,9 +14,10 @@ import (
 )
 
 type Container interface {
-	Start(context.Context)
-	Terminate(context.Context) error
-	Logs(context.Context) (io.Reader, error)
+	Start() error
+	Stop() error
+	//Terminate() error
+	//	Logs(context.Context) (string, error)
 	GetStateV2(context.Context) (*types.ContainerState, error)
 }
 

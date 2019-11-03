@@ -11,7 +11,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	framework.NewSuite(m).WithSut(framework.SutSettings{
+	framework.TestEnv(m).WithSUT(framework.SutSettings{
 		Dir: "./service",
 	}).Run()
 }

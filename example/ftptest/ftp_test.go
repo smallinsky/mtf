@@ -14,13 +14,13 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	framework.NewSuite(m).
+	framework.TestEnv(m).
 		WithFTP(framework.FTPSettings{
 			Addr: "mtf_ftp:21",
 			User: "test",
 			Pass: "test",
 		}).
-		WithSut(framework.SutSettings{
+		WithSUT(framework.SutSettings{
 			Dir: "./service",
 		}).
 		Run()

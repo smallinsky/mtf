@@ -15,11 +15,6 @@ type MysqlSettings struct {
 	Port         string
 }
 
-func (s *Suite) WithMySQL(c MysqlSettings) *Suite {
-	s.settings.mysql = &c
-	return s
-}
-
 type SutSettings struct {
 	Envs  []string
 	Dir   string
@@ -30,16 +25,14 @@ type SutSettings struct {
 	RunForEachTest bool
 }
 
-func (s *Suite) WithSut(c SutSettings) *Suite {
-	s.settings.sut = &c
-	return s
+type PubSubSettings struct {
+	ProjectID          string
+	TopicSubscriptions []TopicSubscriptions
 }
 
-type PubSubSettings struct{}
-
-func (s *Suite) WithPubSub(c PubSubSettings) *Suite {
-	s.settings.pubsub = &c
-	return s
+type TopicSubscriptions struct {
+	Topic         string
+	Subscriptions []string
 }
 
 type RedisSettings struct {
@@ -47,24 +40,8 @@ type RedisSettings struct {
 	Password string
 }
 
-func (s *Suite) WithRedis(c RedisSettings) *Suite {
-	s.settings.redis = &c
-	return s
-}
-
 type FTPSettings struct {
 	Addr string
 	User string
 	Pass string
-}
-
-func (s *Suite) WithFTP(c FTPSettings) *Suite {
-	s.settings.ftp = &c
-	return s
-}
-
-type Comper interface {
-	Start() error
-	Stop() error
-	StartPriority() int
 }

@@ -215,7 +215,7 @@ func (p *HTTPPort) send(msg *HTTPResponse, opts ...Opt) error {
 		p.respC <- msg
 	}()
 	<-p.sync
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Millisecond * 50)
 	return nil
 }
 

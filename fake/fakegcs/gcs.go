@@ -16,8 +16,8 @@ type GCStorage struct {
 }
 
 func (f *GCStorage) handleInsert(w http.ResponseWriter, r *http.Request) {
-	uploadType := r.URL.Query().Get("uploadType")
-	switch uploadType {
+	vars := mux.Vars(r)
+	switch vars["uploadType"] {
 	case "multipart":
 		if err := f.handleMultipart(w, r); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -104,6 +104,10 @@ func (f GCStorage) AddMuxRoute(r *mux.Router) *mux.Router {
 	r.Path("/b/{bucket:.+}/o").Queries("uploadType", "{uploadType}").Methods(http.MethodPost).HandlerFunc(f.handleInsert)
 	r.Path("/{bucket:.+}/{object}").Methods(http.MethodGet).HandlerFunc(f.handleGet)
 	r.Path("/token").Methods(http.MethodPost).HandlerFunc(f.handleToken)
+
+	r.NotFoundHandler = http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		panic("not found")
+	})
 	return r
 }
 

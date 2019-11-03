@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/golang/protobuf/proto"
@@ -12,8 +11,6 @@ import (
 )
 
 func main() {
-	// fix pbusub Healthcheck
-	time.Sleep(time.Second * 5)
 	ctx := context.Background()
 	client, err := pubsub.NewClient(ctx, "test-project-id")
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -11,28 +12,21 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/api/iterator"
 )
 
 const (
 	queueSize = 100
 )
 
-type PubSubConfig struct {
-	TopicSubscriptions []TopicSubscriptions
-}
-
-type TopicSubscriptions struct {
-	Topic         string
-	Subscriptions []string
-}
-
-func NewPubsub(projectID, addr string, config PubSubConfig) (*Port, error) {
+func NewPubsub(projectID, addr string) (*Port, error) {
 	if err := os.Setenv("PUBSUB_EMULATOR_HOST", addr); err != nil {
 		return nil, err
 	}
 
 	ps := &Pubsub{
 		messages: make(chan proto.Message, queueSize),
+		topicMap: make(map[string]*pubsub.Topic),
 	}
 	ctx := context.Background()
 	conn, err := pubsub.NewClient(ctx, projectID)
@@ -40,55 +34,39 @@ func NewPubsub(projectID, addr string, config PubSubConfig) (*Port, error) {
 		return nil, err
 	}
 
-	for _, ts := range config.TopicSubscriptions {
-		ps.topic = conn.Topic(ts.Topic)
-		exists, err := ps.topic.Exists(ctx)
+	titer := conn.Topics(ctx)
+	for {
+		t, err := titer.Next()
 		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			ps.topic, err = conn.CreateTopic(ctx, ts.Topic)
-			if err != nil {
-				return nil, err
+			if err == iterator.Done {
+				break
 			}
+			panic(err)
 		}
 
-		for _, subscription := range ts.Subscriptions {
-			sub := conn.Subscription(subscription)
-			ok, err := sub.Exists(ctx)
+		ps.topicMap[portTopicName(t.String())] = t
+		ps.topic = t
+
+		siter := t.Subscriptions(ctx)
+
+		for {
+			sub, err := siter.Next()
+			if err != nil {
+				if err == iterator.Done {
+					break
+				}
+				panic(err)
+			}
+
+			sm, err := conn.CreateSubscription(ctx, portSubscriptionName(sub.String()), pubsub.SubscriptionConfig{
+				Topic:       t,
+				AckDeadline: time.Second * 10,
+			})
 			if err != nil {
 				return nil, err
 			}
-
-			if !ok {
-				_, err = conn.CreateSubscription(ctx, subscription, pubsub.SubscriptionConfig{
-					Topic:       ps.topic,
-					AckDeadline: time.Second * 10,
-				})
-				if err != nil {
-					return nil, err
-				}
-			}
-			subtmp := subscription + "hash"
-
-			sub = conn.Subscription(subtmp)
-			ok, err = sub.Exists(ctx)
-			if err != nil {
-				return nil, err
-			}
-
-			if !ok {
-				_, err = conn.CreateSubscription(ctx, subtmp, pubsub.SubscriptionConfig{
-					Topic:       ps.topic,
-					AckDeadline: time.Second * 10,
-				})
-				if err != nil {
-					return nil, err
-				}
-			}
-			sub.ReceiveSettings.Synchronous = true
 			go func() {
-				err := sub.Receive(ctx, ps.handle)
+				err := sm.Receive(ctx, ps.handle)
 				if err != nil {
 					panic(err)
 				}
@@ -99,6 +77,22 @@ func NewPubsub(projectID, addr string, config PubSubConfig) (*Port, error) {
 	return &Port{
 		impl: ps,
 	}, nil
+}
+
+func portSubscriptionName(s string) string {
+	ss := strings.SplitAfter(s, "/subscriptions/")
+	if len(ss) != 2 {
+		panic("corupted subscription name")
+	}
+	return fmt.Sprintf("%s_mtf_port_receiver", ss[1])
+}
+
+func portTopicName(s string) string {
+	ss := strings.SplitAfter(s, "/topics/")
+	if len(ss) != 2 {
+		panic("corupted topic name")
+	}
+	return ss[1]
 }
 
 func (ps *Pubsub) handle(ctx context.Context, msg *pubsub.Message) {
@@ -130,6 +124,7 @@ type Pubsub struct {
 	messages chan proto.Message
 	queue    []proto.Message
 	topic    *pubsub.Topic
+	topicMap map[string]*pubsub.Topic
 }
 
 func (p *Pubsub) Receive(ctx context.Context) (interface{}, error) {
@@ -151,7 +146,55 @@ func (p *Pubsub) receive(opts ...Opt) (interface{}, error) {
 	}
 }
 
+type PubSubSendRequest struct {
+	Topic   string
+	Message proto.Message
+}
+
+func (p *Pubsub) sendToTopic(msg *PubSubSendRequest) error {
+	ctx := context.Background()
+	anyMsg, err := ptypes.MarshalAny(msg.Message)
+	if err != nil {
+		return err
+	}
+
+	buf, err := proto.Marshal(anyMsg)
+	if err != nil {
+		return err
+	}
+
+	m := &pubsub.Message{
+		Data: buf,
+	}
+
+	topic, ok := p.topicMap[msg.Topic]
+	if !ok {
+		return fmt.Errorf("topic not found")
+	}
+
+	if _, err := topic.Publish(ctx, m).Get(ctx); err != nil {
+		return err
+	}
+
+	timeout := time.After(time.Second * 2)
+	for {
+		select {
+		case f := <-p.messages:
+			if !proto.Equal(f, msg.Message) {
+				continue
+			}
+			return nil
+		case <-timeout:
+			return fmt.Errorf("failed to send message")
+		}
+	}
+}
+
 func (p *Pubsub) send(i interface{}) error {
+	if msg, ok := i.(*PubSubSendRequest); ok {
+		return p.sendToTopic(msg)
+	}
+
 	msg, ok := i.(proto.Message)
 	if !ok {
 		return fmt.Errorf("message is not a proto.Message")
@@ -176,14 +219,13 @@ func (p *Pubsub) send(i interface{}) error {
 		return err
 	}
 
-	timeout := time.After(time.Second * 5)
+	timeout := time.After(time.Second * 2)
 	for {
 		select {
 		case f := <-p.messages:
 			if !proto.Equal(f, msg) {
 				continue
 			}
-			fmt.Println("receiving done from internal pubsub")
 			return nil
 		case <-timeout:
 			return fmt.Errorf("failed to send message")

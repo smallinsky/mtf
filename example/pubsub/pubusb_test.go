@@ -11,14 +11,22 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	framework.NewSuite(m).
-		WithSut(framework.SutSettings{
+	framework.TestEnv(m).
+		WithSUT(framework.SutSettings{
 			Envs: []string{
 				"ORACLE_ADDR=" + framework.GetDockerHostAddr(8002),
 			},
 			Dir: "./service",
 		}).
-		WithPubSub(framework.PubSubSettings{}).
+		WithPubSub(framework.PubSubSettings{
+			ProjectID: "test-project-id",
+			TopicSubscriptions: []framework.TopicSubscriptions{
+				{
+					Topic:         "testtopic",
+					Subscriptions: []string{"testsub"},
+				},
+			},
+		}).
 		Run()
 }
 
@@ -27,14 +35,7 @@ func TestPubSub(t *testing.T) {
 }
 
 func (st *SuiteTest) Init(t *testing.T) {
-	pusbus, err := port.NewPubsub("test-project-id", "localhost:8085", port.PubSubConfig{
-		TopicSubscriptions: []port.TopicSubscriptions{
-			{
-				Topic:         "testtopic",
-				Subscriptions: []string{"testsub"},
-			},
-		},
-	})
+	pusbus, err := port.NewPubsub("test-project-id", "localhost:8085")
 	if err != nil {
 		t.Fatalf("Failed to create pbusub %v", err)
 	}
