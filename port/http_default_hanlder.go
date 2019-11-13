@@ -117,14 +117,6 @@ func (p *HTTPPort2) send(msg *HTTPResponse, opts ...Opt) error {
 	return nil
 }
 
-func (p *HTTPPort2) Kind() Kind {
-	return KIND_SERVER
-}
-
-func (p *HTTPPort2) Name() string {
-	return "http_server"
-}
-
 func (p *HTTPPort2) Send(ctx context.Context, i interface{}) error {
 	resp, ok := i.(*HTTPResponse)
 	if !ok {

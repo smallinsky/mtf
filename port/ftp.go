@@ -50,14 +50,6 @@ func NewFTP(addr, user, pass string) (*FTPPort, error) {
 	return ftpPort, nil
 }
 
-func (p *FTPPort) Kind() Kind {
-	return KIND_SERVER
-}
-
-func (p *FTPPort) Name() string {
-	return "ftp_server_port"
-}
-
 type FTPEvent struct {
 	Path    string
 	Payload []byte

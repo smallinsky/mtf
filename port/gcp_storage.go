@@ -132,11 +132,3 @@ func (s *GCStorage) Send(ctx context.Context, i interface{}) error {
 func (s *GCStorage) Receive(ctx context.Context) (interface{}, error) {
 	return s.receive()
 }
-
-func (p *GCStorage) Kind() Kind {
-	return KIND_SERVER
-}
-
-func (p *GCStorage) Name() string {
-	return "http_server"
-}

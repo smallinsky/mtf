@@ -25,14 +25,6 @@ type PortIn struct {
 	respC chan outValues
 }
 
-func (p *PortIn) Kind() Kind {
-	return KIND_SERVER
-}
-
-func (p *PortIn) Name() string {
-	return "grpc_server"
-}
-
 func (p *PortIn) Send(ctx context.Context, i interface{}) error {
 	return p.send(i)
 }

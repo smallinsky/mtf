@@ -112,14 +112,6 @@ func (ps *Pubsub) handle(ctx context.Context, msg *pubsub.Message) {
 
 }
 
-func (ps *Pubsub) Kind() Kind {
-	return KIND_MESSAGE_QEUEU
-}
-
-func (ps *Pubsub) Name() string {
-	return "pubsub_message_queue"
-}
-
 type Pubsub struct {
 	messages chan proto.Message
 	queue    []proto.Message
