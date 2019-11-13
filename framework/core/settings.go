@@ -7,6 +7,7 @@ import (
 type ArgSettings struct {
 	BuildBinary             bool
 	StopComponentsAfterExit bool
+	Wait                    bool
 }
 
 var Settings = ArgSettings{}
@@ -17,4 +18,7 @@ func init() {
 
 	flag.BoolVar(&Settings.StopComponentsAfterExit, "stop_components", false,
 		"Don't stop components after test execution have been finished")
+
+	flag.BoolVar(&Settings.Wait, "wait", false,
+		"Don't kill container after test execution")
 }
