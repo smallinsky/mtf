@@ -19,7 +19,6 @@ func main() {
 	sub := client.Subscription("testsub")
 
 	sub.ReceiveSettings.Synchronous = true
-	fmt.Println("receiveing ...")
 	c := make(chan struct{})
 	go func() {
 		err = sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
@@ -29,7 +28,6 @@ func main() {
 		})
 	}()
 	<-c
-	fmt.Println("after receive")
 	if err != nil {
 		fmt.Println("failed to receive from sub: ", err)
 		panic(err)

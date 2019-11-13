@@ -21,10 +21,7 @@ func TestEchoService(t *testing.T) {
 }
 
 func (st *SuiteTest) Init(t *testing.T) {
-	var err error
-	if st.httpPort, err = port.NewHTTPPort(port.WithTLSHost("example.com")); err != nil {
-		t.Fatalf("failed to init http port")
-	}
+	st.httpPort = port.NewHTTP2Port()
 }
 
 type SuiteTest struct {
