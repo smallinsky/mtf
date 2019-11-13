@@ -39,9 +39,7 @@ func (st *SuiteTest) Init(t *testing.T) {
 	if st.echoPort, err = port.NewGRPCClientPort((*pb.EchoClient)(nil), "localhost:8001"); err != nil {
 		t.Fatalf("failed to init grpc client port")
 	}
-	if st.httpPort, err = port.NewHTTPPort(port.WithTLSHost("*.icndb.com")); err != nil {
-		t.Fatalf("failed to init http port")
-	}
+	st.httpPort = port.NewHTTP2Port()
 	if st.oraclePort, err = port.NewGRPCServerPort((*pbo.OracleServer)(nil), ":8002"); err != nil {
 		t.Fatalf("failed to init grpc oracle server")
 	}

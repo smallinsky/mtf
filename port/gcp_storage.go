@@ -2,6 +2,7 @@ package port
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"io/ioutil"
 	"log"
@@ -122,4 +123,20 @@ func (s *GCStorage) send(msg interface{}, opts ...PortOpt) error {
 	case <-time.Tick(time.Second * 3):
 		return errors.Errorf("failed to receive  message, deadline exeeded")
 	}
+}
+
+func (s *GCStorage) Send(ctx context.Context, i interface{}) error {
+	return s.send(i)
+}
+
+func (s *GCStorage) Receive(ctx context.Context) (interface{}, error) {
+	return s.receive()
+}
+
+func (p *GCStorage) Kind() Kind {
+	return KIND_SERVER
+}
+
+func (p *GCStorage) Name() string {
+	return "http_server"
 }

@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
 	"strings"
 	"testing"
 	"time"
@@ -15,6 +17,7 @@ import (
 	"github.com/smallinsky/mtf/framework/component/pubsub"
 	"github.com/smallinsky/mtf/framework/component/redis"
 	"github.com/smallinsky/mtf/framework/component/sut"
+	"github.com/smallinsky/mtf/framework/core"
 	"github.com/smallinsky/mtf/pkg/cert"
 	"github.com/smallinsky/mtf/pkg/docker"
 )
@@ -30,6 +33,7 @@ type TestEnviorment struct {
 	PubSub *PubSubSettings
 	Redis  *RedisSettings
 	FTP    *FTPSettings
+	TLS    *TLSSettings
 
 	components []component.Component
 	network    *docker.Network
@@ -51,24 +55,25 @@ func (env *TestEnviorment) Run() int {
 		log.Fatalf("failed to prepare testing environment %v", err)
 	}
 	defer env.Stop()
-	return env.M.Run()
-}
 
-func genCerts() {
-	kvpair, err := cert.GenCert([]string{"localhost", "host.docker.internal"})
-	if err != nil {
-		log.Fatalf("[ERR] failed to generate certs: %v", err)
+	code := env.M.Run()
+
+	if core.Settings.Wait {
+		sig := make(chan os.Signal)
+		signal.Notify(sig, os.Interrupt)
+		fmt.Println("waiting for signal...")
+		<-sig
 	}
 
-	if err := cert.WriteCert(kvpair); err != nil {
-		log.Fatalf("[ERR] failed to write certs: %v ", err)
-	}
+	return code
 }
 
 func (env *TestEnviorment) Start() error {
 	fmt.Println("=== PREPERING TEST ENV")
 	start := time.Now()
-	genCerts()
+	if err := env.genCerts(); err != nil {
+		panic(err)
+	}
 
 	cli, err := docker.New()
 	if err != nil {
@@ -184,7 +189,7 @@ func (env *TestEnviorment) Prepare() error {
 	if cfg := env.FTP; cfg != nil {
 		comp, err := ftp.New(cli, ftp.FTPConfig{})
 		if err != nil {
-			panic(err)
+			return err
 		}
 		components = append(components, comp)
 	}
@@ -204,6 +209,15 @@ func (env *TestEnviorment) Prepare() error {
 
 	env.components = components
 	return nil
+}
+
+func (env *TestEnviorment) genCerts() error {
+	var hosts []string
+	if env.TLS != nil {
+		hosts = env.TLS.Hosts
+	}
+	_, err := cert.GenCert(hosts)
+	return err
 }
 
 func (env *TestEnviorment) WithMySQL(settings MysqlSettings) *TestEnviorment {
@@ -228,5 +242,10 @@ func (env *TestEnviorment) WithRedis(settings RedisSettings) *TestEnviorment {
 
 func (env *TestEnviorment) WithFTP(settings FTPSettings) *TestEnviorment {
 	env.FTP = &settings
+	return env
+}
+
+func (env *TestEnviorment) WithTLS(settings TLSSettings) *TestEnviorment {
+	env.TLS = &settings
 	return env
 }

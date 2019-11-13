@@ -45,3 +45,7 @@ type FTPSettings struct {
 	User string
 	Pass string
 }
+
+type TLSSettings struct {
+	Hosts []string
+}

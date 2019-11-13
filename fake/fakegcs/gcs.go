@@ -10,6 +10,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var (
+	StorageHost   = "storage.googleapis.com"
+	GoogleAPIHost = "www.googleapis.com"
+	OAuth2Host    = "oauth2.googleapis.com"
+)
+
 type GCStorage struct {
 	OnObjectInsert func(BucketObject, io.Reader) error
 	OnObjectGet    func(BucketObject, io.Writer) error
@@ -95,19 +101,17 @@ func (f GCStorage) handleToken(w http.ResponseWriter, r *http.Request) {
 		ExpiresIn:    3600,
 	}
 
+	w.Header().Add("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(&tj); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 func (f GCStorage) AddMuxRoute(r *mux.Router) *mux.Router {
-	r.Path("/b/{bucket:.+}/o").Queries("uploadType", "{uploadType}").Methods(http.MethodPost).HandlerFunc(f.handleInsert)
-	r.Path("/{bucket:.+}/{object}").Methods(http.MethodGet).HandlerFunc(f.handleGet)
-	r.Path("/token").Methods(http.MethodPost).HandlerFunc(f.handleToken)
-
-	r.NotFoundHandler = http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		panic("not found")
-	})
+	r.Host(StorageHost).Path("/{bucket:.+}/{object}").Methods(http.MethodGet).HandlerFunc(f.handleGet)
+	r.Host(StorageHost).Path("/b/{bucket:.+}/o").Queries("uploadType", "{uploadType}").Methods(http.MethodPost).HandlerFunc(f.handleInsert)
+	r.Host(GoogleAPIHost).Path("/upload/storage/v1/b/{bucket:.+}/o").Queries("uploadType", "{uploadType}").Methods(http.MethodPost).HandlerFunc(f.handleInsert)
+	r.Host(OAuth2Host).Path("/token").Methods(http.MethodPost).HandlerFunc(f.handleToken)
 	return r
 }
 

@@ -27,6 +27,7 @@ func TestStorageInsert(t *testing.T) {
 		},
 	}
 	r := mux.NewRouter()
+	StorageHost = "{[0-9]:.+}"
 	r = fakeStorage.AddMuxRoute(r)
 	cst := httptest.NewServer(r)
 	defer cst.Close()
@@ -80,6 +81,7 @@ func TestHandleGet(t *testing.T) {
 		},
 	}
 	muxRouter := mux.NewRouter()
+	StorageHost = "{[0-9]:.+}"
 	muxRouter = fakeStorage.AddMuxRoute(muxRouter)
 	cst := httptest.NewServer(muxRouter)
 	defer cst.Close()
