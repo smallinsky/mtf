@@ -5,18 +5,16 @@ import (
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/smallinsky/mtf/pkg/cert"
 )
 
 func TestHTTPServer(t *testing.T) {
-	port := &HTTPPort{
-		reqC:  make(chan *HTTPRequest),
-		respC: make(chan *HTTPResponse),
-		sync:  make(chan struct{}),
+	if _, err := cert.GenCert(nil); err != nil {
+		t.Fatalf("failed to generate certs: %v", err)
 	}
-
-	if err := port.serveHTTP(); err != nil {
-		t.Fatalf("failed to serve http %v", err)
-	}
+	startHTTP()
+	port := ht.httpPort2
 
 	sync := make(chan struct{})
 	go func() {

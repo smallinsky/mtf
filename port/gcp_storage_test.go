@@ -17,6 +17,7 @@ import (
 )
 
 func TestGCStorage(t *testing.T) {
+	t.Skip()
 	port := NewGCStoragePort()
 	r := mux.NewRouter()
 	port.registerRuter(r)

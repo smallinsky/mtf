@@ -18,35 +18,19 @@ import (
 	"time"
 )
 
-const (
+var (
 	ServerCertFile = "/tmp/mtf/cert/server.crt"
 	ServerKeyFile  = "/tmp/mtf/cert/server.key"
 )
 
-func WriteCert(ck *CertKey) error {
-	dir := filepath.Dir(ServerCertFile)
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return err
-	}
-
-	if err := ioutil.WriteFile(ServerCertFile, ck.Cert, 0665); err != nil {
-		return err
-	}
-	if err := ioutil.WriteFile(ServerKeyFile, ck.Key, 0665); err != nil {
-		return err
-	}
-	return nil
-}
-
-func publicKey(priv interface{}) interface{} {
-	switch k := priv.(type) {
-	case *rsa.PrivateKey:
-		return &k.PublicKey
-	case *ecdsa.PrivateKey:
-		return &k.PublicKey
-	default:
-		return nil
-	}
+var sniHosts = []string{
+	"localhost",
+	"host.docker.internal",
+	"example.com",
+	"*.icndb.com",
+	"www.googleapis.com",
+	"storage.googleapis.com",
+	"oauth2.googleapis.com",
 }
 
 type CertKey struct {
@@ -81,7 +65,7 @@ func GenCert(hosts []string) (*CertKey, error) {
 		BasicConstraintsValid: true,
 	}
 
-	hosts = append(hosts, []string{"localhost", "host.docker.internal"}...)
+	hosts = append(hosts, sniHosts...)
 	for _, h := range hosts {
 		if ip := net.ParseIP(h); ip != nil {
 			template.IPAddresses = append(template.IPAddresses, ip)
@@ -108,10 +92,41 @@ func GenCert(hosts []string) (*CertKey, error) {
 		return nil, fmt.Errorf("failed to write data to key.pem: %s", err)
 	}
 
-	return &CertKey{
+	cert := &CertKey{
 		Cert: certBuff.Bytes(),
 		Key:  keyBuff.Bytes(),
-	}, nil
+	}
+
+	if err := WriteCert(cert); err != nil {
+		return nil, err
+	}
+	return cert, nil
+}
+
+func WriteCert(ck *CertKey) error {
+	dir := filepath.Dir(ServerCertFile)
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(ServerCertFile, ck.Cert, 0665); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(ServerKeyFile, ck.Key, 0665); err != nil {
+		return err
+	}
+	return nil
+}
+
+func publicKey(priv interface{}) interface{} {
+	switch k := priv.(type) {
+	case *rsa.PrivateKey:
+		return &k.PublicKey
+	case *ecdsa.PrivateKey:
+		return &k.PublicKey
+	default:
+		return nil
+	}
 }
 
 func pemBlockForKey(priv interface{}) *pem.Block {

@@ -19,7 +19,6 @@ const (
 type PortImpl interface {
 	Send(ctx context.Context, msg interface{}) error
 	Receive(ctx context.Context) (interface{}, error)
-	Kind() Kind
 	Name() string
 }
 
