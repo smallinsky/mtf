@@ -73,14 +73,6 @@ type callResult struct {
 	err  error
 }
 
-func (p *ClientPort) Kind() Kind {
-	return KIND_CLIENT
-}
-
-func (p *ClientPort) Name() string {
-	return "grpc_client"
-}
-
 func (p *ClientPort) connect(addr, certfile string) error {
 	options := []grpc.DialOption{grpc.WithInsecure()}
 	if certfile != "" {
