@@ -53,19 +53,20 @@ func TestEnv(m *testing.M) *TestEnviorment {
 }
 
 func (env *TestEnviorment) Run() int {
-	if err := env.Start(); err != nil {
+	ctx := context.Background()
+	if err := env.Start(ctx); err != nil {
 		log.Fatalf("failed to prepare testing environment %v", err)
 	}
 
 	defer func() {
-		if err := env.Stop(); err != nil {
+		if err := env.Stop(ctx); err != nil {
 			log.Fatalf("Failed to stop containers: %v", err)
 		}
 	}()
 
 	code := env.M.Run()
 
-	if err := env.WriteLogs(); err != nil {
+	if err := env.WriteLogs(ctx); err != nil {
 		log.Fatalf("Failed to write containers logs: %v", err)
 	}
 
@@ -79,7 +80,7 @@ func (env *TestEnviorment) Run() int {
 	return code
 }
 
-func (env *TestEnviorment) Start() error {
+func (env *TestEnviorment) Start(ctx context.Context) error {
 	fmt.Println("=== PREPERING TEST ENV")
 	start := time.Now()
 	if err := env.genCerts(); err != nil {
@@ -102,7 +103,7 @@ func (env *TestEnviorment) Start() error {
 	for _, container := range env.components {
 		start := time.Now()
 		fmt.Printf("  - Starting %s ", getComponentName(container))
-		err := container.Start()
+		err := container.Start(ctx)
 		if err != nil {
 			log.Fatalf("\nstart err: %v", err)
 		}
@@ -123,10 +124,10 @@ func getComponentName(c component.Component) string {
 	return fmt.Sprintf("[%s %s]", strings.ToUpper(ss[0]), ss[1])
 }
 
-func (env *TestEnviorment) Stop() error {
+func (env *TestEnviorment) Stop(ctx context.Context) error {
 	defer env.network.Remove()
 	for _, container := range env.components {
-		err := container.Stop()
+		err := container.Stop(ctx)
 		if err != nil {
 			log.Fatalf("stop err: %v", err)
 		}
@@ -134,9 +135,7 @@ func (env *TestEnviorment) Stop() error {
 	return nil
 }
 
-func (env *TestEnviorment) WriteLogs() error {
-	ctx := context.Background()
-
+func (env *TestEnviorment) WriteLogs(ctx context.Context) error {
 	if err := os.MkdirAll("runlogs/component", os.ModePerm); err != nil {
 		return err
 	}

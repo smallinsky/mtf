@@ -6,8 +6,8 @@ import (
 )
 
 type Component interface {
-	Start() error
-	Stop() error
+	Start(context.Context) error
+	Stop(context.Context) error
 }
 
 type Loggable interface {

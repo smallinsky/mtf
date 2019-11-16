@@ -31,8 +31,8 @@ func New(cli *docker.Docker, config Config) (*Component, error) {
 	}, nil
 }
 
-func (c *Component) Start() error {
-	if err := c.Container.Start(); err != nil {
+func (c *Component) Start(ctx context.Context) error {
+	if err := c.Container.Start(ctx); err != nil {
 		return err
 	}
 
@@ -40,7 +40,6 @@ func (c *Component) Start() error {
 		return err
 	}
 
-	ctx := context.Background()
 	conn, err := pubsub.NewClient(ctx, c.Config.ProjectID)
 	if err != nil {
 		return err
@@ -81,6 +80,6 @@ func (c *Component) Start() error {
 	return nil
 }
 
-func (c *Component) Stop() error {
-	return c.Container.Stop()
+func (c *Component) Stop(ctx context.Context) error {
+	return c.Container.Stop(ctx)
 }
