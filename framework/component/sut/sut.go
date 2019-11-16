@@ -29,12 +29,12 @@ func New(cli *docker.Docker, config SutConfig) (*Component, error) {
 	}, nil
 }
 
-func (c *Component) Start() error {
-	return c.Container.Start()
+func (c *Component) Start(ctx context.Context) error {
+	return c.Container.Start(ctx)
 }
 
-func (c *Component) Stop() error {
-	return c.Container.Stop()
+func (c *Component) Stop(ctx context.Context) error {
+	return c.Container.Stop(ctx)
 }
 
 func (c *Component) Logs(ctx context.Context) (io.Reader, error) {

@@ -16,10 +16,10 @@ import (
 )
 
 type Container interface {
-	Start() error
-	Stop() error
-	Name() string
+	Start(context.Context) error
+	Stop(context.Context) error
 	Logs(context.Context) (io.Reader, error)
+	Name() string
 }
 
 type WaitPolicy interface {
@@ -55,8 +55,8 @@ type Mount struct {
 
 type Mounts []Mount
 
-func (c *ContainerType) Start() error {
-	if err := c.cli.ContainerStart(context.Background(), c.ID, types.ContainerStartOptions{}); err != nil {
+func (c *ContainerType) Start(ctx context.Context) error {
+	if err := c.cli.ContainerStart(ctx, c.ID, types.ContainerStartOptions{}); err != nil {
 		return err
 	}
 
@@ -64,11 +64,11 @@ func (c *ContainerType) Start() error {
 		return nil
 	}
 
-	return c.WaitPolicy.WaitForIt(context.Background(), c)
+	return c.WaitPolicy.WaitForIt(ctx, c)
 }
 
-func (c *ContainerType) GetState() (*types.ContainerState, error) {
-	result, err := c.cli.ContainerInspect(context.Background(), c.ID)
+func (c *ContainerType) GetState(ctx context.Context) (*types.ContainerState, error) {
+	result, err := c.cli.ContainerInspect(ctx, c.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -78,12 +78,12 @@ func (c *ContainerType) GetState() (*types.ContainerState, error) {
 	return result.State, nil
 }
 
-func (c *ContainerType) WaitForReady() (state *types.ContainerState, err error) {
+func (c *ContainerType) WaitForReady(ctx context.Context) (state *types.ContainerState, err error) {
 	if c.config.Healtcheck == nil {
 		return nil, fmt.Errorf("heltcheck was not set")
 	}
 	for {
-		state, err = c.GetState()
+		state, err = c.GetState(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -111,12 +111,12 @@ func (c *ContainerType) GetStateV2(ctx context.Context) (*types.ContainerState, 
 	return result.State, nil
 }
 
-func (c *ContainerType) WaitForStatusHealthly() (state *types.ContainerState, err error) {
+func (c *ContainerType) WaitForStatusHealthly(ctx context.Context) (state *types.ContainerState, err error) {
 	if c.config.Healtcheck == nil {
 		return nil, fmt.Errorf("heltcheck was not set")
 	}
 	for {
-		state, err = c.GetState()
+		state, err = c.GetState(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -132,7 +132,7 @@ func (c *ContainerType) WaitForStatusHealthly() (state *types.ContainerState, er
 	return state, nil
 }
 
-func (c *ContainerType) Stop() error {
+func (c *ContainerType) Stop(ctx context.Context) error {
 	if c.config.AttachIfExist {
 		return nil
 	}
@@ -140,7 +140,7 @@ func (c *ContainerType) Stop() error {
 	options := types.ContainerRemoveOptions{
 		Force: true,
 	}
-	return c.cli.ContainerRemove(context.Background(), c.ID, options)
+	return c.cli.ContainerRemove(ctx, c.ID, options)
 }
 
 func (c *ContainerType) Logs(ctx context.Context) (io.Reader, error) {
@@ -148,7 +148,7 @@ func (c *ContainerType) Logs(ctx context.Context) (io.Reader, error) {
 		ShowStdout: true,
 		ShowStderr: true,
 	}
-	rc, err := c.cli.ContainerLogs(context.Background(), c.ID, options)
+	rc, err := c.cli.ContainerLogs(ctx, c.ID, options)
 	if err != nil {
 		return nil, err
 	}
