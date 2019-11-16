@@ -1,6 +1,9 @@
 package sut
 
 import (
+	"context"
+	"io"
+
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
@@ -32,4 +35,12 @@ func (c *Component) Start() error {
 
 func (c *Component) Stop() error {
 	return c.Container.Stop()
+}
+
+func (c *Component) Logs(ctx context.Context) (io.Reader, error) {
+	return c.Container.Logs(ctx)
+}
+
+func (c *Component) Name() string {
+	return c.Container.Name()
 }
