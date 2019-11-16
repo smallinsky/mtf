@@ -1,24 +1,25 @@
 package docker
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strconv"
 	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 )
 
 type Container interface {
 	Start() error
 	Stop() error
-	//Terminate() error
-	//	Logs(context.Context) (string, error)
-	GetStateV2(context.Context) (*types.ContainerState, error)
+	Name() string
+	Logs(context.Context) (io.Reader, error)
 }
 
 type WaitPolicy interface {
@@ -59,12 +60,11 @@ func (c *ContainerType) Start() error {
 		return err
 	}
 
-	if c.WaitPolicy != nil {
-		if err := c.WaitPolicy.WaitForIt(context.Background(), c); err != nil {
-			return err
-		}
+	if c.WaitPolicy == nil {
+		return nil
 	}
-	return nil
+
+	return c.WaitPolicy.WaitForIt(context.Background(), c)
 }
 
 func (c *ContainerType) GetState() (*types.ContainerState, error) {
@@ -133,41 +133,36 @@ func (c *ContainerType) WaitForStatusHealthly() (state *types.ContainerState, er
 }
 
 func (c *ContainerType) Stop() error {
-	if c == nil {
-		return fmt.Errorf("container is nil")
-	}
 	if c.config.AttachIfExist {
 		return nil
 	}
 
-	err := c.cli.ContainerRemove(context.Background(), c.ID, types.ContainerRemoveOptions{
+	options := types.ContainerRemoveOptions{
 		Force: true,
-	})
-	if err != nil {
-		return err
 	}
-	return nil
+	return c.cli.ContainerRemove(context.Background(), c.ID, options)
 }
 
-func (c *ContainerType) Logs() (string, error) {
-	if c.cli == nil {
-		return "", fmt.Errorf("cli is nil")
-	}
-	r, err := c.cli.ContainerLogs(context.Background(), c.ID, types.ContainerLogsOptions{
-		ShowStderr: true,
+func (c *ContainerType) Logs(ctx context.Context) (io.Reader, error) {
+	options := types.ContainerLogsOptions{
 		ShowStdout: true,
-	})
-	if err != nil {
-		return "", err
+		ShowStderr: true,
 	}
-	defer func() { r.Close() }()
-
-	buff, err := ioutil.ReadAll(r)
+	rc, err := c.cli.ContainerLogs(context.Background(), c.ID, options)
 	if err != nil {
-		return "", err
+		return nil, err
+	}
+	defer rc.Close()
+
+	// Docker container log stream contains metadata bytes, stdcopy allows to
+	// alter log and remove these metadata from the stream log.
+	var buff bytes.Buffer
+	_, err = stdcopy.StdCopy(&buff, &buff, rc)
+	if err != nil {
+		return nil, err
 	}
 
-	return string(buff), nil
+	return &buff, nil
 }
 
 func (m Mounts) toDockerType() []mount.Mount {

@@ -1,8 +1,10 @@
 package framework
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -54,9 +56,18 @@ func (env *TestEnviorment) Run() int {
 	if err := env.Start(); err != nil {
 		log.Fatalf("failed to prepare testing environment %v", err)
 	}
-	defer env.Stop()
+
+	defer func() {
+		if err := env.Stop(); err != nil {
+			log.Fatalf("Failed to stop containers: %v", err)
+		}
+	}()
 
 	code := env.M.Run()
+
+	if err := env.WriteLogs(); err != nil {
+		log.Fatalf("Failed to write containers logs: %v", err)
+	}
 
 	if core.Settings.Wait {
 		sig := make(chan os.Signal)
@@ -114,11 +125,40 @@ func getComponentName(c component.Component) string {
 
 func (env *TestEnviorment) Stop() error {
 	defer env.network.Remove()
-
 	for _, container := range env.components {
 		err := container.Stop()
 		if err != nil {
 			log.Fatalf("stop err: %v", err)
+		}
+	}
+	return nil
+}
+
+func (env *TestEnviorment) WriteLogs() error {
+	ctx := context.Background()
+
+	if err := os.MkdirAll("runlogs/component", os.ModePerm); err != nil {
+		return err
+	}
+
+	for _, container := range env.components {
+		v, ok := container.(component.Loggable)
+		if !ok {
+			continue
+		}
+		r, err := v.Logs(ctx)
+		if err != nil {
+			return err
+		}
+
+		f, err := os.Create(fmt.Sprintf("runlogs/component/%s.log", v.Name()))
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		if _, err := io.Copy(f, r); err != nil {
+			return err
 		}
 	}
 
