@@ -55,19 +55,19 @@ func TestEnv(m *testing.M) *TestEnviorment {
 func (env *TestEnviorment) Run() int {
 	ctx := context.Background()
 	if err := env.Start(ctx); err != nil {
-		log.Fatalf("failed to prepare testing environment %v", err)
+		log.Fatalf("[ERROR] Failed to prepare testing environment %v", err)
 	}
 
 	defer func() {
 		if err := env.Stop(ctx); err != nil {
-			log.Fatalf("Failed to stop containers: %v", err)
+			log.Fatalf("[ERROR] Failed to stop containers: %v", err)
 		}
 	}()
 
 	code := env.M.Run()
 
 	if err := env.WriteLogs(ctx); err != nil {
-		log.Fatalf("Failed to write containers logs: %v", err)
+		log.Fatalf("[ERROR] Failed to write containers logs: %v", err)
 	}
 
 	if core.Settings.Wait {
@@ -84,20 +84,20 @@ func (env *TestEnviorment) Start(ctx context.Context) error {
 	fmt.Println("=== PREPERING TEST ENV")
 	start := time.Now()
 	if err := env.genCerts(); err != nil {
-		panic(err)
+		log.Fatalf("[ERROR] Failed to generate tls certs: %v", err)
 	}
 
 	cli, err := docker.New()
 	if err != nil {
-		panic(err)
+		log.Fatalf("[ERROR] Failed to create docker client: %v", err)
 	}
 	env.network, err = cli.CreateNetwork("mtf_net")
 	if err != nil {
-		log.Fatalf("faield to get docker client: %v", err)
+		log.Fatalf("[ERROR] Failed to create docker network: %v", err)
 	}
 
-	if err := env.Prepare(); err != nil {
-		panic(err)
+	if err := env.Prepare(cli); err != nil {
+		log.Fatalf("[ERROR] Failed to prepare env: %v", err)
 	}
 
 	for _, container := range env.components {
@@ -164,11 +164,7 @@ func (env *TestEnviorment) WriteLogs(ctx context.Context) error {
 	return nil
 }
 
-func (env *TestEnviorment) Prepare() error {
-	cli, err := docker.New()
-	if err != nil {
-		panic(err)
-	}
+func (env *TestEnviorment) Prepare(cli *docker.Docker) error {
 	var components []component.Component
 
 	if env.Redis != nil {

@@ -18,16 +18,26 @@ func DeepEqual(exp interface{}) *DeepEqualType {
 }
 
 func (m *DeepEqualType) Match(got interface{}) error {
-	if !reflect.DeepEqual(got, m.exp) {
-		return errors.Wrapf(ErrNotEq, "deep equal: \n got:'%v'\n exp: '%v'\n", toJsonString(got), toJsonString(m.exp))
+	if reflect.DeepEqual(got, m.exp) {
+		return nil
 	}
-	return nil
+
+	gotDump, err := toJsonString(got)
+	if err != nil {
+		return err
+	}
+	expDump, err := toJsonString(m.exp)
+	if err != nil {
+		return err
+	}
+
+	return errors.Wrapf(ErrNotEq, "deep equal: \n got:'%v'\n exp: '%v'\n", gotDump, expDump)
 }
 
-func toJsonString(i interface{}) string {
+func toJsonString(i interface{}) (string, error) {
 	buff, err := json.MarshalIndent(i, "", " ")
 	if err != nil {
-		panic(err)
+		return "", nil
 	}
-	return string(buff)
+	return string(buff), nil
 }

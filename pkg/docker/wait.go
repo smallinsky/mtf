@@ -2,7 +2,6 @@ package docker
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -70,7 +69,6 @@ func waitForHealtyAndRunning(ctx context.Context, c *ContainerType) error {
 				fmt.Println("got error", err)
 				continue
 			}
-			//toJson(r)
 			if r.Health.Status != types.Healthy {
 				continue
 			}
@@ -80,12 +78,4 @@ func waitForHealtyAndRunning(ctx context.Context, c *ContainerType) error {
 			return nil
 		}
 	}
-}
-
-func toJson(i interface{}) {
-	buff, err := json.MarshalIndent(i, "", " ")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(string(buff))
 }

@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// HostIP returns host ip that allows to reach host directly inside docker container
+// HostIP returns host ip that allows to reach host directly inside docker container.
 func HostIP() (string, error) {
 	cmd := strings.Join([]string{
 		`ip addr show scope global dev docker0`,
