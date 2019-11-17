@@ -43,7 +43,6 @@ func (st *SuiteTest) Init(t *testing.T) {
 	if st.oraclePort, err = port.NewGRPCServerPort((*pbo.OracleServer)(nil), ":8002"); err != nil {
 		t.Fatalf("failed to init grpc oracle server")
 	}
-	time.Sleep(time.Millisecond * 300)
 }
 
 type SuiteTest struct {
