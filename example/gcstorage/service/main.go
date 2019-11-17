@@ -10,8 +10,6 @@ import (
 )
 
 func main() {
-	time.Sleep(time.Second * 2)
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 

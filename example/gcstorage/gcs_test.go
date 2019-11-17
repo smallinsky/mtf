@@ -11,7 +11,8 @@ import (
 
 func TestMain(m *testing.M) {
 	framework.TestEnv(m).WithSUT(framework.SutSettings{
-		Dir: "./service",
+		Dir:         "./service",
+		RuntimeType: framework.RuntimeTypeCommand,
 	}).Run()
 }
 

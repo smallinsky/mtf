@@ -19,7 +19,20 @@ func Run(t *testing.T, i interface{}) {
 	context.CreateDirectory()
 
 	for _, test := range getInternalTests(i) {
+		if testenv.settings.SUT.RuntimeType == RuntimeTypeCommand {
+			err := testenv.StartSutInCommandMode()
+			if err != nil {
+				t.Fatalf("[MTF ERROR] Failed to start sut component in cmd mode: %v", err)
+			}
+		}
 		t.Run(test.Name, test.F)
+
+		if testenv.settings.SUT.RuntimeType == RuntimeTypeCommand {
+			err := testenv.StopSutInCommandMode(test.Name)
+			if err != nil {
+				t.Fatalf("[MTF ERROR] Failed to stop sut component in cmd mode: %v", err)
+			}
+		}
 	}
 }
 
