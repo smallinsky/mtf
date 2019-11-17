@@ -27,7 +27,7 @@ func getInternalTests(i interface{}) []testing.InternalTest {
 	var tests []testing.InternalTest
 	v := reflect.ValueOf(i)
 	if v.Type().Kind() != reflect.Ptr && v.Type().Kind() != reflect.Struct {
-		panic("arg is not a ptr to a struct")
+		panic("invalid argument, expect ptr to struct")
 	}
 	for i := 0; i < v.Type().NumMethod(); i++ {
 		tm := v.Type().Method(i)

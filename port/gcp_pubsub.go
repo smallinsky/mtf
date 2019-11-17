@@ -36,18 +36,18 @@ func NewPubsub(projectID, addr string) (*Port, error) {
 
 	titer := conn.Topics(ctx)
 	for {
-		t, err := titer.Next()
+		topic, err := titer.Next()
 		if err != nil {
 			if err == iterator.Done {
 				break
 			}
-			panic(err)
+			return nil, err
 		}
 
-		ps.topicMap[portTopicName(t.String())] = t
-		ps.topic = t
+		ps.topicMap[topicNameSuffix(topic)] = topic
+		ps.topic = topic
 
-		siter := t.Subscriptions(ctx)
+		siter := topic.Subscriptions(ctx)
 
 		for {
 			sub, err := siter.Next()
@@ -55,11 +55,11 @@ func NewPubsub(projectID, addr string) (*Port, error) {
 				if err == iterator.Done {
 					break
 				}
-				panic(err)
+				return nil, err
 			}
 
-			sm, err := conn.CreateSubscription(ctx, portSubscriptionName(sub.String()), pubsub.SubscriptionConfig{
-				Topic:       t,
+			sm, err := conn.CreateSubscription(ctx, customSubscriptionName(sub), pubsub.SubscriptionConfig{
+				Topic:       topic,
 				AckDeadline: time.Second * 10,
 			})
 			if err != nil {
@@ -68,7 +68,7 @@ func NewPubsub(projectID, addr string) (*Port, error) {
 			go func() {
 				err := sm.Receive(ctx, ps.handle)
 				if err != nil {
-					panic(err)
+					log.Fatalf("[ERROR] Pubsub receiver error: %v", err)
 				}
 			}()
 		}
@@ -79,18 +79,20 @@ func NewPubsub(projectID, addr string) (*Port, error) {
 	}, nil
 }
 
-func portSubscriptionName(s string) string {
-	ss := strings.SplitAfter(s, "/subscriptions/")
+func customSubscriptionName(subscription *pubsub.Subscription) string {
+	name := subscription.String()
+	ss := strings.SplitAfter(name, "/subscriptions/")
 	if len(ss) != 2 {
-		panic("corupted subscription name")
+		log.Fatalf("[ERROR] Invalid subscription name:  %s", name)
 	}
 	return fmt.Sprintf("%s_mtf_port_receiver", ss[1])
 }
 
-func portTopicName(s string) string {
-	ss := strings.SplitAfter(s, "/topics/")
+func topicNameSuffix(topic *pubsub.Topic) string {
+	name := topic.String()
+	ss := strings.SplitAfter(name, "/topics/")
 	if len(ss) != 2 {
-		panic("corupted topic name")
+		log.Fatalf("[ERROR] Invalid topic name:  %s", name)
 	}
 	return ss[1]
 }
@@ -99,13 +101,12 @@ func (ps *Pubsub) handle(ctx context.Context, msg *pubsub.Message) {
 	m := any.Any{}
 	err := proto.Unmarshal(msg.Data, &m)
 	if err != nil {
-		log.Infof("recived messge ID: %v Data:%v\n", msg.ID, string(msg.Data))
-		panic(err)
+		log.Fatalf("[ERROR] Failed to unmarshal message: %v", err)
 	}
 
 	dynAny := ptypes.DynamicAny{}
 	if err := ptypes.UnmarshalAny(&m, &dynAny); err != nil {
-		panic(err)
+		log.Fatalf("[ERROR] Failed to unmarshal any: %v", err)
 	}
 	msg.Ack()
 	ps.messages <- dynAny.Message

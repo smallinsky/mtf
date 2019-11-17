@@ -42,7 +42,6 @@ func NewFTP(addr, user, pass string) (*FTPPort, error) {
 
 	go func() {
 		fswatch.Subscriber(":4441", func(event *pb.EventRequest) {
-			fmt.Println("ftp port got event", event.String())
 			ftpPort.ftpEventC <- event
 		})
 	}()

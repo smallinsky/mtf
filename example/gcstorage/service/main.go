@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"io/ioutil"
+	"log"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -16,11 +17,11 @@ func main() {
 
 	buff, err := read(ctx, "bucket/path", "file.txt")
 	if err != nil {
-		panic(err)
+		log.Fatalf("[ERROR]f failed to read from bucket %v", err)
 	}
 
 	if err := write(ctx, "bucket/path/bak", "file.txt.bak", buff); err != nil {
-		panic(err)
+		log.Fatalf("[ERROR]f failed to write to bucket %v", err)
 	}
 }
 
