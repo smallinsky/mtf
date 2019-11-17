@@ -30,14 +30,10 @@ var (
 )
 
 type TestEnviorment struct {
-	MySQL  *MysqlSettings
-	SUT    *SutSettings
-	PubSub *PubSubSettings
-	Redis  *RedisSettings
-	FTP    *FTPSettings
-	TLS    *TLSSettings
+	settings Settings
 
 	components []component.Component
+	SUT        component.Component
 	network    *docker.Network
 
 	M *testing.M
@@ -52,8 +48,9 @@ func TestEnv(m *testing.M) *TestEnviorment {
 	return testenv
 }
 
-func (env *TestEnviorment) Run() int {
+func (env *TestEnviorment) Run() {
 	ctx := context.Background()
+
 	if err := env.Start(ctx); err != nil {
 		log.Fatalf("[ERROR] Failed to prepare testing environment %v", err)
 	}
@@ -66,7 +63,7 @@ func (env *TestEnviorment) Run() int {
 
 	code := env.M.Run()
 
-	if err := env.WriteLogs(ctx); err != nil {
+	if err := env.WriteLogs(ctx, ""); err != nil {
 		log.Fatalf("[ERROR] Failed to write containers logs: %v", err)
 	}
 
@@ -77,7 +74,7 @@ func (env *TestEnviorment) Run() int {
 		<-sig
 	}
 
-	return code
+	os.Exit(code)
 }
 
 func (env *TestEnviorment) Start(ctx context.Context) error {
@@ -135,28 +132,33 @@ func (env *TestEnviorment) Stop(ctx context.Context) error {
 	return nil
 }
 
-func (env *TestEnviorment) WriteLogs(ctx context.Context) error {
-	if err := os.MkdirAll("runlogs/component", os.ModePerm); err != nil {
+func (env *TestEnviorment) StartSutInCommandMode() error {
+	err := env.SUT.Start(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (env *TestEnviorment) StopSutInCommandMode(tcName string) error {
+	ctx := context.Background()
+	if err := env.WriteComponentLogs(ctx, env.SUT, fmt.Sprintf("%s-", tcName)); err != nil {
+		log.Printf("[ERROR] Failed to write sut logs: %v", err)
+	}
+	if err := env.SUT.Stop(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (env *TestEnviorment) WriteLogs(ctx context.Context, tcName string) error {
+	if err := os.MkdirAll("runlogs/components", os.ModePerm); err != nil {
 		return err
 	}
 
 	for _, container := range env.components {
-		v, ok := container.(component.Loggable)
-		if !ok {
-			continue
-		}
-		r, err := v.Logs(ctx)
+		err := env.WriteComponentLogs(ctx, container, "components/")
 		if err != nil {
-			return err
-		}
-
-		f, err := os.Create(fmt.Sprintf("runlogs/component/%s.log", v.Name()))
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-
-		if _, err := io.Copy(f, r); err != nil {
 			return err
 		}
 	}
@@ -164,13 +166,35 @@ func (env *TestEnviorment) WriteLogs(ctx context.Context) error {
 	return nil
 }
 
+func (env *TestEnviorment) WriteComponentLogs(ctx context.Context, cpnt component.Component, prefix string) error {
+	v, ok := cpnt.(component.Loggable)
+	if !ok {
+		return nil
+	}
+	r, err := v.Logs(ctx)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(fmt.Sprintf("runlogs/%s%s.log", prefix, v.Name()))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = io.Copy(f, r)
+	return err
+}
+
 func (env *TestEnviorment) Prepare(cli *docker.Docker) error {
 	var components []component.Component
 
-	if env.Redis != nil {
+	conf := env.settings
+
+	if conf.Redis != nil {
 		comp, err := redis.New(cli, redis.RedisConfig{
-			Password: env.Redis.Password,
-			Port:     env.Redis.Port,
+			Password: conf.Redis.Password,
+			Port:     conf.Redis.Port,
 		})
 		if err != nil {
 			return err
@@ -178,11 +202,11 @@ func (env *TestEnviorment) Prepare(cli *docker.Docker) error {
 		components = append(components, comp)
 	}
 
-	if env.PubSub != nil {
+	if conf.PubSub != nil {
 		cfg := pubsub.Config{
-			ProjectID: env.PubSub.ProjectID,
+			ProjectID: conf.PubSub.ProjectID,
 		}
-		for _, v := range env.PubSub.TopicSubscriptions {
+		for _, v := range conf.PubSub.TopicSubscriptions {
 			cfg.TopicSubscriptions = append(cfg.TopicSubscriptions, pubsub.TopicSubscriptions{
 				Topic:         v.Topic,
 				Subscriptions: v.Subscriptions,
@@ -195,7 +219,7 @@ func (env *TestEnviorment) Prepare(cli *docker.Docker) error {
 		components = append(components, comp)
 	}
 
-	if cfg := env.MySQL; cfg != nil {
+	if cfg := conf.MySQL; cfg != nil {
 		comp, err := mysql.New(cli, mysql.MySQLConfig{
 			Database:      cfg.DatabaseName,
 			Password:      cfg.Password,
@@ -207,7 +231,7 @@ func (env *TestEnviorment) Prepare(cli *docker.Docker) error {
 		components = append(components, comp)
 	}
 
-	if cfg := env.MySQL; cfg != nil && cfg.MigrationDir != "" {
+	if cfg := conf.MySQL; cfg != nil && cfg.MigrationDir != "" {
 		comp, err := migrate.New(cli, migrate.MigrateConfig{
 			Path:     cfg.MigrationDir,
 			Password: cfg.Password,
@@ -221,7 +245,7 @@ func (env *TestEnviorment) Prepare(cli *docker.Docker) error {
 		components = append(components, comp)
 	}
 
-	if cfg := env.FTP; cfg != nil {
+	if cfg := conf.FTP; cfg != nil {
 		comp, err := ftp.New(cli, ftp.FTPConfig{})
 		if err != nil {
 			return err
@@ -229,17 +253,22 @@ func (env *TestEnviorment) Prepare(cli *docker.Docker) error {
 		components = append(components, comp)
 	}
 
-	if env.SUT != nil {
-		env.SUT.Envs = append(env.SUT.Envs, "PUBSUB_EMULATOR_HOST="+GetDockerHostAddr(8085))
+	if conf.SUT != nil {
+		conf.SUT.Envs = append(conf.SUT.Envs, "PUBSUB_EMULATOR_HOST="+GetDockerHostAddr(8085))
 		comp, err := sut.New(cli, sut.SutConfig{
-			Path:         env.SUT.Dir,
-			Env:          env.SUT.Envs,
-			ExposedPorts: env.SUT.Ports,
+			Path:               conf.SUT.Dir,
+			Env:                conf.SUT.Envs,
+			ExposedPorts:       conf.SUT.Ports,
+			RuntimeTypeCommand: conf.SUT.RuntimeType == RuntimeTypeCommand,
 		})
 		if err != nil {
 			return err
 		}
-		components = append(components, comp)
+
+		env.SUT = comp
+		if conf.SUT.RuntimeType != RuntimeTypeCommand {
+			components = append(components, comp)
+		}
 	}
 
 	env.components = components
@@ -247,40 +276,9 @@ func (env *TestEnviorment) Prepare(cli *docker.Docker) error {
 }
 
 func (env *TestEnviorment) genCerts() error {
-	var hosts []string
-	if env.TLS != nil {
-		hosts = env.TLS.Hosts
+	if env.settings.TLS == nil {
+		return nil
 	}
-	_, err := cert.GenCert(hosts)
+	_, err := cert.GenCert(env.settings.TLS.Hosts)
 	return err
-}
-
-func (env *TestEnviorment) WithMySQL(settings MysqlSettings) *TestEnviorment {
-	env.MySQL = &settings
-	return env
-}
-
-func (env *TestEnviorment) WithSUT(settings SutSettings) *TestEnviorment {
-	env.SUT = &settings
-	return env
-}
-
-func (env *TestEnviorment) WithPubSub(settings PubSubSettings) *TestEnviorment {
-	env.PubSub = &settings
-	return env
-}
-
-func (env *TestEnviorment) WithRedis(settings RedisSettings) *TestEnviorment {
-	env.Redis = &settings
-	return env
-}
-
-func (env *TestEnviorment) WithFTP(settings FTPSettings) *TestEnviorment {
-	env.FTP = &settings
-	return env
-}
-
-func (env *TestEnviorment) WithTLS(settings TLSSettings) *TestEnviorment {
-	env.TLS = &settings
-	return env
 }

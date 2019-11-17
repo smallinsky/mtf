@@ -9,8 +9,7 @@ import (
 
 var (
 	addr = flag.String("addr", "host.docker.internal:4441", "watcher address")
-
-	dir = flag.String("dir", ".", "dir path to watch")
+	dir  = flag.String("dir", ".", "dir path to watch")
 )
 
 func main() {

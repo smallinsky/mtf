@@ -12,9 +12,10 @@ import (
 )
 
 type SutConfig struct {
-	Path         string
-	Env          []string
-	ExposedPorts []int
+	Path               string
+	Env                []string
+	ExposedPorts       []int
+	RuntimeTypeCommand bool
 
 	absoltePath string
 	binaryName  string
@@ -69,6 +70,10 @@ func BuildContainerConfig(config SutConfig) (*docker.ContainerConfig, error) {
 		Source: config.absoltePath,
 		Target: "/component",
 	}
+	var waitPolicy docker.WaitPolicy
+	if !config.RuntimeTypeCommand {
+		waitPolicy = &docker.WaitForProcess{Process: config.binaryName}
+	}
 
 	return &docker.ContainerConfig{
 		Name:  name,
@@ -81,6 +86,6 @@ func BuildContainerConfig(config SutConfig) (*docker.ContainerConfig, error) {
 		PortMap:     ports,
 		NetworkName: network,
 		Priviliged:  true,
-		WaitPolicy:  &docker.WaitForProcess{Process: config.binaryName},
+		WaitPolicy:  waitPolicy,
 	}, nil
 }

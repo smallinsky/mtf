@@ -21,7 +21,8 @@ func TestMain(m *testing.M) {
 			Pass: "test",
 		}).
 		WithSUT(framework.SutSettings{
-			Dir: "./service",
+			Dir:         "./service",
+			RuntimeType: framework.RuntimeTypeCommand,
 		}).
 		Run()
 }

@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/jlaffaye/ftp"
 	"github.com/pkg/errors"
 )
 
 func main() {
-	time.Sleep(time.Second * 2)
 	conn, err := dialFTP("ftp_mtf:21", "test", "test")
 	if err != nil {
 		log.Fatalf("failed to connect to ftp server")
