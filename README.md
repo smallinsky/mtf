@@ -2,7 +2,7 @@
 Test your microservice without dependency to other services.
 
 ## Getting started
-To begin using `MTF` framework you will need to define `TestMain` function and setup required environment used for binary that you would like to test further called `SUT` (System Under Test). To setup prerequisite dependency for your SUT the `framework.TestEnv` function should be invoked. `With...()` functions method chain allows to set up and configure depenency for SUT.
+To begin using `MTF` framework you will need to define `TestMain` function and setup required environment used for binary that you would like to test further called `SUT` (System Under Test). To setup prerequisite dependency for your SUT the `framework.TestEnv` function should be invoked. `With...()` functions method chain allows to set up and configure depenency for SUT. Finally the `.Run()` chain method function starts the test.
 ```go
 func TestMain(m *testing.M) {
 	framework.TestEnv(m).
@@ -23,13 +23,16 @@ func TestMain(m *testing.M) {
 }
 ```
 
+Suite collects ports that allows to communicate with external mocked dependency by calling port.`{send receive}` functions. 
 ```go
 type SuiteTest struct {
 	echoPort   *port.Port
 	httpPort   *port.Port
 	oraclePort *port.Port
 }
-
+```
+Ports initialization should be done within Suite `Init(t *testing.T)` function. 
+```
 func (st *SuiteTest) Init(t *testing.T) {
 	var err error
 	if st.echoPort, err = port.NewGRPCClientPort((*pb.EchoClient)(nil), "localhost:8001"); err != nil {
@@ -42,7 +45,7 @@ func (st *SuiteTest) Init(t *testing.T) {
 }
 ```
 
-
+Tests function needs to be implemented on sute object.
 ```go
 func (st *SuiteTest) TestRedis(t *testing.T) {
 	st.echoPort.Send(t, &pb.AskRedisRequest{
