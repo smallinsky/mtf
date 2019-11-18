@@ -80,11 +80,11 @@ func initRedis(cfg config) *redis.Client {
 		log.Fatalf("failed to coonect to reddis: %v", err)
 	}
 
-	if _, err := client.Set("make me sandwitch", "what? make it yourself", 0).Result(); err != nil {
+	if _, err := client.Set("make me sandwich", "what? make it yourself", 0).Result(); err != nil {
 		log.Fatalf("redis: faield to set key %v", err)
 	}
 
-	if _, err := client.Set("sudo make me sandwitch", "okey", 0).Result(); err != nil {
+	if _, err := client.Set("sudo make me sandwich", "okey", 0).Result(); err != nil {
 		log.Fatalf("redis: faield to set key %v", err)
 	}
 
