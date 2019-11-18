@@ -32,7 +32,7 @@ type SuiteTest struct {
 }
 ```
 Ports initialization should be done within Suite `Init(t *testing.T)` function. 
-```
+```go
 func (st *SuiteTest) Init(t *testing.T) {
 	var err error
 	if st.echoPort, err = port.NewGRPCClientPort((*pb.EchoClient)(nil), "localhost:8001"); err != nil {
@@ -45,7 +45,7 @@ func (st *SuiteTest) Init(t *testing.T) {
 }
 ```
 
-Tests function needs to be implemented on sute object.
+Tests function needs to be implemented on suite object.
 ```go
 func (st *SuiteTest) TestRedis(t *testing.T) {
 	st.echoPort.Send(t, &pb.AskRedisRequest{
@@ -61,4 +61,30 @@ func (st *SuiteTest) TestRedis(t *testing.T) {
 		Data: "okey",
 	})
 }
+
+func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
+	time.Sleep(time.Second * 2)
+	st.echoPort.Send(t, &pb.AskOracleRequest{
+		Data: "Get answer for ultimate question of life the universe and everything",
+	})
+	st.oraclePort.Receive(t, &pbo.AskDeepThoughtRequest{
+		Data: "Get answer for ultimate question of life the universe and everything",
+	})
+	st.oraclePort.Send(t, &pbo.AskDeepThoughtResponse{
+		Data: "42",
+	})
+	st.echoPort.Receive(t, &pb.AskOracleResponse{
+		Data: "42",
+	})
+}
+
+func (st *SuiteTest) TestFetchDataFromDB(t *testing.T) {
+	st.echoPort.Send(t, &pb.AskDBRequest{
+		Data: "the dirty fork",
+	})
+	st.echoPort.Receive(t, &pb.AskDBResponse{
+		Data: "Lucky we didn't say anything about the dirty knife",
+	})
+}
+
 ```
