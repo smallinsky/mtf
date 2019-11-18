@@ -54,13 +54,13 @@ type SuiteTest struct {
 
 func (st *SuiteTest) TestRedis(t *testing.T) {
 	st.echoPort.Send(t, &pb.AskRedisRequest{
-		Data: "make me sandwitch",
+		Data: "make me sandwich",
 	})
 	st.echoPort.Receive(t, &pb.AskRedisResponse{
 		Data: "what? make it yourself",
 	})
 	st.echoPort.Send(t, &pb.AskRedisRequest{
-		Data: "sudo make me sandwitch",
+		Data: "sudo make me sandwich",
 	})
 	st.echoPort.Receive(t, &pb.AskRedisResponse{
 		Data: "okey",
