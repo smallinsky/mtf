@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/smallinsky/mtf/framework/context"
+	"github.com/smallinsky/mtf/port"
 )
 
 type Initable interface {
@@ -17,6 +18,7 @@ func Run(t *testing.T, i interface{}) {
 		v.Init(t)
 	}
 	context.CreateDirectory()
+	port.WaitForGRPCConn()
 
 	for _, test := range getInternalTests(i) {
 		if testenv.settings.SUT.RuntimeType == RuntimeTypeCommand {

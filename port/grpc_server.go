@@ -5,6 +5,7 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 	"unsafe"
 
@@ -122,11 +123,15 @@ func NewGRPCServer(i interface{}, port string, opts ...PortOpt) (*PortIn, error)
 		return nil, errors.Wrapf(err, "failed to reqigster server interface")
 	}
 
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
+		wg.Done()
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("Failed to server %v", err)
 		}
 	}()
+	wg.Wait()
 	return portIn, nil
 }
 
