@@ -3,6 +3,7 @@ package port
 import (
 	"log"
 	"net/http"
+	"runtime"
 	"sync"
 
 	"github.com/gorilla/mux"
@@ -56,6 +57,7 @@ func (ht *httpserver) servHTTPS() error {
 			log.Fatalf("faield to start tls server: %v", err)
 		}
 	}()
+	runtime.Gosched()
 	return nil
 }
 
@@ -67,5 +69,6 @@ func (ht *httpserver) servHTTP() error {
 			log.Fatalf("faield to start tls server: %v", err)
 		}
 	}()
+	runtime.Gosched()
 	return nil
 }
