@@ -14,7 +14,12 @@ var _ net.Listener = &listener{}
 
 var startSync sync.WaitGroup
 
+func WaitForGRPCConn() {
+	startSync.Wait()
+}
+
 func listen(network, address string) (net.Listener, error) {
+	defer startSync.Add(1)
 	l, err := net.Listen(network, address)
 	if err != nil {
 		return nil, err
@@ -28,16 +33,13 @@ func listen(network, address string) (net.Listener, error) {
 }
 
 type listener struct {
-	l net.Listener
+	l  net.Listener
+	wg sync.WaitGroup
 }
 
 func (l *listener) Accept() (net.Conn, error) {
-	conn, err := l.l.Accept()
-	if err != nil {
-		return conn, err
-	}
-
-	return conn, err
+	defer startSync.Done()
+	return l.l.Accept()
 }
 
 func (l *listener) Close() error {

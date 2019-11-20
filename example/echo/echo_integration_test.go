@@ -4,7 +4,6 @@ package framework
 
 import (
 	"testing"
-	"time"
 
 	"github.com/smallinsky/mtf/framework"
 	"github.com/smallinsky/mtf/port"
@@ -43,7 +42,6 @@ func (st *SuiteTest) Init(t *testing.T) {
 	if st.oraclePort, err = port.NewGRPCServerPort((*pbo.OracleServer)(nil), ":8002"); err != nil {
 		t.Fatalf("failed to init grpc oracle server")
 	}
-	time.Sleep(time.Millisecond * 300)
 }
 
 type SuiteTest struct {
@@ -86,7 +84,6 @@ func (st *SuiteTest) TestHTTP(t *testing.T) {
 }
 
 func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
-	time.Sleep(time.Second * 2)
 	st.echoPort.Send(t, &pb.AskOracleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
