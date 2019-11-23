@@ -16,7 +16,8 @@ func TestMain(m *testing.M) {
 			Envs: []string{
 				"ORACLE_ADDR=" + framework.GetDockerHostAddr(8002),
 			},
-			Dir: "./service",
+			Dir:         "./service",
+			RuntimeType: framework.RuntimeTypeCommand,
 		}).
 		WithPubSub(framework.PubSubSettings{
 			ProjectID: "test-project-id",
@@ -40,7 +41,6 @@ func (st *SuiteTest) Init(t *testing.T) {
 		t.Fatalf("Failed to create pbusub %v", err)
 	}
 	st.pubsub = pusbus
-
 }
 
 type SuiteTest struct {
