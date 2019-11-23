@@ -2,6 +2,7 @@ package pubsub
 
 import (
 	"context"
+	"log"
 	"os"
 	"time"
 
@@ -66,10 +67,14 @@ func (c *Component) Start(ctx context.Context) error {
 				return err
 			}
 			if !exists {
-				_, err = conn.CreateSubscription(ctx, sn, pubsub.SubscriptionConfig{
-					Topic:       topic,
-					AckDeadline: time.Second * 10,
-				})
+				continue
+			}
+			_, err = conn.CreateSubscription(ctx, sn, pubsub.SubscriptionConfig{
+				Topic:       topic,
+				AckDeadline: time.Second * 10,
+			})
+			if err != nil {
+				log.Fatalf("[ERROR] Failed to create subscription %v", err)
 			}
 		}
 	}

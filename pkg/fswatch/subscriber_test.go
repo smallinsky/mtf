@@ -45,7 +45,7 @@ func TestDirWatcher(t *testing.T) {
 			t.Fatalf("got: %+v\nexp: %+v", got, exp)
 		}
 	case <-time.After(time.Second):
-		t.Fatalf("file event was not recived")
+		t.Fatalf("file event was not received")
 	}
 
 	if err := os.Remove(tmpFile); err != nil {
@@ -62,6 +62,6 @@ func TestDirWatcher(t *testing.T) {
 			t.Fatalf("got: %+v\nexp: %+v", got, exp)
 		}
 	case <-time.After(time.Second):
-		t.Fatalf("file event was not recived")
+		t.Fatalf("file event was not received")
 	}
 }

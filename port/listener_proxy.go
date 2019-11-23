@@ -7,7 +7,7 @@ import (
 
 // Custom proxy around net.Listen interface that allow to
 // observe when client connection is enstablished.
-// Current GRPC transport impementation does retry with exponencial backoff
+// Current GRPC transport impementation does retry with exponential backoff
 // and when connection is not in READY state whole GRPC call fails with error.
 
 var _ net.Listener = &listener{}

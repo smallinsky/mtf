@@ -43,11 +43,6 @@ type SuiteTest struct {
 }
 
 func (s *SuiteTest) TestFTPUpload(t *testing.T) {
-	conn, err := dialFTP("localhost:21", "test", "test")
-	if err != nil {
-		t.Fatalf("failed to dial ftp server: %v", err)
-	}
-	conn = conn
 	s.ftpPort.Receive(t, &port.FTPEvent{
 		Path:    "/ftp/randomfile.txt",
 		Payload: []byte("random file content"),

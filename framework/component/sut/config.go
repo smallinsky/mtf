@@ -85,7 +85,7 @@ func BuildContainerConfig(config SutConfig) (*docker.ContainerConfig, error) {
 		},
 		PortMap:     ports,
 		NetworkName: network,
-		Priviliged:  true,
+		Privileged:  true,
 		WaitPolicy:  waitPolicy,
 	}, nil
 }
