@@ -3,11 +3,7 @@
 package ftptest
 
 import (
-	"fmt"
 	"testing"
-
-	"github.com/jlaffaye/ftp"
-	"github.com/pkg/errors"
 
 	"github.com/smallinsky/mtf/framework"
 	"github.com/smallinsky/mtf/port"
@@ -47,15 +43,4 @@ func (s *SuiteTest) TestFTPUpload(t *testing.T) {
 		Path:    "/ftp/randomfile.txt",
 		Payload: []byte("random file content"),
 	})
-}
-
-func dialFTP(addr string, user, pass string) (*ftp.ServerConn, error) {
-	connection, err := ftp.Connect(addr)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to connect to %q", addr)
-	}
-	if err := connection.Login(user, pass); err != nil {
-		return nil, fmt.Errorf("failed to login to %q: %v", addr, err)
-	}
-	return connection, nil
 }
