@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/smallinsky/mtf/framework"
+	"github.com/smallinsky/mtf/match"
 	"github.com/smallinsky/mtf/port"
 	pb "github.com/smallinsky/mtf/proto/echo"
 	pbo "github.com/smallinsky/mtf/proto/oracle"
@@ -105,4 +106,23 @@ func (st *SuiteTest) TestFetchDataFromDB(t *testing.T) {
 	st.echoPort.Receive(t, &pb.AskDBResponse{
 		Data: "Lucky we didn't say anything about the dirty knife",
 	})
+}
+
+func (st *SuiteTest) TestHTTPMatcher(t *testing.T) {
+	st.echoPort.Send(t, &pb.AskGoogleRequest{
+		Data: "Get answer for ultimate question of life the universe and everything",
+	})
+	st.httpPort.Receive(t, match.Fn(func(req *port.HTTPRequest) {
+		if got, want := req.Host, "api.icndb.com"; got != want {
+			t.Fatalf("host mismatch, got: %v want: %v", got, want)
+		}
+	}))
+	st.httpPort.Send(t, &port.HTTPResponse{
+		Body: []byte(`{"value":{"joke":"42"}}`),
+	})
+	st.echoPort.Receive(t, match.Fn(func(resp *pb.AskGoogleResponse) {
+		if got, want := resp.GetData(), "42"; got != want {
+			t.Fatalf("data mismatch, got: %v want: %v", got, want)
+		}
+	}))
 }
