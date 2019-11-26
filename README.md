@@ -1,8 +1,8 @@
-# MTF - Microservice Test Framework [![CircleCI](https://circleci.com/gh/smallinsky/mtf.svg?style=svg)](https://circleci.com/gh/smallinsky/mtf)
+# Microservice Test Framework [![CircleCI](https://circleci.com/gh/smallinsky/mtf.svg?style=svg)](https://circleci.com/gh/smallinsky/mtf)[![Go Report Card](https://goreportcard.com/badge/github.com/smallinsky/mtf)](https://goreportcard.com/report/github.com/smallinsky/mtf)
 Test your microservice without dependency to other services.
 
 ## Getting started
-To begin using `MTF` framework you will need to define `TestMain` function and setup required environment used for binary that you would like to test further called `SUT` (System Under Test). To setup prerequisite dependency for your SUT the `framework.TestEnv` function should be invoked. `With...()` functions method chain allows to set up and configure dependency for SUT. Finally the `.Run()` chain method function starts the test.
+To begin using `MTF` framework you will need to define `TestMain` function and setup required environment used for binary that you would like to test further called `SUT` (System Under Test). To setup prerequisite dependency for your SUT the `framework.TestEnv` function should be invoked. `With...()` functions method chain allows to set up and configure depenency for SUT. Finally the `.Run()` chain method function starts the test.
 ```go
 func TestMain(m *testing.M) {
 	framework.TestEnv(m).
@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 }
 ```
 
-Suite collects ports that allows to communicate with external mocked dependency by calling port.`{send receive}` functions.
+Suite collects ports that allows to communicate with external mocked dependency by calling port.`{send receive}` functions. 
 ```go
 type SuiteTest struct {
 	echoPort   *port.Port
@@ -31,7 +31,7 @@ type SuiteTest struct {
 	oraclePort *port.Port
 }
 ```
-Ports initialization should be done within Suite `Init(t *testing.T)` function.
+Ports initialization should be done within Suite `Init(t *testing.T)` function. 
 ```go
 func (st *SuiteTest) Init(t *testing.T) {
 	var err error
@@ -49,20 +49,22 @@ Tests function needs to be implemented on suite object.
 ```go
 func (st *SuiteTest) TestRedis(t *testing.T) {
 	st.echoPort.Send(t, &pb.AskRedisRequest{
-		Data: "make me sandwich",
+		Data: "make me sandwitch",
 	})
 	st.echoPort.Receive(t, &pb.AskRedisResponse{
 		Data: "what? make it yourself",
 	})
 	st.echoPort.Send(t, &pb.AskRedisRequest{
-		Data: "sudo make me sandwich",
+		Data: "sudo make me sandwitch",
 	})
 	st.echoPort.Receive(t, &pb.AskRedisResponse{
 		Data: "okey",
 	})
 }
-
+```
+```go
 func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
+	time.Sleep(time.Second * 2)
 	st.echoPort.Send(t, &pb.AskOracleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
@@ -76,7 +78,8 @@ func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
 		Data: "42",
 	})
 }
-
+```
+```go
 func (st *SuiteTest) TestFetchDataFromDB(t *testing.T) {
 	st.echoPort.Send(t, &pb.AskDBRequest{
 		Data: "the dirty fork",
@@ -85,7 +88,4 @@ func (st *SuiteTest) TestFetchDataFromDB(t *testing.T) {
 		Data: "Lucky we didn't say anything about the dirty knife",
 	})
 }
-
 ```
-
-
