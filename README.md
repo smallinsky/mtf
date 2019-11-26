@@ -57,24 +57,27 @@ func (st *SuiteTest) Init(t *testing.T) {
 
 Tests function needs to be implemented on suite object.
 ```go
-func (st *SuiteTest) TestRedis(t *testing.T) {
-	st.echoPort.Send(t, &pb.AskRedisRequest{
-		Data: "make me sandwitch",
+func (st *SuiteTest) TestHTTP(t *testing.T) {
+	st.echoPort.Send(t, &pb.AskGoogleRequest{
+		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	st.echoPort.Receive(t, &pb.AskRedisResponse{
-		Data: "what? make it yourself",
+	st.httpPort.Receive(t, &port.HTTPRequest{
+		Body:   []byte{},
+		Method: "GET",
+		Host:   "api.icndb.com",
+		URL:    "/jokes/random?firstName=John\u0026amp;lastName=Doe",
 	})
-	st.echoPort.Send(t, &pb.AskRedisRequest{
-		Data: "sudo make me sandwitch",
+	st.httpPort.Send(t, &port.HTTPResponse{
+		Body: []byte(`{"value":{"joke":"42"}}`),
 	})
-	st.echoPort.Receive(t, &pb.AskRedisResponse{
-		Data: "okey",
+	st.echoPort.Receive(t, &pb.AskGoogleResponse{
+		Data: "42",
 	})
 }
+
 ```
 ```go
 func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
-	time.Sleep(time.Second * 2)
 	st.echoPort.Send(t, &pb.AskOracleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
