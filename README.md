@@ -53,35 +53,3 @@ func (st *SuiteTest) Init(t *testing.T) {
 		t.Fatalf("failed to init grpc oracle server")
 	}
 }
-```
-## Writing Testcase
-Lets say that our SUT service is simple grpc server with a `AskOracle(context.Context, &pb.AskOracleRequest) (*pb.AskOracleResponse, error)` handler method that calls other grpc service in order to get the result. 
-```go 
-func (s *server) AskOracle(ctx context.Context, req *pb.AskOracleRequest) (*pb.AskOracleResponse, error) {
-	resp, err := s.OracleClient.AskDeepThought(context.Background(), &pbo.AskDeepThoughtRequest{
-		Data: req.GetData(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &pb.AskOracleResponse{
-		Data: resp.GetData(),
-	}, nil
-}
-```
-```go
-func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
-	st.echoPort.Send(t, &pb.AskOracleRequest{
-		Data: "Get answer for ultimate question of life the universe and everything",
-	})
-	st.oraclePort.Receive(t, &pbo.AskDeepThoughtRequest{
-		Data: "Get answer for ultimate question of life the universe and everything",
-	})
-	st.oraclePort.Send(t, &pbo.AskDeepThoughtResponse{
-		Data: "42",
-	})
-	st.echoPort.Receive(t, &pb.AskOracleResponse{
-		Data: "42",
-	})
-}
-```
