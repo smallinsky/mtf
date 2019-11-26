@@ -1,4 +1,4 @@
-# MTF - Microservice Test Framework [![CircleCI](https://circleci.com/gh/smallinsky/mtf.svg?style=svg)](https://circleci.com/gh/smallinsky/mtf)[![Go Report Card](https://goreportcard.com/badge/github.com/smallinsky/mtf)](https://goreportcard.com/report/github.com/smallinsky/mtf)
+# Microservice Test Framework [![CircleCI](https://circleci.com/gh/smallinsky/mtf.svg?style=svg)](https://circleci.com/gh/smallinsky/mtf)[![Go Report Card](https://goreportcard.com/badge/github.com/smallinsky/mtf)](https://goreportcard.com/report/github.com/smallinsky/mtf)
 Test your microservice without dependency to other services.
 
 ## Getting started
@@ -61,7 +61,8 @@ func (st *SuiteTest) TestRedis(t *testing.T) {
 		Data: "okey",
 	})
 }
-
+```
+```go
 func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
 	time.Sleep(time.Second * 2)
 	st.echoPort.Send(t, &pb.AskOracleRequest{
@@ -77,7 +78,8 @@ func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
 		Data: "42",
 	})
 }
-
+```
+```go
 func (st *SuiteTest) TestFetchDataFromDB(t *testing.T) {
 	st.echoPort.Send(t, &pb.AskDBRequest{
 		Data: "the dirty fork",
