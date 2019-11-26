@@ -19,7 +19,7 @@ type httpserver struct {
 	router *mux.Router
 	wg     sync.WaitGroup
 
-	httpPort2 *HTTPPort2
+	httpPort *HTTPPort
 	gcs       *GCStorage
 }
 
@@ -27,10 +27,10 @@ func startHTTP() {
 	once.Do(func() {
 		ht = &httpserver{
 			router:    mux.NewRouter(),
-			httpPort2: newHTTPPort2(),
+			httpPort: newHTTPPort(),
 			gcs:       NewGCStoragePort(),
 		}
-		ht.httpPort2.Register(ht.router)
+		ht.httpPort.Register(ht.router)
 		if ht.gcs != nil {
 			ht.gcs.registerRuter(ht.router)
 		}

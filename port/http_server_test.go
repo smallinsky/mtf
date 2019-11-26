@@ -14,7 +14,7 @@ func TestHTTPServer(t *testing.T) {
 		t.Fatalf("failed to generate certs: %v", err)
 	}
 	startHTTP()
-	port := ht.httpPort2
+	port := ht.httpPort
 
 	sync := make(chan struct{})
 	go func() {

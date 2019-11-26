@@ -11,10 +11,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-func NewHTTP2Port() *Port {
+func NewHTTPPort() *Port {
 	startHTTP()
 	return &Port{
-		impl: ht.httpPort2,
+		impl: ht.httpPort,
 	}
 }
 
@@ -24,14 +24,14 @@ func NewGCSPort() (*Port, error) {
 		impl: ht.gcs,
 	}, nil
 }
-func newHTTPPort2() *HTTPPort2 {
-	return &HTTPPort2{
+func newHTTPPort() *HTTPPort {
+	return &HTTPPort{
 		reqC:  make(chan *HTTPRequest),
 		respC: make(chan *HTTPResponse),
 	}
 }
 
-type HTTPPort2 struct {
+type HTTPPort struct {
 	reqC  chan *HTTPRequest
 	respC chan *HTTPResponse
 	sync  chan struct{}
@@ -78,11 +78,11 @@ func (resp *HTTPResponse) setDefaults() {
 	}
 }
 
-func (p *HTTPPort2) Register(router *mux.Router) {
+func (p *HTTPPort) Register(router *mux.Router) {
 	router.NotFoundHandler = p
 }
 
-func (p *HTTPPort2) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (p *HTTPPort) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	p.reqC <- convHTTPRequest(req)
 
 	resp := <-p.respC
@@ -90,7 +90,7 @@ func (p *HTTPPort2) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(resp.Body))
 }
 
-func (p *HTTPPort2) receive(opts ...Opt) (*HTTPRequest, error) {
+func (p *HTTPPort) receive(opts ...Opt) (*HTTPRequest, error) {
 	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
@@ -104,7 +104,7 @@ func (p *HTTPPort2) receive(opts ...Opt) (*HTTPRequest, error) {
 	}
 }
 
-func (p *HTTPPort2) send(msg *HTTPResponse, opts ...Opt) error {
+func (p *HTTPPort) send(msg *HTTPResponse, opts ...Opt) error {
 	options := defaultPortOpts
 	for _, opt := range opts {
 		opt(&options)
@@ -117,7 +117,7 @@ func (p *HTTPPort2) send(msg *HTTPResponse, opts ...Opt) error {
 	return nil
 }
 
-func (p *HTTPPort2) Send(ctx context.Context, i interface{}) error {
+func (p *HTTPPort) Send(ctx context.Context, i interface{}) error {
 	resp, ok := i.(*HTTPResponse)
 	if !ok {
 		return errors.Errorf("invalid type %T", i)
@@ -125,6 +125,6 @@ func (p *HTTPPort2) Send(ctx context.Context, i interface{}) error {
 	return p.send(resp)
 }
 
-func (p *HTTPPort2) Receive(ctx context.Context) (interface{}, error) {
+func (p *HTTPPort) Receive(ctx context.Context) (interface{}, error) {
 	return p.receive()
 }

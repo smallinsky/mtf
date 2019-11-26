@@ -22,7 +22,7 @@ func TestEchoService(t *testing.T) {
 }
 
 func (st *SuiteTest) Init(t *testing.T) {
-	st.httpPort = port.NewHTTP2Port()
+	st.httpPort = port.NewHTTPPort()
 }
 
 type SuiteTest struct {
