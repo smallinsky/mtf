@@ -53,3 +53,23 @@ func (st *SuiteTest) Init(t *testing.T) {
 		t.Fatalf("failed to init grpc oracle server")
 	}
 }
+```
+## Test examples
+```
+func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
+	st.echoPort.Send(t, &pb.AskOracleRequest{
+		Data: "Get answer for ultimate question of life the universe and everything",
+	})
+	st.oraclePort.Receive(t, &pbo.AskDeepThoughtRequest{
+		Data: "Get answer for ultimate question of life the universe and everything",
+	})
+	st.oraclePort.Send(t, &pbo.AskDeepThoughtResponse{
+		Data: "42",
+	})
+	st.echoPort.Receive(t, &pb.AskOracleResponse{
+		Data: "42",
+	})
+}
+```
+
+More Use case of mtf framework can be in a `mtf/example/` directory
