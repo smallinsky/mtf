@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/cenkalti/backoff"
 	"google.golang.org/grpc"
 
 	pb "github.com/smallinsky/mtf/proto/fswatch"
@@ -83,7 +84,7 @@ func (g *ActionHandler) OnFileCreated(path string) error {
 			Content: buff,
 		})
 		return err
-	}, retryMaxCount, retryWaitTime)
+	})
 	if err != nil {
 		return fmt.Errorf("failed to send event: %s", err)
 	}
@@ -98,7 +99,7 @@ func (g *ActionHandler) OnFileDeleted(path string) error {
 			Action: pb.Action_REMOVED,
 		})
 		return err
-	}, retryMaxCount, retryWaitTime)
+	})
 
 	if err != nil {
 		return fmt.Errorf("failed to send event: %s", err)
@@ -106,14 +107,13 @@ func (g *ActionHandler) OnFileDeleted(path string) error {
 	return nil
 }
 
-func withRetry(call func() error, max uint, waitTime time.Duration) (err error) {
-	max += 1
-	for attempt := uint(0); attempt < max; attempt++ {
-		if err = call(); err == nil {
-			break
-		}
-		fmt.Printf("[INFO] retry attampt %v/%v failed\n", attempt, max)
-		time.Sleep(waitTime)
-	}
-	return err
+func withRetry(call func() error) (err error) {
+	return backoff.Retry(call, &backoff.ExponentialBackOff{
+		InitialInterval:     time.Millisecond * 100,
+		RandomizationFactor: backoff.DefaultRandomizationFactor,
+		Multiplier:          1.1,
+		MaxInterval:         time.Second,
+		MaxElapsedTime:      time.Second * 10,
+		Clock:               backoff.SystemClock,
+	})
 }
