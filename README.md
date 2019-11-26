@@ -17,7 +17,7 @@ To begin using `MTF` framework you will need to define `TestMain` function and s
 func TestMain(m *testing.M) {
 	framework.TestEnv(m).
 		WithSUT(framework.SutSettings{
-			Dir:   "./service", // dir with source file of system under test.
+			Dir:   "./service", // dir with source files of system under test.
 			Ports: []int{8001},
 			Envs: []string{
 				"ORACLE_ADDR=" + framework.GetDockerHostAddr(8002),
