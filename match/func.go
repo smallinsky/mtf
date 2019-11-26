@@ -77,7 +77,7 @@ func (m *FnType) Validate() error {
 		if t == nil {
 			t = v.Type()
 		} else if v.Type() != t {
-			return errors.Wrap(ErrMatchFnInvalidArg, "match functions supose to have same prototype")
+			return errors.Wrap(ErrMatchFnInvalidArg, "match functions suppose to have same prototype")
 		}
 	}
 	return nil

@@ -36,7 +36,7 @@ const (
 type SutSettings struct {
 	// Envs allows to pass custom env to system under test container.
 	Envs []string
-	// Dir is a path to directory that collect system under test source for wich binary shuld be build.
+	// Dir is a path to directory that collect system under test source for which binary shuld be build.
 	Dir string
 	// Ports is a collection of ports that sut binary require, those ports will be forwarded to local host with the
 	// same port mapping.

@@ -11,10 +11,18 @@ import (
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
+// SutConfig is a configuration required to buld and run sut
+// into docker container.
 type SutConfig struct {
-	Path               string
-	Env                []string
-	ExposedPorts       []int
+	// Path to dir binary source files that will be
+	// build and executed into docker containers as a SUT.
+	Path string
+	// Env is list of environment variables will be passed to SUT.
+	Env []string
+	// ExposedPorts is a list of port that will be exposed and forwarded
+	// to docker host.
+	ExposedPorts []int
+	// RuntimeTypeCommand allows to distinguish between service and simple command binary.
 	RuntimeTypeCommand bool
 
 	absoltePath string
@@ -85,7 +93,7 @@ func BuildContainerConfig(config SutConfig) (*docker.ContainerConfig, error) {
 		},
 		PortMap:     ports,
 		NetworkName: network,
-		Priviliged:  true,
+		Privileged:  true,
 		WaitPolicy:  waitPolicy,
 	}, nil
 }

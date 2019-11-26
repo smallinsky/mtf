@@ -81,7 +81,7 @@ type ContainerConfig struct {
 	Healtcheck      *HealthCheckConfig
 	AttachIfExist   bool
 	AutoRemove      bool
-	Priviliged      bool
+	Privileged      bool
 	WaitPolicy      WaitPolicy
 }
 
@@ -150,7 +150,7 @@ func (c *Docker) NewContainer(config ContainerConfig) (*ContainerType, error) {
 		Healthcheck:  hc,
 	}
 
-	if config.Priviliged {
+	if config.Privileged {
 		config.CapAdd = append(config.CapAdd, []string{"NET_RAW", "NET_ADMIN"}...)
 	}
 
@@ -197,6 +197,9 @@ func (c *Docker) CreateNetwork(name string) (*Network, error) {
 	net, err := c.cli.NetworkCreate(context.Background(), name, types.NetworkCreate{
 		CheckDuplicate: true,
 	})
+	if err != nil {
+		return nil, err
+	}
 	return &Network{
 		ID:  net.ID,
 		cli: c.cli,

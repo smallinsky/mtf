@@ -2,7 +2,6 @@ package ftp
 
 import (
 	"context"
-	"time"
 
 	"github.com/smallinsky/mtf/pkg/docker"
 )
@@ -31,9 +30,6 @@ func New(cli *docker.Docker, config FTPConfig) (*Component, error) {
 
 func (c *Component) Start(ctx context.Context) error {
 	err := c.Container.Start(ctx)
-	//TODO Fix ftp healtcheck.
-	time.Sleep(time.Second * 2)
-
 	return err
 }
 

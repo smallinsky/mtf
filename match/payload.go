@@ -23,7 +23,7 @@ func (m *PayloadMatcher) Validate() error {
 
 func (m *PayloadMatcher) Match(err error, got interface{}) error {
 	if err != nil {
-		return fmt.Errorf("recived unexpected error during %T matcher call, err: %v", m, err)
+		return fmt.Errorf("received unexpected error during %T matcher call, err: %v", m, err)
 	}
 	if errs := deep.Equal(got, m.Exp); err != nil {
 		err := strings.Join(errs, "\n")

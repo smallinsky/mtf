@@ -20,13 +20,13 @@ func TestType(t *testing.T) {
 			got:  int(2),
 		},
 		{
-			name: "int and int32 diffrent types",
+			name: "int and int32 different types",
 			exp:  int(1),
 			got:  int32(2),
 			err:  ErrNotEq,
 		},
 		{
-			name: "proto ptr vs obj diffrent types",
+			name: "proto ptr vs obj different types",
 			exp: &pb.Message{
 				Name: "ptr message",
 			},

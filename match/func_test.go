@@ -115,7 +115,7 @@ func TestFuncMatch(t *testing.T) {
 		},
 		func(p *firstType) {
 			if len(p.Data) <= 8 {
-				t.Fatalf("data lenght should be greater than 8")
+				t.Fatalf("data length should be greater than 8")
 			}
 		},
 	)

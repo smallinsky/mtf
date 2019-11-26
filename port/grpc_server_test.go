@@ -16,7 +16,7 @@ func TestGRPCServer(t *testing.T) {
 	svr, _ := NewGRPCServerPort((*oracle.OracleServer)(nil), ":9999")
 	conn, err := grpc.Dial("localhost:9999", grpc.WithInsecure())
 	if err != nil {
-		t.Fatal("fialed to dial echo addres: ", err)
+		t.Fatal("fialed to dial echo address: ", err)
 	}
 	defer conn.Close()
 	client := oracle.NewOracleClient(conn)
@@ -112,7 +112,7 @@ func TestGRPCServerStart(t *testing.T) {
 	t.Run("Delay", func(t *testing.T) {
 		conn, err := grpc.Dial("localhost:9991", grpc.WithInsecure())
 		if err != nil {
-			t.Fatal("fialed to dial echo addres: ", err)
+			t.Fatal("fialed to dial echo address: ", err)
 		}
 
 		defer conn.Close()

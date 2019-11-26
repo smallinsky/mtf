@@ -15,7 +15,7 @@ func TestGrpcClientPort(t *testing.T) {
 	port := Port{
 		impl: &ClientPort{
 			emd: map[reflect.Type]EndpointRespTypePair{
-				reflect.TypeOf((*FirstRequest)(nil)): EndpointRespTypePair{
+				reflect.TypeOf((*FirstRequest)(nil)): {
 					Endpoint: "FirstMessageHandler",
 					RespType: reflect.TypeOf((*FirstResponse)(nil)),
 				},

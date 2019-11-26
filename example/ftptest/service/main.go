@@ -20,8 +20,6 @@ func main() {
 		log.Fatalf("failed to upload file: %v", err)
 	}
 	fmt.Println("file uploaded")
-
-	conn = conn
 }
 
 func dialFTP(addr string, user, pass string) (*ftp.ServerConn, error) {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/jlaffaye/ftp"
@@ -40,11 +41,15 @@ func NewFTP(addr, user, pass string) (*FTPPort, error) {
 		conn:      conn,
 	}
 
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	go func() {
+		wg.Done()
 		fswatch.Subscriber(":4441", func(event *pb.EventRequest) {
 			ftpPort.ftpEventC <- event
 		})
 	}()
+	wg.Wait()
 
 	return ftpPort, nil
 }

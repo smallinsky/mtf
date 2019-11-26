@@ -3,11 +3,7 @@
 package ftptest
 
 import (
-	"fmt"
 	"testing"
-
-	"github.com/jlaffaye/ftp"
-	"github.com/pkg/errors"
 
 	"github.com/smallinsky/mtf/framework"
 	"github.com/smallinsky/mtf/port"
@@ -43,24 +39,8 @@ type SuiteTest struct {
 }
 
 func (s *SuiteTest) TestFTPUpload(t *testing.T) {
-	conn, err := dialFTP("localhost:21", "test", "test")
-	if err != nil {
-		t.Fatalf("failed to dial ftp server: %v", err)
-	}
-	conn = conn
 	s.ftpPort.Receive(t, &port.FTPEvent{
 		Path:    "/ftp/randomfile.txt",
 		Payload: []byte("random file content"),
 	})
-}
-
-func dialFTP(addr string, user, pass string) (*ftp.ServerConn, error) {
-	connection, err := ftp.Connect(addr)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to connect to %q", addr)
-	}
-	if err := connection.Login(user, pass); err != nil {
-		return nil, fmt.Errorf("failed to login to %q: %v", addr, err)
-	}
-	return connection, nil
 }

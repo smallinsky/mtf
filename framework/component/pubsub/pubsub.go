@@ -70,6 +70,9 @@ func (c *Component) Start(ctx context.Context) error {
 					Topic:       topic,
 					AckDeadline: time.Second * 10,
 				})
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
