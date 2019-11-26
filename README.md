@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 }
 ```
 
-Suite collects ports that allows to communicate with external mocked dependency by calling port.`{send receive}` functions. 
+SuiteTest collects ports that allows to communicate with external mocked dependency by calling port.`{send receive}` functions. 
 ```go
 type SuiteTest struct {
 	echoPort   *port.Port
