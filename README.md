@@ -1,8 +1,18 @@
 # Microservice Test Framework [![CircleCI](https://circleci.com/gh/smallinsky/mtf.svg?style=svg)](https://circleci.com/gh/smallinsky/mtf)[![Go Report Card](https://goreportcard.com/badge/github.com/smallinsky/mtf)](https://goreportcard.com/report/github.com/smallinsky/mtf)
-Test your microservice without dependency to other services.
+## Introduction
+This Microservice Test Framework allows in simple way to mock "all" dependency by microservice and test it in a comprehensive way.    
+
+Supported dependencies:
+* GRPC client/server communication
+* Google Cloud Pubsub 
+* Google Cloud Storage (Partial - only bucket object Insert/Get operation)
+* FTP 
+* HTTP/HTTPS integration
+* MySQL
+* Redis
 
 ## Getting started
-To begin using `MTF` framework you will need to define `TestMain` function and setup required environment used for binary that you would like to test further called `SUT` (System Under Test). To setup prerequisite dependency for your SUT the `framework.TestEnv` function should be invoked. `With...()` functions method chain allows to set up and configure depenency for SUT. Finally the `.Run()` chain method function starts the test.
+To begin using `MTF` framework you will need to define `TestMain` function and setup required environment used for binary that you would like to test further called `SUT` (System Under Test). To setup prerequisite dependency for your SUT the `framework.TestEnv` function should be invoked. `With...()` functions method chain allows to set up and configure dependency for SUT. Finally the `.Run()` chain method function starts the test.
 ```go
 func TestMain(m *testing.M) {
 	framework.TestEnv(m).
