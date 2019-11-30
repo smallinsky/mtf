@@ -78,7 +78,7 @@ func (env *TestEnviorment) Run() {
 }
 
 func (env *TestEnviorment) Start(ctx context.Context) error {
-	fmt.Println("=== PREPERING TEST ENV")
+	fmt.Println("=== PREPARING TEST ENV")
 	start := time.Now()
 	if err := env.genCerts(); err != nil {
 		log.Fatalf("[ERROR] Failed to generate tls certs: %v", err)
