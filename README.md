@@ -1,7 +1,7 @@
 [![CircleCI](https://circleci.com/gh/smallinsky/mtf.svg?style=svg)](https://circleci.com/gh/smallinsky/mtf)[![Go Report Card](https://goreportcard.com/badge/github.com/smallinsky/mtf)](https://goreportcard.com/report/github.com/smallinsky/mtf)
  # Microservice Test Framework
 ## Introduction
-This Microservice Test Framework (MTF) allows in simple way to mock "all" dependency by microservice and test it in a comprehensive way.    
+This Microservice Test Framework (MTF) allows in simple way to mock service dependencies and setup docker test environment   in a comprehensive way.    
 
 Supported dependencies:
 * GRPC client/server communication
