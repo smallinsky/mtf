@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 }
 ```
 
-SuiteTest collects ports that allows to communicate with external mocked dependency by calling port.`{send receive}` functions. 
+SuiteTest collects and groupsports that allows to communicate with external mocked dependency.
 ```go
 type SuiteTest struct {
 	echoPort   *port.Port
@@ -149,4 +149,20 @@ echoPort.Receive(t, match.Fn(func(resp *pb.AskGoogleResponse) {
 			t.Fatalf("data len mismatch, got: %v want: %v", got, want)
 		}
 	}))
+```
+
+# Running tests examples
+```bash
+go test ./example/... -p 1 --rebuild_binary=true  -tags=mtf
+```
+
+## Test Environment preparation  phace
+At first run the mtf will download docker images dependency needed to prepare and run test environment:
+```
+=== PREPERING TEST ENV
+  - Starting [REDIS Component] -  1.601356005s
+  - Starting [MYSQL Component] -  50.75908ms
+  - Starting [MIGRATE Component] -  805.090778ms
+  - Starting [SUT Component] -  5.895084273s
+=== TEST RUN DONE - 11.863770827s
 ```
