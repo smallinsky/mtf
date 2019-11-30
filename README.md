@@ -12,7 +12,7 @@ Supported dependencies:
 * MySQL
 * Redis
 
-The aim of the MTF framework is not only cut dependencies require to run your binary and execute tests but also focuse on test readability.
+The aim of the MTF framework is not only cut dependencies require to run your binary and execute tests but also focus on test readability.
 
 
 
@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 }
 ```
 
-SuiteTest collects and groupsports that allows to communicate with external mocked dependency.
+SuiteTest collects and groups collection of ports that allows to communicate with external mocked dependency.
 ```go
 type SuiteTest struct {
 	echoPort   *port.Port
@@ -62,16 +62,16 @@ func (st *SuiteTest) Init(t *testing.T) {
 ```
  
 ## Ports
-Port are used to communicate with dependencies by sending and receiveing messages in a consistent way.
+Port are used to communicate with dependencies by sending and receiving messages in a consistent way.
 ### GRPC Client/Server port
-GRPC ports allows to mock whole grpc comunication between client<->SUT<->Other GRPC service. 
+GRPC ports allows to mock whole grpc communication between client<->SUT<->Other GRPC service. 
 
-Server grpc port initalization
+Server grpc port initialization
 ```
 oraclePort, err = port.NewGRPCServerPort((*pbo.OracleServer)(nil), ":8002")
 ```
 
-Client port initalization 
+Client port initialization 
 ```
 echoPort, err = port.NewGRPCClientPort((*pb.EchoClient)(nil), "localhost:8001")
 ```
@@ -156,10 +156,10 @@ echoPort.Receive(t, match.Fn(func(resp *pb.AskGoogleResponse) {
 go test ./example/... -p 1 --rebuild_binary=true  -tags=mtf
 ```
 
-### Test Environment preparation  phace
+### Test Environment preparation  phase
 At first run the mtf will download docker images dependency needed to prepare and run test environment:
 ```
-=== PREPERING TEST ENV
+=== PREPARING TEST ENV
   - Starting [REDIS Component] -  1.601356005s
   - Starting [MYSQL Component] -  50.75908ms
   - Starting [MIGRATE Component] -  805.090778ms
