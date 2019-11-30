@@ -62,10 +62,9 @@ func (st *SuiteTest) Init(t *testing.T) {
 ```
  
 ## Ports
-Port are used to communicate with dependencies by sending and receiveing messages in a consistent way,
-for example grpc port allows to mock whole grpc comunication between SUT and other service. 
+Port are used to communicate with dependencies by sending and receiveing messages in a consistent way.
 ### GRPC Client/Server port
-
+GRPC ports allows to mock whole grpc comunication between client<->SUT<->Other GRPC service. 
 
 Server grpc port initalization
 ```
@@ -77,23 +76,22 @@ Client port initalization
 echoPort, err = port.NewGRPCClientPort((*pb.EchoClient)(nil), "localhost:8001")
 ```
 
-
-
+Example of sut gprc method handler:
 ```go
-oraclePort.Receive(t, &pbo.AskDeepThoughtRequest{
-	Data: "Get answer for ultimate question of life the universe and everything",
-})
-oraclePort.Send(t, &pbo.AskDeepThoughtResponse{
-	Data: "42",
-})
-
+func (s *server) AskOracle(ctx context.Context, req *pb.AskOracleRequest) (*pb.AskOracleResponse, error) {
+	resp, err := s.OracleClient.AskDeepThought(ctx, &pbo.AskDeepThoughtRequest{
+		Data: req.GetData(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &pb.AskOracleResponse{
+		Data: resp.GetData(),
+	}, nil
+}
 ```
-
-### Metchers
-
-## Test examples
-
-```
+MTF test case:
+```go
 func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
 	st.echoPort.Send(t, &pb.AskOracleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
@@ -109,8 +107,46 @@ func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
 	})
 }
 ```
+```
+--- PASS: TestEchoService (0.75s)
+    --- PASS: TestEchoService/TestClientServerGRPC (0.01s)
+PASS
+```
+If we change the handler body by adding additional text to AskOracleResponse.Date:
+```diff
+@@ -110,6 +110,6 @@ func (s *server) AskOracle(ctx context.Context, req *pb.AskOracleRequest) (*pb.A
+                return nil, err
+        }
+        return &pb.AskOracleResponse{
+-               Data: resp.GetData(),
++               Data: resp.GetData() + "!!!",
+        }, nil
+ }
+```
+The `echoPort.Receive(t, &pb.AskOracleResponse{...}` call will log port mismatch
+```
+--- FAIL: TestEchoService/TestClientServerGRPC (0.01s)
+port.go:89: Failed to receive *echo.AskOracleResponse:
+     deep equal:
+     got:'{
+     "data": "42!!!!"
+    }'
+     exp: '{
+     "data": "42"
+    }'
+    : match not eq
+```
 
-More Use case of mtf framework can be in a `mtf/example/` directory
-
-
-
+### Metchers
+Match only message type:
+```go
+echoPort.Receive(t, match.Type(&pb.AskOracleResponse{})
+```
+Match by custom function:
+```go
+echoPort.Receive(t, match.Fn(func(resp *pb.AskGoogleResponse) {
+		if got, want := len(resp.GetData()), 2; got != want {
+			t.Fatalf("data len mismatch, got: %v want: %v", got, want)
+		}
+	}))
+```
