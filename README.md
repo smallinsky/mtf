@@ -151,12 +151,12 @@ echoPort.Receive(t, match.Fn(func(resp *pb.AskGoogleResponse) {
 	}))
 ```
 
-# Running tests examples
+## Running tests examples
 ```bash
 go test ./example/... -p 1 --rebuild_binary=true  -tags=mtf
 ```
 
-## Test Environment preparation  phace
+### Test Environment preparation  phace
 At first run the mtf will download docker images dependency needed to prepare and run test environment:
 ```
 === PREPERING TEST ENV
