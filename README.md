@@ -83,14 +83,21 @@ func (s *server) AskOracle(ctx context.Context, req *pb.AskOracleRequest) (*pb.A
 		Data: req.GetData(),
 	})
 	if err != nil {
-		return nil, err
+		switch status.Code(err) {
+		case codes.FailedPrecondition:
+			return &pb.AskOracleResponse{
+				Data: "Come back after seven and a half million years",
+			}, nil
+		default:
+			return nil, err
+		}
 	}
 	return &pb.AskOracleResponse{
 		Data: resp.GetData(),
 	}, nil
 }
 ```
-MTF test case:
+Test GRPC message flow:
 ```go
 func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
 	st.echoPort.Send(t, &pb.AskOracleRequest{
@@ -136,6 +143,23 @@ port.go:89: Failed to receive *echo.AskOracleResponse:
     }'
     : match not eq
 ```
+Mock GRPC error response:
+```go
+func (st *SuiteTest) TestClientServerGRPCError(t *testing.T) {
+	st.echoPort.Send(t, &pb.AskOracleRequest{
+		Data: "Get answer for ultimate question of life the universe and everything",
+	})
+	st.oraclePort.Receive(t, &pbo.AskDeepThoughtRequest{
+		Data: "Get answer for ultimate question of life the universe and everything",
+	})
+	st.oraclePort.Send(t, &port.GRPCErr{
+		Err: status.Errorf(codes.FailedPrecondition, "Deepthought error"),
+	})
+	st.echoPort.Receive(t, &pb.AskOracleResponse{
+		Data: "Come back after seven and a half million years",
+	})
+}
+```
 ## HTTP/HTTPS Port `port.NewHTTPPort()`
 HTTP port allows to test external http endpoint integration by matching SUT's http requests and sending back custom shape responses.
 
@@ -169,13 +193,18 @@ echoPort.Receive(t, match.Fn(func(resp *pb.AskGoogleResponse) {
 		}
 	}))
 ```
-
-## Running tests examples:
+Match GRPC Error status code:
+```
+echoPort.Receive(t, match.GRPCStatusCode(codes.Internal))
+```
+## MTF Tests execution
+Right now MTF framework does not support parallel test execution and to prevent simultaneously test run passing the  `-p 1` flag to `go test` command is required.  
+### Run tests examples:
 ```bash
 go test ./example/... -p 1 --rebuild_binary=true  -tags=mtf
 ```
 
-### Test Environment preparation  phase
+### Test Environment preparation phase
 At first run the mtf will download docker images dependency needed to prepare and run test environment:
 ```
 === PREPARING TEST ENV
