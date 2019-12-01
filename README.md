@@ -1,5 +1,21 @@
-# MTF - Microservice Test Framework [![CircleCI](https://circleci.com/gh/smallinsky/mtf.svg?style=svg)](https://circleci.com/gh/smallinsky/mtf)
-Test your microservice without dependency to other services.
+[![CircleCI](https://circleci.com/gh/smallinsky/mtf.svg?style=svg)](https://circleci.com/gh/smallinsky/mtf)[![Go Report Card](https://goreportcard.com/badge/github.com/smallinsky/mtf)](https://goreportcard.com/report/github.com/smallinsky/mtf)
+ # Microservice Test Framework
+## Introduction
+This Microservice Test Framework (MTF) allows in simple way to mock service dependencies and setup docker test environment   in a comprehensive way.
+
+Supported dependencies:
+* GRPC client/server communication
+* Google Cloud Pubsub
+* Google Cloud Storage (Partial - only bucket object Insert/Get operation)
+* FTP
+* HTTP/HTTPS integration
+* MySQL
+* Redis
+
+The aim of the MTF framework is not only cut dependencies require to run your binary and execute tests but also focus on test readability.
+
+
+
 
 ## Getting started
 To begin using `MTF` framework you will need to define `TestMain` function and setup required environment used for binary that you would like to test further called `SUT` (System Under Test). To setup prerequisite dependency for your SUT the `framework.TestEnv` function should be invoked. `With...()` functions method chain allows to set up and configure dependency for SUT. Finally the `.Run()` chain method function starts the test.
@@ -7,7 +23,7 @@ To begin using `MTF` framework you will need to define `TestMain` function and s
 func TestMain(m *testing.M) {
 	framework.TestEnv(m).
 		WithSUT(framework.SutSettings{
-			Dir:   "./service", // dir with source file of system under test.
+			Dir:   "./service", // dir with source files of system under test.
 			Ports: []int{8001},
 			Envs: []string{
 				"ORACLE_ADDR=" + framework.GetDockerHostAddr(8002),
@@ -23,7 +39,7 @@ func TestMain(m *testing.M) {
 }
 ```
 
-Suite collects ports that allows to communicate with external mocked dependency by calling port.`{send receive}` functions.
+SuiteTest collects and groups collection of ports that allows to communicate with external mocked dependency.
 ```go
 type SuiteTest struct {
 	echoPort   *port.Port
@@ -45,23 +61,37 @@ func (st *SuiteTest) Init(t *testing.T) {
 }
 ```
 
-Tests function needs to be implemented on suite object.
-```go
-func (st *SuiteTest) TestRedis(t *testing.T) {
-	st.echoPort.Send(t, &pb.AskRedisRequest{
-		Data: "make me sandwich",
-	})
-	st.echoPort.Receive(t, &pb.AskRedisResponse{
-		Data: "what? make it yourself",
-	})
-	st.echoPort.Send(t, &pb.AskRedisRequest{
-		Data: "sudo make me sandwich",
-	})
-	st.echoPort.Receive(t, &pb.AskRedisResponse{
-		Data: "okey",
-	})
-}
+## Ports
+Port are used to communicate with dependencies by sending and receiving messages in a consistent way.
+### GRPC Client/Server port `port.NewGRPCServerPort` `port.NewGRPCClientPort`
+GRPC ports allows to mock whole grpc communication between client<->SUT<->Other GRPC service.
 
+Server grpc port initialization:
+```
+oraclePort, err = port.NewGRPCServerPort((*pbo.OracleServer)(nil), ":8002")
+```
+
+Client port initialization:
+```
+echoPort, err = port.NewGRPCClientPort((*pb.EchoClient)(nil), "localhost:8001")
+```
+
+Example of sut gprc method handler:
+```go
+func (s *server) AskOracle(ctx context.Context, req *pb.AskOracleRequest) (*pb.AskOracleResponse, error) {
+	resp, err := s.OracleClient.AskDeepThought(ctx, &pbo.AskDeepThoughtRequest{
+		Data: req.GetData(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &pb.AskOracleResponse{
+		Data: resp.GetData(),
+	}, nil
+}
+```
+MTF test case:
+```go
 func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
 	st.echoPort.Send(t, &pb.AskOracleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
@@ -76,16 +106,82 @@ func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
 		Data: "42",
 	})
 }
+```
+```
+--- PASS: TestEchoService (0.75s)
+    --- PASS: TestEchoService/TestClientServerGRPC (0.01s)
+PASS
+```
+If we change the handler body by adding additional text to AskOracleResponse.Date:
+```diff
+@@ -110,6 +110,6 @@ func (s *server) AskOracle(ctx context.Context, req *pb.AskOracleRequest) (*pb.A
+                return nil, err
+        }
+        return &pb.AskOracleResponse{
+-               Data: resp.GetData(),
++               Data: resp.GetData() + "!!!",
+        }, nil
+ }
+```
+The `echoPort.Receive(t, &pb.AskOracleResponse{...}` call will log port mismatch
+```
+--- FAIL: TestEchoService/TestClientServerGRPC (0.01s)
+port.go:89: Failed to receive *echo.AskOracleResponse:
+     deep equal:
+     got:'{
+     "data": "42!!!!"
+    }'
+     exp: '{
+     "data": "42"
+    }'
+    : match not eq
+```
+## HTTP/HTTPS Port `port.NewHTTPPort()`
+HTTP port allows to test external http endpoint integration by matching SUT's http requests and sending back custom shape responses.
 
-func (st *SuiteTest) TestFetchDataFromDB(t *testing.T) {
-	st.echoPort.Send(t, &pb.AskDBRequest{
-		Data: "the dirty fork",
+```go
+func (st *SuiteTest) TestHTTP(t *testing.T) {
+	st.httpPort.Receive(t, &port.HTTPRequest{
+		Body:   []byte{},
+		Method: "GET",
+		Host:   "example.com",
+		URL:    "/urlpath",
 	})
-	st.echoPort.Receive(t, &pb.AskDBResponse{
-		Data: "Lucky we didn't say anything about the dirty knife",
+
+	st.httpPort.Send(t, &port.HTTPResponse{
+		Body:   []byte(`{"value":{"joke":"42"}}`),
+		Status: http.StatusOK,
 	})
 }
-
 ```
 
 
+### Metchers
+Match only message type:
+```go
+echoPort.Receive(t, match.Type(&pb.AskOracleResponse{})
+```
+Match by custom function:
+```go
+echoPort.Receive(t, match.Fn(func(resp *pb.AskGoogleResponse) {
+		if got, want := len(resp.GetData()), 2; got != want {
+			t.Fatalf("data len mismatch, got: %v want: %v", got, want)
+		}
+	}))
+```
+
+## Running tests examples:
+```bash
+go test ./example/... -p 1 --rebuild_binary=true  -tags=mtf
+```
+
+### Test Environment preparation  phase
+At first run the mtf will download docker images dependency needed to prepare and run test environment:
+```
+=== PREPARING TEST ENV
+  - Starting [REDIS Component] -  1.601356005s
+  - Starting [MYSQL Component] -  50.75908ms
+  - Starting [MIGRATE Component] -  805.090778ms
+  - Starting [SUT Component] -  5.895084273s
+=== TEST RUN DONE - 11.863770827s
+```
