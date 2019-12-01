@@ -19,6 +19,7 @@ type Container interface {
 	Start(context.Context) error
 	Stop(context.Context) error
 	Logs(context.Context) (io.Reader, error)
+	GetState(context.Context) (*types.ContainerState, error)
 	Name() string
 }
 
