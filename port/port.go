@@ -61,9 +61,21 @@ func (p *Port) Receive(t *testing.T, i interface{}) (interface{}, error) {
 	m, err := p.impl.Receive(ctx)
 
 	name := getPortName(p.impl)
+
+	if matcher, ok := i.(*match.GRPCErrType); ok {
+		if mtfc := mtfctx.Get(t); mtfc != nil {
+			mtfc.LogReceive(name, err)
+		}
+		if err := matcher.Match(err); err != nil {
+			return i, err
+		}
+		return i, nil
+	}
+
 	if mtfc := mtfctx.Get(t); mtfc != nil {
 		mtfc.LogReceive(name, m)
 	}
+
 	if err != nil {
 		t.Fatalf("failed to receive %T from %s: %v", i, name, err)
 	}

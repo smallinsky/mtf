@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 )
 
 type processFunc func(i interface{}) (interface{}, error)
@@ -171,11 +172,14 @@ func (p *PortIn) send(msg interface{}, opts ...PortOpt) error {
 
 	switch t := msg.(type) {
 	case *GRPCErr:
+		if _, ok := status.FromError(t.Err); !ok {
+			return fmt.Errorf("invalid error type")
+		}
 		p.respC <- outValues{
 			msg: nil,
 			err: t.Err,
 		}
-	case *proto.Message:
+	case proto.Message:
 		p.respC <- outValues{
 			msg: t,
 			err: options.err,
