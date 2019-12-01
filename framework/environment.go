@@ -155,14 +155,12 @@ func (env *TestEnviorment) WriteLogs(ctx context.Context, tcName string) error {
 	if err := os.MkdirAll("runlogs/components", os.ModePerm); err != nil {
 		return err
 	}
-
 	for _, container := range env.components {
 		err := env.WriteComponentLogs(ctx, container, "components/")
 		if err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
