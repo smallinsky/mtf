@@ -83,14 +83,21 @@ func (s *server) AskOracle(ctx context.Context, req *pb.AskOracleRequest) (*pb.A
 		Data: req.GetData(),
 	})
 	if err != nil {
-		return nil, err
+		switch status.Code(err) {
+		case codes.FailedPrecondition:
+			return &pb.AskOracleResponse{
+				Data: "Come back after seven and a half million years",
+			}, nil
+		default:
+			return nil, err
+		}
 	}
 	return &pb.AskOracleResponse{
 		Data: resp.GetData(),
 	}, nil
 }
 ```
-MTF test case:
+Test GRPC message flow:
 ```go
 func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
 	st.echoPort.Send(t, &pb.AskOracleRequest{
@@ -136,6 +143,23 @@ port.go:89: Failed to receive *echo.AskOracleResponse:
     }'
     : match not eq
 ```
+Mock GRPC error response:
+```go
+func (st *SuiteTest) TestClientServerGRPCError(t *testing.T) {
+	st.echoPort.Send(t, &pb.AskOracleRequest{
+		Data: "Get answer for ultimate question of life the universe and everything",
+	})
+	st.oraclePort.Receive(t, &pbo.AskDeepThoughtRequest{
+		Data: "Get answer for ultimate question of life the universe and everything",
+	})
+	st.oraclePort.Send(t, &port.GRPCErr{
+		Err: status.Errorf(codes.FailedPrecondition, "Deepthought error"),
+	})
+	st.echoPort.Receive(t, &pb.AskOracleResponse{
+		Data: "Come back after seven and a half million years",
+	})
+}
+```
 ## HTTP/HTTPS Port `port.NewHTTPPort()`
 HTTP port allows to test external http endpoint integration by matching SUT's http requests and sending back custom shape responses.
 
@@ -155,13 +179,20 @@ func (st *SuiteTest) TestHTTP(t *testing.T) {
 }
 ```
 
+### GRPC and HTTPS with TLS support
 
-### Metchers
-Match only message type:
+The `framework.WithTLS(framework.TLSSettings{Host: []string{"customdomain.com"})` chain method of `framework.TestEnv` allows to set custom DNSNames that will be added to TLS.
+In order to create grpc TLS server or client the port `port.NewGRPCClientPort(..., ..., port.WithTLSConn(cert.ServerCertFile))` and
+`port.NewGRPCServerPort(..., ..., port.WithTLS(cert.ServertCertFile, cert.ServerKeyFile))` can be used,  where cert is a package imported from `smallinsky/mtf/pkg/cert`
+Under the hood the mtf framework will create cert key pair in `/tmp/mtf/` that will be propagated to dependencies during test execution.
+
+
+### Match `mtf/match`
+Match only respnse message type:
 ```go
 echoPort.Receive(t, match.Type(&pb.AskOracleResponse{})
 ```
-Match by custom function:
+Match response by custom function:
 ```go
 echoPort.Receive(t, match.Fn(func(resp *pb.AskGoogleResponse) {
 		if got, want := len(resp.GetData()), 2; got != want {
@@ -169,13 +200,18 @@ echoPort.Receive(t, match.Fn(func(resp *pb.AskGoogleResponse) {
 		}
 	}))
 ```
-
-## Running tests examples:
+Match response GRPC Error status code:
+```
+echoPort.Receive(t, match.GRPCStatusCode(codes.Internal))
+```
+## MTF Tests execution
+Right now MTF framework does not support parallel test execution and to prevent simultaneously test run passing the  `-p 1` flag to `go test` command is required.  
+### Run tests examples:
 ```bash
 go test ./example/... -p 1 --rebuild_binary=true  -tags=mtf
 ```
 
-### Test Environment preparation  phase
+### Test Environment preparation phase
 At first run the mtf will download docker images dependency needed to prepare and run test environment:
 ```
 === PREPARING TEST ENV
