@@ -2,6 +2,7 @@ package port
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"reflect"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -157,16 +159,31 @@ func (p *PortIn) receive(opts ...Opt) (interface{}, error) {
 	}
 }
 
+type GRPCErr struct {
+	Err error
+}
+
 func (p *PortIn) send(msg interface{}, opts ...PortOpt) error {
 	options := defaultPortOpts
 	for _, o := range opts {
 		o(&options)
 	}
 
-	p.respC <- outValues{
-		msg: msg,
-		err: options.err,
+	switch t := msg.(type) {
+	case *GRPCErr:
+		p.respC <- outValues{
+			msg: nil,
+			err: t.Err,
+		}
+	case *proto.Message:
+		p.respC <- outValues{
+			msg: t,
+			err: options.err,
+		}
+	default:
+		return fmt.Errorf("invalid message type %T", msg)
 	}
+
 	return nil
 }
 
