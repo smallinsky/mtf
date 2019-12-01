@@ -5,6 +5,9 @@ package framework
 import (
 	"testing"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/smallinsky/mtf/framework"
 	"github.com/smallinsky/mtf/match"
 	"github.com/smallinsky/mtf/port"
@@ -97,6 +100,34 @@ func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
 	st.echoPort.Receive(t, &pb.AskOracleResponse{
 		Data: "42",
 	})
+}
+
+func (st *SuiteTest) TestClientServerGRPCError(t *testing.T) {
+	st.echoPort.Send(t, &pb.AskOracleRequest{
+		Data: "Get answer for ultimate question of life the universe and everything",
+	})
+	st.oraclePort.Receive(t, &pbo.AskDeepThoughtRequest{
+		Data: "Get answer for ultimate question of life the universe and everything",
+	})
+	st.oraclePort.Send(t, &port.GRPCErr{
+		Err: status.Errorf(codes.FailedPrecondition, "Deepthought error"),
+	})
+	st.echoPort.Receive(t, &pb.AskOracleResponse{
+		Data: "Come back after seven and a half million years",
+	})
+}
+
+func (st *SuiteTest) TestClientServerGRPCErrorMatch(t *testing.T) {
+	st.echoPort.Send(t, &pb.AskOracleRequest{
+		Data: "Get answer for ultimate question of life the universe and everything",
+	})
+	st.oraclePort.Receive(t, &pbo.AskDeepThoughtRequest{
+		Data: "Get answer for ultimate question of life the universe and everything",
+	})
+	st.oraclePort.Send(t, &port.GRPCErr{
+		Err: status.Errorf(codes.Internal, "internal error"),
+	})
+	st.echoPort.Receive(t, match.GRPCStatusCode(codes.Internal))
 }
 
 func (st *SuiteTest) TestFetchDataFromDB(t *testing.T) {

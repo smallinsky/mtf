@@ -96,23 +96,25 @@ func (s *server) AskRedis(ctx context.Context, req *pb.AskRedisRequest) (*pb.Ask
 	} else if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to get key value from redis, err %v", err)
 	}
-
 	return &pb.AskRedisResponse{
 		Data: resp,
 	}, nil
 }
 
 func (s *server) AskOracle(ctx context.Context, req *pb.AskOracleRequest) (*pb.AskOracleResponse, error) {
-	log.Println("AskOrace ongoing....")
-	resp, err := s.OracleClient.AskDeepThought(context.Background(), &pbo.AskDeepThoughtRequest{
+	resp, err := s.OracleClient.AskDeepThought(ctx, &pbo.AskDeepThoughtRequest{
 		Data: req.GetData(),
 	})
 	if err != nil {
-		fmt.Println("got error during asking oracle", err)
-		return nil, err
+		switch status.Code(err) {
+		case codes.FailedPrecondition:
+			return &pb.AskOracleResponse{
+				Data: "Come back after seven and a half million years",
+			}, nil
+		default:
+			return nil, err
+		}
 	}
-	fmt.Println("asking oracle done")
-
 	return &pb.AskOracleResponse{
 		Data: resp.GetData(),
 	}, nil

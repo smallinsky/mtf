@@ -85,6 +85,9 @@ func (c *TestContext) LogSend(name string, i interface{}) {
 }
 
 func dump(i interface{}) (string, error) {
+	if err, ok := i.(error); ok {
+		return fmt.Sprintf("{\n  %v\n}\n", err), nil
+	}
 	buff, err := json.MarshalIndent(i, "", "  ")
 	if err != nil {
 		return "", err
