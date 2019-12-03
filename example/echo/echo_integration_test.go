@@ -74,7 +74,6 @@ func (st *SuiteTest) TestHTTP(t *testing.T) {
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
 	st.httpPort.Receive(t, &port.HTTPRequest{
-		Body:   []byte{},
 		Method: "GET",
 		Host:   "api.icndb.com",
 		URL:    "/jokes/random?firstName=John\u0026amp;lastName=Doe",

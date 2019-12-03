@@ -31,7 +31,6 @@ type SuiteTest struct {
 
 func (st *SuiteTest) TestHTTP(t *testing.T) {
 	st.httpPort.Receive(t, &port.HTTPRequest{
-		Body:   []byte{},
 		Method: "GET",
 		Host:   "example.com",
 		URL:    "/urlpath",
