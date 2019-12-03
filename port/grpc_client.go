@@ -120,7 +120,7 @@ func (p *ClientPort) receive(opts ...PortOpt) (interface{}, error) {
 		return nil, errors.Errorf("failed to receive  message, deadline exeeded")
 	case result := <-p.callResultC:
 		if result.err != nil {
-			return nil, errors.Wrapf(result.err, "Got unexpected error during receive, err: %v", result.err)
+			return nil, result.err
 		}
 		return result.resp, nil
 	}

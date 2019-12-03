@@ -67,7 +67,7 @@ func (p *Port) Receive(t *testing.T, i interface{}) (interface{}, error) {
 			mtfc.LogReceive(name, err)
 		}
 		if err := matcher.Match(err); err != nil {
-			return i, err
+			t.Fatalf("Failed to receive GRPC error: %v", err)
 		}
 		return i, nil
 	}

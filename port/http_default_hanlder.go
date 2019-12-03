@@ -63,10 +63,13 @@ func convHTTPRequest(r *http.Request) *HTTPRequest {
 
 	out := &HTTPRequest{
 		Method: r.Method,
-		//URL:    r.URL,
-		Body: buff,
-		Host: r.Host,
-		URL:  r.URL.RequestURI(),
+		Body:   buff,
+		Host:   r.Host,
+		URL:    r.URL.RequestURI(),
+	}
+
+	if len(out.Body) == 0 {
+		out.Body = nil
 	}
 
 	return out

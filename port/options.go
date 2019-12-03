@@ -3,6 +3,8 @@ package port
 import (
 	"testing"
 	"time"
+
+	"github.com/smallinsky/mtf/pkg/cert"
 )
 
 type Opt func(*portOpts)
@@ -31,32 +33,20 @@ type portOpts struct {
 	serverCertPath string
 	serverKeyPath  string
 
-	pkgName  string
-	err      error
-	timeout  time.Duration
-	TLSHosts []string
+	pkgName string
+	err     error
+	timeout time.Duration
 
 	t *testing.T
 }
 
 type PortOpt func(*portOpts)
 
-func WithTLSCon(path string) PortOpt {
+func WithTLS() PortOpt {
 	return func(o *portOpts) {
-		o.clientCertPath = path
-	}
-}
-
-func WithTLS(crtPath, keyPath string) PortOpt {
-	return func(o *portOpts) {
-		o.serverCertPath = crtPath
-		o.serverKeyPath = keyPath
-	}
-}
-
-func WithTLSHost(hosts ...string) PortOpt {
-	return func(o *portOpts) {
-		o.TLSHosts = hosts
+		o.clientCertPath = cert.ServerCertFile
+		o.serverCertPath = cert.ServerCertFile
+		o.serverKeyPath = cert.ServerKeyFile
 	}
 }
 
