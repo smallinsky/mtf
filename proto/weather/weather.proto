@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package weather;
+
+service Weather {
+	rpc AskAboutWeather(AskAboutWeatherRequest) returns (AskAboutWeatherResponse) {}
+}
+
+service ScaleConv {
+	rpc CelciusToFarenheit(CelciusToFarenheitRequest) returns (CelciusToFarenheitResponse) {}
+}
+
+message CelciusToFarenheitRequest {
+   int64 value = 1;
+}
+
+message CelciusToFarenheitResponse {
+   int64 value = 1;
+}
+
+message AskAboutWeatherRequest {
+	string city = 1;
+	Scale scale = 2;
+}
+
+enum Scale {
+	CELCIUS = 0;
+    FAHRENHEIT = 1;
+}
+
+message AskAboutWeatherResponse {
+	string result = 1;
+}
