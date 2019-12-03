@@ -280,3 +280,11 @@ func (env *TestEnviorment) genCerts() error {
 	_, err := cert.GenCert(env.settings.TLS.Hosts)
 	return err
 }
+
+func GetTLSCertPath() string {
+	return cert.ServerCertFile
+}
+
+func GetTLSKeyPath() string {
+	return cert.ServerKeyFile
+}
