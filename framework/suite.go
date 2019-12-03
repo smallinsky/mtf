@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/smallinsky/mtf/framework/context"
 	"github.com/smallinsky/mtf/port"
@@ -19,18 +18,7 @@ func Run(t *testing.T, i interface{}) {
 		v.Init(t)
 	}
 	context.CreateDirectory()
-
-	syncC := make(chan struct{})
-	go func() {
-		port.WaitForGRPCConn()
-		close(syncC)
-	}()
-
-	select {
-	case <-syncC:
-	case <-time.Tick(time.Second * 5):
-		t.Logf("[MTF ERROR] GRPC server port wait for client connection failed")
-	}
+	port.WaitForGRPCConn()
 
 	for _, test := range getInternalTests(i) {
 		if testenv.settings.SUT.RuntimeType == RuntimeTypeCommand {

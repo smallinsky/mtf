@@ -44,7 +44,7 @@ func (st *SuiteTest) Init(t *testing.T) {
 		t.Fatalf("failed to init grpc client port")
 	}
 
-	if st.convPort, err = port.NewGRPCServerPort((*pb.ScaleConvServer)(nil), "localhost:8083", port.WithTLS()); err != nil {
+	if st.convPort, err = port.NewGRPCServerPort((*pb.ScaleConvServer)(nil), ":8083", port.WithTLS()); err != nil {
 		t.Fatalf("failed to init grpc server port")
 	}
 	st.httpPort = port.NewHTTPPort()

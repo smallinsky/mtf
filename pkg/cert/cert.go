@@ -31,6 +31,7 @@ var sniHosts = []string{
 	"www.googleapis.com",
 	"storage.googleapis.com",
 	"oauth2.googleapis.com",
+	"172.17.0.1", // default docker linux host addr.
 }
 
 type CertKey struct {
