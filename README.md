@@ -181,9 +181,8 @@ func (st *SuiteTest) TestHTTP(t *testing.T) {
 
 ### GRPC and HTTPS with TLS support
 
-The `framework.WithTLS(framework.TLSSettings{Host: []string{"customdomain.com"})` chain method of `framework.TestEnv` allows to set custom DNSNames that will be added to TLS.
-In order to create grpc TLS server or client the port `port.NewGRPCClientPort(..., ..., port.WithTLSConn(cert.ServerCertFile))` and
-`port.NewGRPCServerPort(..., ..., port.WithTLS(cert.ServertCertFile, cert.ServerKeyFile))` can be used,  where cert is a package imported from `smallinsky/mtf/pkg/cert`
+The `framework.WithTLS(framework.TLSSettings{Hosts: []string{"customdomain.com"})` chain method of `framework.TestEnv` allows to set custom DNSNames that will be added to TLS.
+In order to create grpc TLS server or client the port `port.WithTLS` options should be pass to NewGRPCServerPort or NewGRPCClientPort port funciton.
 Under the hood the mtf framework will create cert key pair in `/tmp/mtf/` that will be propagated to dependencies during test execution.
 
 
