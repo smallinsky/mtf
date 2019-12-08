@@ -30,13 +30,13 @@ type SuiteTest struct {
 }
 
 func (st *SuiteTest) TestHTTP(t *testing.T) {
-	st.httpPort.Receive(t, &port.HTTPRequest{
+	st.httpPort.Receive(&port.HTTPRequest{
 		Method: "GET",
 		Host:   "example.com",
 		URL:    "/urlpath",
 	})
 
-	st.httpPort.Send(t, &port.HTTPResponse{
+	st.httpPort.Send(&port.HTTPResponse{
 		Body:   []byte(`{"value":{"joke":"42"}}`),
 		Status: http.StatusOK,
 	})

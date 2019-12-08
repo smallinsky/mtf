@@ -55,102 +55,102 @@ type SuiteTest struct {
 }
 
 func (st *SuiteTest) TestRedis(t *testing.T) {
-	st.echoPort.Send(t, &pb.AskRedisRequest{
+	st.echoPort.Send(&pb.AskRedisRequest{
 		Data: "make me sandwich",
 	})
-	st.echoPort.Receive(t, &pb.AskRedisResponse{
+	st.echoPort.Receive(&pb.AskRedisResponse{
 		Data: "what? make it yourself",
 	})
-	st.echoPort.Send(t, &pb.AskRedisRequest{
+	st.echoPort.Send(&pb.AskRedisRequest{
 		Data: "sudo make me sandwich",
 	})
-	st.echoPort.Receive(t, &pb.AskRedisResponse{
+	st.echoPort.Receive(&pb.AskRedisResponse{
 		Data: "okey",
 	})
 }
 
 func (st *SuiteTest) TestHTTP(t *testing.T) {
-	st.echoPort.Send(t, &pb.AskGoogleRequest{
+	st.echoPort.Send(&pb.AskGoogleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	st.httpPort.Receive(t, &port.HTTPRequest{
+	st.httpPort.Receive(&port.HTTPRequest{
 		Method: "GET",
 		Host:   "api.icndb.com",
 		URL:    "/jokes/random?firstName=John\u0026amp;lastName=Doe",
 	})
-	st.httpPort.Send(t, &port.HTTPResponse{
+	st.httpPort.Send(&port.HTTPResponse{
 		Body: []byte(`{"value":{"joke":"42"}}`),
 	})
-	st.echoPort.Receive(t, &pb.AskGoogleResponse{
+	st.echoPort.Receive(&pb.AskGoogleResponse{
 		Data: "42",
 	})
 }
 
 func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
-	st.echoPort.Send(t, &pb.AskOracleRequest{
+	st.echoPort.Send(&pb.AskOracleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	st.oraclePort.Receive(t, &pbo.AskDeepThoughtRequest{
+	st.oraclePort.Receive(&pbo.AskDeepThoughtRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	st.oraclePort.Send(t, &pbo.AskDeepThoughtResponse{
+	st.oraclePort.Send(&pbo.AskDeepThoughtResponse{
 		Data: "42",
 	})
-	st.echoPort.Receive(t, &pb.AskOracleResponse{
+	st.echoPort.Receive(&pb.AskOracleResponse{
 		Data: "42",
 	})
 }
 
 func (st *SuiteTest) TestClientServerGRPCError(t *testing.T) {
-	st.echoPort.Send(t, &pb.AskOracleRequest{
+	st.echoPort.Send(&pb.AskOracleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	st.oraclePort.Receive(t, &pbo.AskDeepThoughtRequest{
+	st.oraclePort.Receive(&pbo.AskDeepThoughtRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	st.oraclePort.Send(t, &port.GRPCErr{
+	st.oraclePort.Send(&port.GRPCErr{
 		Err: status.Errorf(codes.FailedPrecondition, "Deepthought error"),
 	})
-	st.echoPort.Receive(t, &pb.AskOracleResponse{
+	st.echoPort.Receive(&pb.AskOracleResponse{
 		Data: "Come back after seven and a half million years",
 	})
 }
 
 func (st *SuiteTest) TestClientServerGRPCErrorMatch(t *testing.T) {
-	st.echoPort.Send(t, &pb.AskOracleRequest{
+	st.echoPort.Send(&pb.AskOracleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	st.oraclePort.Receive(t, &pbo.AskDeepThoughtRequest{
+	st.oraclePort.Receive(&pbo.AskDeepThoughtRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	st.oraclePort.Send(t, &port.GRPCErr{
+	st.oraclePort.Send(&port.GRPCErr{
 		Err: status.Errorf(codes.Internal, "internal error"),
 	})
-	st.echoPort.Receive(t, match.GRPCStatusCode(codes.Internal))
+	st.echoPort.Receive(match.GRPCStatusCode(codes.Internal))
 }
 
 func (st *SuiteTest) TestFetchDataFromDB(t *testing.T) {
-	st.echoPort.Send(t, &pb.AskDBRequest{
+	st.echoPort.Send(&pb.AskDBRequest{
 		Data: "the dirty fork",
 	})
-	st.echoPort.Receive(t, &pb.AskDBResponse{
+	st.echoPort.Receive(&pb.AskDBResponse{
 		Data: "Lucky we didn't say anything about the dirty knife",
 	})
 }
 
 func (st *SuiteTest) TestHTTPMatcher(t *testing.T) {
-	st.echoPort.Send(t, &pb.AskGoogleRequest{
+	st.echoPort.Send(&pb.AskGoogleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	st.httpPort.Receive(t, match.Fn(func(req *port.HTTPRequest) {
+	st.httpPort.Receive(match.Fn(func(req *port.HTTPRequest) {
 		if got, want := req.Host, "api.icndb.com"; got != want {
 			t.Fatalf("host mismatch, got: %v want: %v", got, want)
 		}
 	}))
-	st.httpPort.Send(t, &port.HTTPResponse{
+	st.httpPort.Send(&port.HTTPResponse{
 		Body: []byte(`{"value":{"joke":"42"}}`),
 	})
-	st.echoPort.Receive(t, match.Fn(func(resp *pb.AskGoogleResponse) {
+	st.echoPort.Receive(match.Fn(func(resp *pb.AskGoogleResponse) {
 		if got, want := resp.GetData(), "42"; got != want {
 			t.Fatalf("data mismatch, got: %v want: %v", got, want)
 		}

@@ -57,84 +57,84 @@ type SuiteTest struct {
 }
 
 func (st *SuiteTest) TestWeatherCelsius(t *testing.T) {
-	st.weatherPort.Send(t, &pb.AskAboutWeatherRequest{
+	st.weatherPort.Send(&pb.AskAboutWeatherRequest{
 		City: "Wroclaw",
 	})
-	st.httpPort.Receive(t, &port.HTTPRequest{
+	st.httpPort.Receive(&port.HTTPRequest{
 		Method: "GET",
 		Host:   "api.weather.com",
 		URL:    "/",
 	})
-	st.httpPort.Send(t, &port.HTTPResponse{
+	st.httpPort.Send(&port.HTTPResponse{
 		Status: 200,
 		Body:   []byte("15 Celsius Degrees"),
 	})
-	st.weatherPort.Receive(t, &pb.AskAboutWeatherResponse{
+	st.weatherPort.Receive(&pb.AskAboutWeatherResponse{
 		Result: "15 Celsius Degrees",
 	})
 }
 
 func (st *SuiteTest) TestFarenheitConvErr(t *testing.T) {
-	st.weatherPort.Send(t, &pb.AskAboutWeatherRequest{
+	st.weatherPort.Send(&pb.AskAboutWeatherRequest{
 		City:  "Wroclaw",
 		Scale: pb.Scale_FAHRENHEIT,
 	})
-	st.httpPort.Receive(t, &port.HTTPRequest{
+	st.httpPort.Receive(&port.HTTPRequest{
 		Method: "GET",
 		Host:   "api.weather.com",
 		URL:    "/",
 	})
-	st.httpPort.Send(t, &port.HTTPResponse{
+	st.httpPort.Send(&port.HTTPResponse{
 		Status: 200,
 		Body:   []byte("15 Celsius Degrees"),
 	})
-	st.weatherPort.Receive(t, match.GRPCErr(codes.Internal, "failed to convert http response to int"))
+	st.weatherPort.Receive(match.GRPCErr(codes.Internal, "failed to convert http response to int"))
 }
 
 func (st *SuiteTest) TestFarenheit(t *testing.T) {
-	st.weatherPort.Send(t, &pb.AskAboutWeatherRequest{
+	st.weatherPort.Send(&pb.AskAboutWeatherRequest{
 		City:  "Wroclaw",
 		Scale: pb.Scale_FAHRENHEIT,
 	})
-	st.httpPort.Receive(t, &port.HTTPRequest{
+	st.httpPort.Receive(&port.HTTPRequest{
 		Method: "GET",
 		Host:   "api.weather.com",
 		URL:    "/",
 	})
-	st.httpPort.Send(t, &port.HTTPResponse{
+	st.httpPort.Send(&port.HTTPResponse{
 		Status: 200,
 		Body:   []byte("15"),
 	})
-	st.convPort.Receive(t, &pb.CelciusToFarenheitRequest{
+	st.convPort.Receive(&pb.CelciusToFarenheitRequest{
 		Value: 15,
 	})
-	st.convPort.Send(t, &pb.CelciusToFarenheitResponse{
+	st.convPort.Send(&pb.CelciusToFarenheitResponse{
 		Value: 59,
 	})
-	st.weatherPort.Receive(t, &pb.AskAboutWeatherResponse{
+	st.weatherPort.Receive(&pb.AskAboutWeatherResponse{
 		Result: "59 Farenheit Degrees",
 	})
 }
 
 func (st *SuiteTest) TestFarenheitConvGRPCErr(t *testing.T) {
-	st.weatherPort.Send(t, &pb.AskAboutWeatherRequest{
+	st.weatherPort.Send(&pb.AskAboutWeatherRequest{
 		City:  "Wroclaw",
 		Scale: pb.Scale_FAHRENHEIT,
 	})
-	st.httpPort.Receive(t, &port.HTTPRequest{
+	st.httpPort.Receive(&port.HTTPRequest{
 		Method: "GET",
 		Host:   "api.weather.com",
 		URL:    "/",
 	})
-	st.httpPort.Send(t, &port.HTTPResponse{
+	st.httpPort.Send(&port.HTTPResponse{
 		Status: 200,
 		Body:   []byte("15"),
 	})
-	st.convPort.Receive(t, &pb.CelciusToFarenheitRequest{
+	st.convPort.Receive(&pb.CelciusToFarenheitRequest{
 		Value: 15,
 	})
-	st.convPort.Send(t, &port.GRPCErr{
+	st.convPort.Send(&port.GRPCErr{
 		Err: status.Error(codes.FailedPrecondition, "not supported"),
 	})
-	st.weatherPort.Receive(t, match.GRPCErr(codes.Internal, "cale conv client failed"))
+	st.weatherPort.Receive(match.GRPCErr(codes.Internal, "cale conv client failed"))
 }

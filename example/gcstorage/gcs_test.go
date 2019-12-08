@@ -33,20 +33,20 @@ type SuiteTest struct {
 }
 
 func (st *SuiteTest) TestGCStorage(t *testing.T) {
-	st.gcsPort.Receive(t, &port.StorageGetRequest{
+	st.gcsPort.Receive(&port.StorageGetRequest{
 		Bucket: "bucket/path",
 		Object: "file.txt",
 	})
 
-	st.gcsPort.Send(t, &port.StorageGetResponse{
+	st.gcsPort.Send(&port.StorageGetResponse{
 		Content: []byte("awesomefile.txt file content"),
 	})
 
-	st.gcsPort.Receive(t, &port.StorageInsertRequest{
+	st.gcsPort.Receive(&port.StorageInsertRequest{
 		Bucket:  "bucket/path/bak",
 		Object:  "file.txt.bak",
 		Content: []byte("awesomefile.txt file content"),
 	})
 
-	st.gcsPort.Send(t, &port.StorageInsertResponse{})
+	st.gcsPort.Send(&port.StorageInsertResponse{})
 }

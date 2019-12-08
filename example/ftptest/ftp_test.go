@@ -39,7 +39,7 @@ type SuiteTest struct {
 }
 
 func (s *SuiteTest) TestFTPUpload(t *testing.T) {
-	s.ftpPort.Receive(t, &port.FTPEvent{
+	s.ftpPort.Receive(&port.FTPEvent{
 		Path:    "/ftp/randomfile.txt",
 		Payload: []byte("random file content"),
 	})

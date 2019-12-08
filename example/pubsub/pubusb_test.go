@@ -49,10 +49,10 @@ type SuiteTest struct {
 }
 
 func (st *SuiteTest) TestPubsub(t *testing.T) {
-	st.pubsub.Send(t, &proto3_proto.Message{
+	st.pubsub.Send(&proto3_proto.Message{
 		Name: "test message",
 	})
-	st.pubsub.Receive(t, &proto3_proto.Message{
+	st.pubsub.Receive(&proto3_proto.Message{
 		Name: "bar",
 	})
 }

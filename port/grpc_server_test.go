@@ -31,7 +31,7 @@ func TestGRPCServer(t *testing.T) {
 				),
 			)
 
-			svr.Send(t, &oracle.AskDeepThoughtResponse{
+			svr.Send(&oracle.AskDeepThoughtResponse{
 				Data: "42",
 			})
 		}()
@@ -55,10 +55,10 @@ func TestGRPCServer(t *testing.T) {
 
 		go func() {
 			for i := 0; i < N; i++ {
-				svr.Receive(t, &oracle.AskDeepThoughtRequest{
+				svr.Receive(&oracle.AskDeepThoughtRequest{
 					Data: fmt.Sprintf("Request: %v", i),
 				})
-				svr.Send(t, &oracle.AskDeepThoughtResponse{
+				svr.Send(&oracle.AskDeepThoughtResponse{
 					Data: fmt.Sprintf("Response: %v", i),
 				})
 			}
@@ -80,7 +80,7 @@ func TestGRPCServer(t *testing.T) {
 
 	t.Run("ReciveMatchFn", func(t *testing.T) {
 		go func() {
-			svr.Receive(t, match.Fn(
+			svr.Receive(match.Fn(
 				func(r *oracle.AskDeepThoughtRequest) {
 					if r.Data != "Ultimate question" {
 						t.Fatalf("unexpected payload: %v", r.Data)
@@ -88,7 +88,7 @@ func TestGRPCServer(t *testing.T) {
 				},
 			))
 
-			svr.Send(t, &oracle.AskDeepThoughtResponse{
+			svr.Send(&oracle.AskDeepThoughtResponse{
 				Data: "42",
 			})
 		}()
@@ -122,11 +122,11 @@ func TestGRPCServerStart(t *testing.T) {
 		time.Sleep(time.Second * 0)
 		svr, _ := NewGRPCServerPort((*oracle.OracleServer)(nil), ":9991")
 		go func() {
-			svr.Receive(t, &oracle.AskDeepThoughtRequest{
+			svr.Receive(&oracle.AskDeepThoughtRequest{
 				Data: "Ultimate question",
 			})
 
-			svr.Send(t, &oracle.AskDeepThoughtResponse{
+			svr.Send(&oracle.AskDeepThoughtResponse{
 				Data: "42",
 			})
 		}()
