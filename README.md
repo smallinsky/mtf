@@ -100,16 +100,16 @@ func (s *server) AskOracle(ctx context.Context, req *pb.AskOracleRequest) (*pb.A
 Test GRPC message flow:
 ```go
 func (st *SuiteTest) TestClientServerGRPC(t *testing.T) {
-	st.echoPort.Send(t, &pb.AskOracleRequest{
+	st.echoPort.Send(&pb.AskOracleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	st.oraclePort.Receive(t, &pbo.AskDeepThoughtRequest{
+	st.oraclePort.Receive(&pbo.AskDeepThoughtRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	st.oraclePort.Send(t, &pbo.AskDeepThoughtResponse{
+	st.oraclePort.Send(&pbo.AskDeepThoughtResponse{
 		Data: "42",
 	})
-	st.echoPort.Receive(t, &pb.AskOracleResponse{
+	st.echoPort.Receive(&pb.AskOracleResponse{
 		Data: "42",
 	})
 }
@@ -130,7 +130,7 @@ If we change the handler body by adding additional text to AskOracleResponse.Dat
         }, nil
  }
 ```
-The `echoPort.Receive(t, &pb.AskOracleResponse{...}` call will log port mismatch
+The `echoPort.Receive(&pb.AskOracleResponse{...}` call will log port mismatch
 ```
 --- FAIL: TestEchoService/TestClientServerGRPC (0.01s)
 port.go:89: Failed to receive *echo.AskOracleResponse:
@@ -146,16 +146,16 @@ port.go:89: Failed to receive *echo.AskOracleResponse:
 Mock GRPC error response:
 ```go
 func (st *SuiteTest) TestClientServerGRPCError(t *testing.T) {
-	st.echoPort.Send(t, &pb.AskOracleRequest{
+	st.echoPort.Send(&pb.AskOracleRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	st.oraclePort.Receive(t, &pbo.AskDeepThoughtRequest{
+	st.oraclePort.Receive(&pbo.AskDeepThoughtRequest{
 		Data: "Get answer for ultimate question of life the universe and everything",
 	})
-	st.oraclePort.Send(t, &port.GRPCErr{
+	st.oraclePort.Send(&port.GRPCErr{
 		Err: status.Errorf(codes.FailedPrecondition, "Deepthought error"),
 	})
-	st.echoPort.Receive(t, &pb.AskOracleResponse{
+	st.echoPort.Receive(&pb.AskOracleResponse{
 		Data: "Come back after seven and a half million years",
 	})
 }
@@ -165,14 +165,14 @@ HTTP port allows to test external http endpoint integration by matching SUT's ht
 
 ```go
 func (st *SuiteTest) TestHTTP(t *testing.T) {
-	st.httpPort.Receive(t, &port.HTTPRequest{
+	st.httpPort.Receive(&port.HTTPRequest{
 		Body:   []byte{},
 		Method: "GET",
 		Host:   "example.com",
 		URL:    "/urlpath",
 	})
 
-	st.httpPort.Send(t, &port.HTTPResponse{
+	st.httpPort.Send(&port.HTTPResponse{
 		Body:   []byte(`{"value":{"joke":"42"}}`),
 		Status: http.StatusOK,
 	})
@@ -189,11 +189,11 @@ Under the hood the mtf framework will create cert key pair in `/tmp/mtf/` that w
 ### Match `mtf/match`
 Match only respnse message type:
 ```go
-echoPort.Receive(t, match.Type(&pb.AskOracleResponse{})
+echoPort.Receive(match.Type(&pb.AskOracleResponse{})
 ```
 Match response by custom function:
 ```go
-echoPort.Receive(t, match.Fn(func(resp *pb.AskGoogleResponse) {
+echoPort.Receive(match.Fn(func(resp *pb.AskGoogleResponse) {
 		if got, want := len(resp.GetData()), 2; got != want {
 			t.Fatalf("data len mismatch, got: %v want: %v", got, want)
 		}
@@ -201,7 +201,7 @@ echoPort.Receive(t, match.Fn(func(resp *pb.AskGoogleResponse) {
 ```
 Match response GRPC Error status code:
 ```
-echoPort.Receive(t, match.GRPCStatusCode(codes.Internal))
+echoPort.Receive(match.GRPCStatusCode(codes.Internal))
 ```
 ## MTF Tests execution
 Right now MTF framework does not support parallel test execution and to prevent simultaneously test run passing the  `-p 1` flag to `go test` command is required.  
