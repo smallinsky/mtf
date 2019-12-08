@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"testing"
 
 	mtfctx "github.com/smallinsky/mtf/framework/context"
 	"github.com/smallinsky/mtf/match"
@@ -31,7 +30,8 @@ func WithCtx(ctx context.Context) SendOption {
 	}
 }
 
-func (p *Port) Send(t *testing.T, i interface{}, opts ...SendOption) error {
+func (p *Port) Send(i interface{}, opts ...SendOption) error {
+	t := getT()
 	defOpts := &sendOptions{
 		ctx: context.Background(),
 	}
@@ -56,7 +56,8 @@ func getPortName(i interface{}) string {
 	return fmt.Sprintf("%s", strings.ToLower(name))
 }
 
-func (p *Port) Receive(t *testing.T, i interface{}) (interface{}, error) {
+func (p *Port) Receive(i interface{}) (interface{}, error) {
+	t := getT()
 	ctx := context.Background()
 	m, err := p.impl.Receive(ctx)
 
