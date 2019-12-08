@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto/proto3_proto"
+
 	"github.com/smallinsky/mtf/framework"
 	"github.com/smallinsky/mtf/port"
 )
