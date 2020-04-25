@@ -31,7 +31,7 @@ func (s *server) Repeat(ctx context.Context, req *pb.RepeatRequest) (*pb.RepeatR
 }
 
 func (s *server) Scream(ctx context.Context, req *pb.ScreamRequest) (*pb.ScreamResponse, error) {
-	log.Panicln("Scream enpoint called")
+	log.Panicln("Scream endpoint called")
 	return &pb.ScreamResponse{
 		Data: fmt.Sprintf("%s !!!!", strings.ToUpper(req.GetData())),
 	}, nil
@@ -55,7 +55,7 @@ func (s *server) AskGoogle(ctx context.Context, req *pb.AskGoogleRequest) (*pb.A
 	defer resp.Body.Close()
 	buff, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to read reasponse body: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to read response body: %v", err)
 	}
 
 	type incdbResp struct {

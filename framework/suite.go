@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/smallinsky/mtf/framework/context"
-	"github.com/smallinsky/mtf/port"
+	"github.com/smallinsky/mtf/pkg/netw"
 )
 
 type Initable interface {
@@ -22,7 +22,7 @@ func Run(t *testing.T, i interface{}) {
 
 	syncC := make(chan struct{})
 	go func() {
-		port.WaitForGRPCConn()
+		netw.WaitForGRPCConn()
 		close(syncC)
 	}()
 

@@ -27,7 +27,7 @@ const (
 	// RuntimeTypeService indicates that system under test works as a service.
 	RuntimeTypeService RuntimeType = iota
 
-	// RuntimeTypeCommand indicates that system under test is a simble binary that will
+	// RuntimeTypeCommand indicates that system under test is a simile binary that will
 	// terminate after execution.
 	RuntimeTypeCommand
 )
@@ -36,7 +36,7 @@ const (
 type SutSettings struct {
 	// Envs allows to pass custom env to system under test container.
 	Envs []string
-	// Dir is a path to directory that collect system under test source for which binary shuld be build.
+	// Dir is a path to directory that collect system under test source for which binary should be build.
 	Dir string
 	// Ports is a collection of ports that sut binary require, those ports will be forwarded to local host with the
 	// same port mapping.
@@ -44,7 +44,7 @@ type SutSettings struct {
 
 	// RuntimeType Type of system under test runtime. In case of service runtime sut component will
 	// be executed once, but when runtime type is set to command (terminates after execution) sut component
-	// needs to be re-executed for each testcase.
+	// needs to be re-executed for each test case.
 	RuntimeType RuntimeType
 }
 
@@ -75,32 +75,32 @@ type TLSSettings struct {
 	Hosts []string
 }
 
-func (env *TestEnviorment) WithMySQL(settings MysqlSettings) *TestEnviorment {
+func (env *TestEnvironment) WithMySQL(settings MysqlSettings) *TestEnvironment {
 	env.settings.MySQL = &settings
 	return env
 }
 
-func (env *TestEnviorment) WithSUT(settings SutSettings) *TestEnviorment {
+func (env *TestEnvironment) WithSUT(settings SutSettings) *TestEnvironment {
 	env.settings.SUT = &settings
 	return env
 }
 
-func (env *TestEnviorment) WithPubSub(settings PubSubSettings) *TestEnviorment {
+func (env *TestEnvironment) WithPubSub(settings PubSubSettings) *TestEnvironment {
 	env.settings.PubSub = &settings
 	return env
 }
 
-func (env *TestEnviorment) WithRedis(settings RedisSettings) *TestEnviorment {
+func (env *TestEnvironment) WithRedis(settings RedisSettings) *TestEnvironment {
 	env.settings.Redis = &settings
 	return env
 }
 
-func (env *TestEnviorment) WithFTP(settings FTPSettings) *TestEnviorment {
+func (env *TestEnvironment) WithFTP(settings FTPSettings) *TestEnvironment {
 	env.settings.FTP = &settings
 	return env
 }
 
-func (env *TestEnviorment) WithTLS(settings TLSSettings) *TestEnviorment {
+func (env *TestEnvironment) WithTLS(settings TLSSettings) *TestEnvironment {
 	env.settings.TLS = &settings
 	return env
 }

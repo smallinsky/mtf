@@ -74,7 +74,7 @@ func (st *SuiteTest) TestWeatherCelsius(t *testing.T) {
 	})
 }
 
-func (st *SuiteTest) TestFarenheitConvErr(t *testing.T) {
+func (st *SuiteTest) TestFahrenheitConvErr(t *testing.T) {
 	st.weatherPort.Send(t, &pb.AskAboutWeatherRequest{
 		City:  "Wroclaw",
 		Scale: pb.Scale_FAHRENHEIT,
@@ -91,7 +91,7 @@ func (st *SuiteTest) TestFarenheitConvErr(t *testing.T) {
 	st.weatherPort.Receive(t, match.GRPCErr(codes.Internal, "failed to convert http response to int"))
 }
 
-func (st *SuiteTest) TestFarenheit(t *testing.T) {
+func (st *SuiteTest) TestFahrenheit(t *testing.T) {
 	st.weatherPort.Send(t, &pb.AskAboutWeatherRequest{
 		City:  "Wroclaw",
 		Scale: pb.Scale_FAHRENHEIT,
@@ -105,18 +105,18 @@ func (st *SuiteTest) TestFarenheit(t *testing.T) {
 		Status: 200,
 		Body:   []byte("15"),
 	})
-	st.convPort.Receive(t, &pb.CelciusToFarenheitRequest{
+	st.convPort.Receive(t, &pb.CelsiusToFahrenheitRequest{
 		Value: 15,
 	})
-	st.convPort.Send(t, &pb.CelciusToFarenheitResponse{
+	st.convPort.Send(t, &pb.CelsiusToFahrenheitResponse{
 		Value: 59,
 	})
 	st.weatherPort.Receive(t, &pb.AskAboutWeatherResponse{
-		Result: "59 Farenheit Degrees",
+		Result: "59 Fahrenheit Degrees",
 	})
 }
 
-func (st *SuiteTest) TestFarenheitConvGRPCErr(t *testing.T) {
+func (st *SuiteTest) TestFahrenheitConvGRPCErr(t *testing.T) {
 	st.weatherPort.Send(t, &pb.AskAboutWeatherRequest{
 		City:  "Wroclaw",
 		Scale: pb.Scale_FAHRENHEIT,
@@ -130,7 +130,7 @@ func (st *SuiteTest) TestFarenheitConvGRPCErr(t *testing.T) {
 		Status: 200,
 		Body:   []byte("15"),
 	})
-	st.convPort.Receive(t, &pb.CelciusToFarenheitRequest{
+	st.convPort.Receive(t, &pb.CelsiusToFahrenheitRequest{
 		Value: 15,
 	})
 	st.convPort.Send(t, &port.GRPCErr{

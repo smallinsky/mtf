@@ -20,7 +20,7 @@ func TestGCStorage(t *testing.T) {
 	t.Skip()
 	port := NewGCStoragePort()
 	r := mux.NewRouter()
-	port.registerRuter(r)
+	port.registerRouter(r)
 
 	cst := httptest.NewServer(r)
 

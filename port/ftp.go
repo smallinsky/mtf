@@ -33,7 +33,7 @@ func NewFTPPort(addr, user, pass string) (*Port, error) {
 func NewFTP(addr, user, pass string) (*FTPPort, error) {
 	conn, err := dialFTP("localhost:21", "test", "test")
 	if err != nil {
-		return nil, fmt.Errorf("faield to dial ftp: %v", err)
+		return nil, fmt.Errorf("failed to dial ftp: %v", err)
 	}
 
 	ftpPort := &FTPPort{
@@ -80,7 +80,7 @@ func (p *FTPPort) Receive(ctx context.Context) (interface{}, error) {
 			Payload: msg.GetContent(),
 		}, nil
 	case <-time.NewTimer(time.Second * 7).C:
-		return nil, errors.Errorf("fialed to recive message, deadline exeeded")
+		return nil, errors.Errorf("failed to receive message, deadline exceeded")
 	}
 }
 
