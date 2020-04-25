@@ -15,6 +15,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
+
+	"github.com/smallinsky/mtf/pkg/netw"
 )
 
 type processFunc func(i interface{}) (interface{}, error)
@@ -68,12 +70,12 @@ func NewGRPCServers(ii []interface{}, port string, opts ...PortOpt) (*PortIn, er
 		respC: make(chan outValues),
 	}
 
-	lis, err := listen("tcp", port)
+	lis, err := netw.Listen("tcp", port)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create net listener")
 	}
 
-	grpcOpts := []grpc.ServerOption{}
+	var grpcOpts []grpc.ServerOption
 	if options.serverCertPath != "" && options.serverKeyPath != "" {
 		creds, err := credentials.NewServerTLSFromFile(options.serverCertPath, options.serverKeyPath)
 		if err != nil {
@@ -107,12 +109,12 @@ func NewGRPCServer(i interface{}, port string, opts ...PortOpt) (*PortIn, error)
 		respC: make(chan outValues),
 	}
 
-	lis, err := listen("tcp", port)
+	lis, err := netw.Listen("tcp", port)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create net listener")
 	}
 
-	grpcOpts := []grpc.ServerOption{}
+	var grpcOpts []grpc.ServerOption
 	if options.serverCertPath != "" && options.serverKeyPath != "" {
 		creds, err := credentials.NewServerTLSFromFile(options.serverCertPath, options.serverKeyPath)
 		if err != nil {
@@ -123,7 +125,7 @@ func NewGRPCServer(i interface{}, port string, opts ...PortOpt) (*PortIn, error)
 
 	s, err := registerInterface(grpc.NewServer(grpcOpts...), i, portIn.rpcCallHandler, options)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to reqigster server interface")
+		return nil, errors.Wrapf(err, "failed to register server interface")
 	}
 
 	var wg sync.WaitGroup
@@ -154,7 +156,7 @@ func (p *PortIn) receive(opts ...Opt) (interface{}, error) {
 
 	select {
 	case <-time.NewTimer(options.timeout).C:
-		return nil, errors.Errorf("failed to receive  message, deadline exeeded")
+		return nil, errors.Errorf("failed to receive  message, deadline exceeded")
 	case v := <-p.reqC:
 		return v, nil
 	}
@@ -250,8 +252,9 @@ func registerInterfaces(server *grpc.Server, ii []interface{}, procCall processF
 			fn := func(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 				v := reflect.New(mdesc.InType)
 				v.Elem().Set(reflect.New(mdesc.InType.Elem()))
-				dec(v.Elem().Interface())
-
+				if err := dec(v.Elem().Interface()); err != nil {
+					return nil, err
+				}
 				return procCall(v.Elem().Interface())
 			}
 

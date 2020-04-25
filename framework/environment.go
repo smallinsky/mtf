@@ -26,10 +26,10 @@ import (
 
 var (
 	GetDockerHostAddr = docker.HostAddr
-	testenv           *TestEnviorment
+	testenv           *TestEnvironment
 )
 
-type TestEnviorment struct {
+type TestEnvironment struct {
 	settings Settings
 
 	components []component.Component
@@ -39,16 +39,16 @@ type TestEnviorment struct {
 	M *testing.M
 }
 
-func TestEnv(m *testing.M) *TestEnviorment {
+func TestEnv(m *testing.M) *TestEnvironment {
 	flag.Parse()
 
-	testenv = &TestEnviorment{
+	testenv = &TestEnvironment{
 		M: m,
 	}
 	return testenv
 }
 
-func (env *TestEnviorment) Run() {
+func (env *TestEnvironment) Run() {
 	ctx := context.Background()
 
 	if err := env.Start(ctx); err != nil {
@@ -77,7 +77,7 @@ func (env *TestEnviorment) Run() {
 	os.Exit(code)
 }
 
-func (env *TestEnviorment) Start(ctx context.Context) error {
+func (env *TestEnvironment) Start(ctx context.Context) error {
 	fmt.Println("=== PREPARING TEST ENV")
 	start := time.Now()
 	if err := env.genCerts(); err != nil {
@@ -121,7 +121,7 @@ func getComponentName(c component.Component) string {
 	return fmt.Sprintf("[%s %s]", strings.ToUpper(ss[0]), ss[1])
 }
 
-func (env *TestEnviorment) Stop(ctx context.Context) error {
+func (env *TestEnvironment) Stop(ctx context.Context) error {
 	defer env.network.Remove()
 	for _, container := range env.components {
 		err := container.Stop(ctx)
@@ -132,7 +132,7 @@ func (env *TestEnviorment) Stop(ctx context.Context) error {
 	return nil
 }
 
-func (env *TestEnviorment) StartSutInCommandMode() error {
+func (env *TestEnvironment) StartSutInCommandMode() error {
 	err := env.SUT.Start(context.Background())
 	if err != nil {
 		return err
@@ -140,7 +140,7 @@ func (env *TestEnviorment) StartSutInCommandMode() error {
 	return nil
 }
 
-func (env *TestEnviorment) StopSutInCommandMode(tcName string) error {
+func (env *TestEnvironment) StopSutInCommandMode(tcName string) error {
 	ctx := context.Background()
 	if err := env.WriteComponentLogs(ctx, env.SUT, fmt.Sprintf("%s-", tcName)); err != nil {
 		log.Printf("[ERROR] Failed to write sut logs: %v", err)
@@ -151,7 +151,7 @@ func (env *TestEnviorment) StopSutInCommandMode(tcName string) error {
 	return nil
 }
 
-func (env *TestEnviorment) WriteLogs(ctx context.Context, tcName string) error {
+func (env *TestEnvironment) WriteLogs(ctx context.Context, tcName string) error {
 	if err := os.MkdirAll("runlogs/components", os.ModePerm); err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ func (env *TestEnviorment) WriteLogs(ctx context.Context, tcName string) error {
 	return nil
 }
 
-func (env *TestEnviorment) WriteComponentLogs(ctx context.Context, cpnt component.Component, prefix string) error {
+func (env *TestEnvironment) WriteComponentLogs(ctx context.Context, cpnt component.Component, prefix string) error {
 	v, ok := cpnt.(component.Loggable)
 	if !ok {
 		return nil
@@ -184,7 +184,7 @@ func (env *TestEnviorment) WriteComponentLogs(ctx context.Context, cpnt componen
 	return err
 }
 
-func (env *TestEnviorment) Prepare(cli *docker.Docker) error {
+func (env *TestEnvironment) Prepare(cli *docker.Docker) error {
 	var components []component.Component
 
 	conf := env.settings
@@ -273,7 +273,7 @@ func (env *TestEnviorment) Prepare(cli *docker.Docker) error {
 	return nil
 }
 
-func (env *TestEnviorment) genCerts() error {
+func (env *TestEnvironment) genCerts() error {
 	if env.settings.TLS == nil {
 		return nil
 	}

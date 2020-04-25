@@ -76,7 +76,7 @@ func (s GCStorage) onObjectGet(bo fakegcs.BucketObject, w io.Writer) error {
 	return nil
 }
 
-func (s GCStorage) registerRuter(r *mux.Router) {
+func (s GCStorage) registerRouter(r *mux.Router) {
 	fgcs := &fakegcs.GCStorage{
 		OnObjectInsert: s.onObjectInsert,
 		OnObjectGet:    s.onObjectGet,
@@ -110,7 +110,7 @@ type StorageGetResponse struct {
 func (s *GCStorage) receive(opts ...Opt) (interface{}, error) {
 	select {
 	case <-time.Tick(time.Second * 3):
-		return nil, errors.Errorf("failed to receive  message, deadline exeeded")
+		return nil, errors.Errorf("failed to receive  message, deadline exceeded")
 	case msg := <-s.inEvent:
 		return msg, nil
 	}
@@ -121,7 +121,7 @@ func (s *GCStorage) send(msg interface{}, opts ...PortOpt) error {
 	case s.outEvent <- msg:
 		return nil
 	case <-time.Tick(time.Second * 3):
-		return errors.Errorf("failed to receive  message, deadline exeeded")
+		return errors.Errorf("failed to receive  message, deadline exceeded")
 	}
 }
 

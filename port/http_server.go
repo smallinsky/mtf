@@ -20,21 +20,24 @@ type httpserver struct {
 	wg     sync.WaitGroup
 
 	httpPort *HTTPPort
-	gcs       *GCStorage
+	gcs      *GCStorage
 }
 
 func startHTTP() {
 	once.Do(func() {
 		ht = &httpserver{
-			router:    mux.NewRouter(),
+			router:   mux.NewRouter(),
 			httpPort: newHTTPPort(),
-			gcs:       NewGCStoragePort(),
+			gcs:      NewGCStoragePort(),
 		}
 		ht.httpPort.Register(ht.router)
 		if ht.gcs != nil {
-			ht.gcs.registerRuter(ht.router)
+			ht.gcs.registerRouter(ht.router)
 		}
-		ht.run()
+		if err := ht.run(); err != nil {
+			panic(err)
+
+		}
 	})
 }
 
@@ -42,14 +45,14 @@ func (ht *httpserver) run() error {
 	if err := ht.servHTTP(); err != nil {
 		return err
 	}
-	if err := ht.servHTTPS(); err != nil {
+	if err := ht.serveHTTPS(); err != nil {
 		return err
 	}
 	ht.wg.Wait()
 	return nil
 }
 
-func (ht *httpserver) servHTTPS() error {
+func (ht *httpserver) serveHTTPS() error {
 	ht.wg.Add(1)
 	go func() {
 		ht.wg.Done()
