@@ -1,7 +1,7 @@
 [![CircleCI](https://circleci.com/gh/smallinsky/mtf.svg?style=svg)](https://circleci.com/gh/smallinsky/mtf)[![Go Report Card](https://goreportcard.com/badge/github.com/smallinsky/mtf)](https://goreportcard.com/report/github.com/smallinsky/mtf)
  # Microservice Test Framework
 ## Introduction
-This Microservice Test Framework (MTF) allows in simple way to mock service dependencies and setup docker test environment   in a comprehensive way.
+This Microservice Test Framework (MTF) allows in simple way to mock service dependencies and setup docker test environment comprehensive.
 
 Supported dependencies:
 * GRPC client/server communication
@@ -12,7 +12,7 @@ Supported dependencies:
 * MySQL
 * Redis
 
-The aim of the MTF framework is not only cut dependencies require to run your binary and execute tests but also focus on test readability.
+MTF framework aim to cut dependencies require to run your binary and execute tests but also focus on test readability.
 
 
 
@@ -62,9 +62,9 @@ func (st *SuiteTest) Init(t *testing.T) {
 ```
 
 ## Ports
-Port are used to communicate with dependencies by sending and receiving messages in a consistent way.
+Port are used to communicate with dependencies by sending and receiving messages consistent.
 ### GRPC Client/Server port `port.NewGRPCServerPort` `port.NewGRPCClientPort`
-GRPC ports allows to mock whole grpc communication between client<->SUT<->Other GRPC service.
+GRPC ports allows mock whole grpc communication between client<->SUT<->Other GRPC service.
 
 Server grpc port initialization:
 ```
@@ -181,8 +181,8 @@ func (st *SuiteTest) TestHTTP(t *testing.T) {
 
 ### GRPC and HTTPS with TLS support
 
-The `framework.WithTLS(framework.TLSSettings{Hosts: []string{"customdomain.com"})` chain method of `framework.TestEnv` allows to set custom DNSNames that will be added to TLS.
-In order to create grpc TLS server or client the port `port.WithTLS` options should be pass to NewGRPCServerPort or NewGRPCClientPort port funciton.
+The `framework.WithTLS(framework.TLSSettings{Hosts: []string{"customdomain.com"})` chain method of `framework.TestEnv` allows to setting custom DNSNames that will be added to TLS.
+In order to create grpc TLS server or client the port `port.WithTLS` options should be pass to NewGRPCServerPort or NewGRPCClientPort port function.
 Under the hood the mtf framework will create cert key pair in `/tmp/mtf/` that will be propagated to dependencies during test execution.
 
 

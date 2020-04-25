@@ -43,13 +43,13 @@ func (f *GCStorage) handleMultipart(rw http.ResponseWriter, r *http.Request) err
 	}
 	defer r.Body.Close()
 	reader := multipart.NewReader(r.Body, params["boundary"])
-	poartMeta, err := reader.NextPart()
+	partMeta, err := reader.NextPart()
 	if err != nil {
 		return err
 	}
-	defer poartMeta.Close()
+	defer partMeta.Close()
 	var obj meta
-	if err := json.NewDecoder(poartMeta).Decode(&obj); err != nil {
+	if err := json.NewDecoder(partMeta).Decode(&obj); err != nil {
 		return err
 	}
 	partContent, err := reader.NextPart()

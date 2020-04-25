@@ -7,14 +7,14 @@ service Weather {
 }
 
 service ScaleConv {
-	rpc CelciusToFarenheit(CelciusToFarenheitRequest) returns (CelciusToFarenheitResponse) {}
+	rpc CelsiusToFahrenheit(CelsiusToFahrenheitRequest) returns (CelsiusToFahrenheitResponse) {}
 }
 
-message CelciusToFarenheitRequest {
+message CelsiusToFahrenheitRequest {
    int64 value = 1;
 }
 
-message CelciusToFarenheitResponse {
+message CelsiusToFahrenheitResponse {
    int64 value = 1;
 }
 
@@ -24,8 +24,8 @@ message AskAboutWeatherRequest {
 }
 
 enum Scale {
-	CELCIUS = 0;
-    FAHRENHEIT = 1;
+	CELSIUS = 0;
+	FAHRENHEIT = 1;
 }
 
 message AskAboutWeatherResponse {

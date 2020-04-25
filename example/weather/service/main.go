@@ -60,7 +60,7 @@ func (s *server) AskAboutWeather(ctx context.Context, req *pb.AskAboutWeatherReq
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to convert http response to int: %v", err)
 		}
-		cresp, err := s.scaleConvClient.CelciusToFarenheit(ctx, &pb.CelciusToFarenheitRequest{Value: val})
+		cresp, err := s.scaleConvClient.CelsiusToFahrenheit(ctx, &pb.CelsiusToFahrenheitRequest{Value: val})
 		if err != nil {
 			if status.Code(err) == codes.FailedPrecondition {
 				return nil, status.Errorf(codes.Internal, "scale conv client failed: %v", err)
@@ -68,7 +68,7 @@ func (s *server) AskAboutWeather(ctx context.Context, req *pb.AskAboutWeatherReq
 			return nil, err
 		}
 		return &pb.AskAboutWeatherResponse{
-			Result: fmt.Sprintf("%d Farenheit Degrees", cresp.GetValue()),
+			Result: fmt.Sprintf("%d Fahrenheit Degrees", cresp.GetValue()),
 		}, nil
 	}
 

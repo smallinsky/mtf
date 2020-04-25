@@ -25,17 +25,17 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 type Scale int32
 
 const (
-	Scale_CELCIUS    Scale = 0
+	Scale_Celsius    Scale = 0
 	Scale_FAHRENHEIT Scale = 1
 )
 
 var Scale_name = map[int32]string{
-	0: "CELCIUS",
+	0: "Celsius",
 	1: "FAHRENHEIT",
 }
 
 var Scale_value = map[string]int32{
-	"CELCIUS":    0,
+	"Celsius":    0,
 	"FAHRENHEIT": 1,
 }
 
@@ -47,78 +47,78 @@ func (Scale) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_231dcd72b885f4be, []int{0}
 }
 
-type CelciusToFarenheitRequest struct {
+type CelsiusToFahrenheitRequest struct {
 	Value                int64    `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CelciusToFarenheitRequest) Reset()         { *m = CelciusToFarenheitRequest{} }
-func (m *CelciusToFarenheitRequest) String() string { return proto.CompactTextString(m) }
-func (*CelciusToFarenheitRequest) ProtoMessage()    {}
-func (*CelciusToFarenheitRequest) Descriptor() ([]byte, []int) {
+func (m *CelsiusToFahrenheitRequest) Reset()         { *m = CelsiusToFahrenheitRequest{} }
+func (m *CelsiusToFahrenheitRequest) String() string { return proto.CompactTextString(m) }
+func (*CelsiusToFahrenheitRequest) ProtoMessage()    {}
+func (*CelsiusToFahrenheitRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_231dcd72b885f4be, []int{0}
 }
 
-func (m *CelciusToFarenheitRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_CelciusToFarenheitRequest.Unmarshal(m, b)
+func (m *CelsiusToFahrenheitRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CelsiusToFahrenheitRequest.Unmarshal(m, b)
 }
-func (m *CelciusToFarenheitRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_CelciusToFarenheitRequest.Marshal(b, m, deterministic)
+func (m *CelsiusToFahrenheitRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CelsiusToFahrenheitRequest.Marshal(b, m, deterministic)
 }
-func (m *CelciusToFarenheitRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CelciusToFarenheitRequest.Merge(m, src)
+func (m *CelsiusToFahrenheitRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CelsiusToFahrenheitRequest.Merge(m, src)
 }
-func (m *CelciusToFarenheitRequest) XXX_Size() int {
-	return xxx_messageInfo_CelciusToFarenheitRequest.Size(m)
+func (m *CelsiusToFahrenheitRequest) XXX_Size() int {
+	return xxx_messageInfo_CelsiusToFahrenheitRequest.Size(m)
 }
-func (m *CelciusToFarenheitRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_CelciusToFarenheitRequest.DiscardUnknown(m)
+func (m *CelsiusToFahrenheitRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CelsiusToFahrenheitRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_CelciusToFarenheitRequest proto.InternalMessageInfo
+var xxx_messageInfo_CelsiusToFahrenheitRequest proto.InternalMessageInfo
 
-func (m *CelciusToFarenheitRequest) GetValue() int64 {
+func (m *CelsiusToFahrenheitRequest) GetValue() int64 {
 	if m != nil {
 		return m.Value
 	}
 	return 0
 }
 
-type CelciusToFarenheitResponse struct {
+type CelsiusToFahrenheitResponse struct {
 	Value                int64    `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CelciusToFarenheitResponse) Reset()         { *m = CelciusToFarenheitResponse{} }
-func (m *CelciusToFarenheitResponse) String() string { return proto.CompactTextString(m) }
-func (*CelciusToFarenheitResponse) ProtoMessage()    {}
-func (*CelciusToFarenheitResponse) Descriptor() ([]byte, []int) {
+func (m *CelsiusToFahrenheitResponse) Reset()         { *m = CelsiusToFahrenheitResponse{} }
+func (m *CelsiusToFahrenheitResponse) String() string { return proto.CompactTextString(m) }
+func (*CelsiusToFahrenheitResponse) ProtoMessage()    {}
+func (*CelsiusToFahrenheitResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_231dcd72b885f4be, []int{1}
 }
 
-func (m *CelciusToFarenheitResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_CelciusToFarenheitResponse.Unmarshal(m, b)
+func (m *CelsiusToFahrenheitResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CelsiusToFahrenheitResponse.Unmarshal(m, b)
 }
-func (m *CelciusToFarenheitResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_CelciusToFarenheitResponse.Marshal(b, m, deterministic)
+func (m *CelsiusToFahrenheitResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CelsiusToFahrenheitResponse.Marshal(b, m, deterministic)
 }
-func (m *CelciusToFarenheitResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CelciusToFarenheitResponse.Merge(m, src)
+func (m *CelsiusToFahrenheitResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CelsiusToFahrenheitResponse.Merge(m, src)
 }
-func (m *CelciusToFarenheitResponse) XXX_Size() int {
-	return xxx_messageInfo_CelciusToFarenheitResponse.Size(m)
+func (m *CelsiusToFahrenheitResponse) XXX_Size() int {
+	return xxx_messageInfo_CelsiusToFahrenheitResponse.Size(m)
 }
-func (m *CelciusToFarenheitResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_CelciusToFarenheitResponse.DiscardUnknown(m)
+func (m *CelsiusToFahrenheitResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CelsiusToFahrenheitResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_CelciusToFarenheitResponse proto.InternalMessageInfo
+var xxx_messageInfo_CelsiusToFahrenheitResponse proto.InternalMessageInfo
 
-func (m *CelciusToFarenheitResponse) GetValue() int64 {
+func (m *CelsiusToFahrenheitResponse) GetValue() int64 {
 	if m != nil {
 		return m.Value
 	}
@@ -169,7 +169,7 @@ func (m *AskAboutWeatherRequest) GetScale() Scale {
 	if m != nil {
 		return m.Scale
 	}
-	return Scale_CELCIUS
+	return Scale_Celsius
 }
 
 type AskAboutWeatherResponse struct {
@@ -213,8 +213,8 @@ func (m *AskAboutWeatherResponse) GetResult() string {
 
 func init() {
 	proto.RegisterEnum("weather.Scale", Scale_name, Scale_value)
-	proto.RegisterType((*CelciusToFarenheitRequest)(nil), "weather.CelciusToFarenheitRequest")
-	proto.RegisterType((*CelciusToFarenheitResponse)(nil), "weather.CelciusToFarenheitResponse")
+	proto.RegisterType((*CelsiusToFahrenheitRequest)(nil), "weather.CelsiusToFahrenheitRequest")
+	proto.RegisterType((*CelsiusToFahrenheitResponse)(nil), "weather.CelsiusToFahrenheitResponse")
 	proto.RegisterType((*AskAboutWeatherRequest)(nil), "weather.AskAboutWeatherRequest")
 	proto.RegisterType((*AskAboutWeatherResponse)(nil), "weather.AskAboutWeatherResponse")
 }
@@ -319,7 +319,7 @@ var _Weather_serviceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ScaleConvClient interface {
-	CelciusToFarenheit(ctx context.Context, in *CelciusToFarenheitRequest, opts ...grpc.CallOption) (*CelciusToFarenheitResponse, error)
+	CelsiusToFahrenheit(ctx context.Context, in *CelsiusToFahrenheitRequest, opts ...grpc.CallOption) (*CelsiusToFahrenheitResponse, error)
 }
 
 type scaleConvClient struct {
@@ -330,9 +330,9 @@ func NewScaleConvClient(cc *grpc.ClientConn) ScaleConvClient {
 	return &scaleConvClient{cc}
 }
 
-func (c *scaleConvClient) CelciusToFarenheit(ctx context.Context, in *CelciusToFarenheitRequest, opts ...grpc.CallOption) (*CelciusToFarenheitResponse, error) {
-	out := new(CelciusToFarenheitResponse)
-	err := c.cc.Invoke(ctx, "/weather.ScaleConv/CelciusToFarenheit", in, out, opts...)
+func (c *scaleConvClient) CelsiusToFahrenheit(ctx context.Context, in *CelsiusToFahrenheitRequest, opts ...grpc.CallOption) (*CelsiusToFahrenheitResponse, error) {
+	out := new(CelsiusToFahrenheitResponse)
+	err := c.cc.Invoke(ctx, "/weather.ScaleConv/CelsiusToFahrenheit", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -341,27 +341,27 @@ func (c *scaleConvClient) CelciusToFarenheit(ctx context.Context, in *CelciusToF
 
 // ScaleConvServer is the server API for ScaleConv service.
 type ScaleConvServer interface {
-	CelciusToFarenheit(context.Context, *CelciusToFarenheitRequest) (*CelciusToFarenheitResponse, error)
+	CelsiusToFahrenheit(context.Context, *CelsiusToFahrenheitRequest) (*CelsiusToFahrenheitResponse, error)
 }
 
 func RegisterScaleConvServer(s *grpc.Server, srv ScaleConvServer) {
 	s.RegisterService(&_ScaleConv_serviceDesc, srv)
 }
 
-func _ScaleConv_CelciusToFarenheit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CelciusToFarenheitRequest)
+func _ScaleConv_CelsiusToFahrenheit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CelsiusToFahrenheitRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ScaleConvServer).CelciusToFarenheit(ctx, in)
+		return srv.(ScaleConvServer).CelsiusToFahrenheit(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/weather.ScaleConv/CelciusToFarenheit",
+		FullMethod: "/weather.ScaleConv/CelsiusToFahrenheit",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ScaleConvServer).CelciusToFarenheit(ctx, req.(*CelciusToFarenheitRequest))
+		return srv.(ScaleConvServer).CelsiusToFahrenheit(ctx, req.(*CelsiusToFahrenheitRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -371,8 +371,8 @@ var _ScaleConv_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*ScaleConvServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CelciusToFarenheit",
-			Handler:    _ScaleConv_CelciusToFarenheit_Handler,
+			MethodName: "CelsiusToFahrenheit",
+			Handler:    _ScaleConv_CelsiusToFahrenheit_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -155,7 +155,7 @@ func (c *ContainerType) Logs(ctx context.Context) (io.Reader, error) {
 	}
 	defer rc.Close()
 
-	// Docker container log stream contains metadata bytes, stdcopy allows to
+	// Docker container log stream contains metadata bytes, std copy allows to
 	// alter log and remove these metadata from the stream log.
 	var buff bytes.Buffer
 	_, err = stdcopy.StdCopy(&buff, &buff, rc)
