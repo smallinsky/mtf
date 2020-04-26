@@ -230,20 +230,38 @@ func (env *TestEnvironment) Prepare(cli *docker.Docker) error {
 		components = append(components, comp)
 	}
 
-	if cfg := conf.MySQL; cfg != nil && cfg.MigrationDir != "" {
-		dirs := strings.Split(cfg.MigrationDir, ";")
-		for _, dir := range dirs {
+	if len(conf.Migration) != 0 {
+		for _, mig := range conf.Migration {
 			comp, err := migrate.New(cli, migrate.MigrateConfig{
-				Path:     dir,
-				Password: cfg.Password,
-				Port:     "3306",
+				Path:     mig.Dir,
+				Password: mig.Password,
+				Port:     mig.Port,
 				Hostname: "mysql_mtf",
-				Database: cfg.DatabaseName,
+				Database: mig.DBName,
 			})
 			if err != nil {
 				return err
 			}
 			components = append(components, comp)
+		}
+	}
+
+	if false {
+		if cfg := conf.MySQL; cfg != nil && cfg.MigrationDir != "" {
+			dirs := strings.Split(cfg.MigrationDir, ";")
+			for _, dir := range dirs {
+				comp, err := migrate.New(cli, migrate.MigrateConfig{
+					Path:     dir,
+					Password: cfg.Password,
+					Port:     "3306",
+					Hostname: "mysql_mtf",
+					Database: cfg.DatabaseName,
+				})
+				if err != nil {
+					return err
+				}
+				components = append(components, comp)
+			}
 		}
 	}
 

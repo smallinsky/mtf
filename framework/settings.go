@@ -1,12 +1,20 @@
 package framework
 
 type Settings struct {
-	MySQL  *MysqlSettings
-	SUT    *SutSettings
-	PubSub *PubSubSettings
-	Redis  *RedisSettings
-	FTP    *FTPSettings
-	TLS    *TLSSettings
+	MySQL     *MysqlSettings
+	SUT       *SutSettings
+	PubSub    *PubSubSettings
+	Redis     *RedisSettings
+	FTP       *FTPSettings
+	TLS       *TLSSettings
+	Migration []*MigrationSettings
+}
+
+type MigrationSettings struct {
+	Password string
+	Port     string
+	DBName   string
+	Dir      string
 }
 
 type MysqlSettings struct {
@@ -78,6 +86,11 @@ type TLSSettings struct {
 
 func (env *TestEnvironment) WithMySQL(settings MysqlSettings) *TestEnvironment {
 	env.settings.MySQL = &settings
+	return env
+}
+
+func (env *TestEnvironment) WithMigration(settings []*MigrationSettings) *TestEnvironment {
+	env.settings.Migration = settings
 	return env
 }
 

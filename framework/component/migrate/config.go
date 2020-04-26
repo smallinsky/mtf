@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/smallinsky/mtf/pkg/docker"
 )
@@ -53,7 +52,7 @@ func BuildContainerConfig(config MigrateConfig) (*docker.ContainerConfig, error)
 
 	return &docker.ContainerConfig{
 		Image:       image,
-		Name:        fmt.Sprintf("%s%d", name, time.Now().Nanosecond()),
+		Name:        fmt.Sprintf("%s_%s", name, config.Database),
 		NetworkName: network,
 		CapAdd:      []string{"NET_RAW", "NET_ADMIN"},
 		Mounts: docker.Mounts{
