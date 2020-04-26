@@ -1,16 +1,18 @@
 package mysql
 
 import (
+	"bytes"
 	"fmt"
-
 	"github.com/smallinsky/mtf/pkg/docker"
 )
 
 type MySQLConfig struct {
-	Database string
-	Password string
-	Hostname string
-	Network  string
+	//obsolete
+	Database  string
+	Databases []string
+	Password  string
+	Hostname  string
+	Network   string
 
 	AttachIfExist bool
 }
@@ -35,10 +37,24 @@ func BuildContainerConfig(config MySQLConfig) (*docker.ContainerConfig, error) {
 			fmt.Sprintf("MYSQL_DATABASE=%s", config.Database),
 			fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", config.Password),
 		},
+		EntryPoint: []string{
+			`/bin/bash`, `-c`, createDBCommand(config.Databases),
+		},
 		Cmd: []string{
 			"--default-authentication-plugin=mysql_native_password",
 		},
 		AttachIfExist: config.AttachIfExist,
 		WaitPolicy:    &docker.WaitForCommand{Command: cmd},
 	}, nil
+}
+
+func createDBCommand(databases []string) string {
+	var buff bytes.Buffer
+	_, _ = fmt.Fprint(&buff, `echo '`)
+	for _, db := range databases {
+		_, _ = fmt.Fprintf(&buff, `CREATE DATABASE IF NOT EXISTS %s; `, db)
+	}
+	_, _ = fmt.Fprintf(&buff, `' > /docker-entrypoint-initdb.d/init.sql; `)
+	_, _ = fmt.Fprintf(&buff, `/usr/local/bin/docker-entrypoint.sh --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci`)
+	return buff.String()
 }

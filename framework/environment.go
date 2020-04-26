@@ -220,6 +220,7 @@ func (env *TestEnvironment) Prepare(cli *docker.Docker) error {
 	if cfg := conf.MySQL; cfg != nil {
 		comp, err := mysql.New(cli, mysql.MySQLConfig{
 			Database:      cfg.DatabaseName,
+			Databases:     cfg.Databases,
 			Password:      cfg.Password,
 			AttachIfExist: true,
 		})
@@ -229,18 +230,39 @@ func (env *TestEnvironment) Prepare(cli *docker.Docker) error {
 		components = append(components, comp)
 	}
 
-	if cfg := conf.MySQL; cfg != nil && cfg.MigrationDir != "" {
-		comp, err := migrate.New(cli, migrate.MigrateConfig{
-			Path:     cfg.MigrationDir,
-			Password: cfg.Password,
-			Port:     "3306",
-			Hostname: "mysql_mtf",
-			Database: cfg.DatabaseName,
-		})
-		if err != nil {
-			return err
+	if len(conf.Migration) != 0 {
+		for _, mig := range conf.Migration {
+			comp, err := migrate.New(cli, migrate.MigrateConfig{
+				Path:     mig.Dir,
+				Password: mig.Password,
+				Port:     mig.Port,
+				Hostname: "mysql_mtf",
+				Database: mig.DBName,
+			})
+			if err != nil {
+				return err
+			}
+			components = append(components, comp)
 		}
-		components = append(components, comp)
+	}
+
+	if false {
+		if cfg := conf.MySQL; cfg != nil && cfg.MigrationDir != "" {
+			dirs := strings.Split(cfg.MigrationDir, ";")
+			for _, dir := range dirs {
+				comp, err := migrate.New(cli, migrate.MigrateConfig{
+					Path:     dir,
+					Password: cfg.Password,
+					Port:     "3306",
+					Hostname: "mysql_mtf",
+					Database: cfg.DatabaseName,
+				})
+				if err != nil {
+					return err
+				}
+				components = append(components, comp)
+			}
+		}
 	}
 
 	if cfg := conf.FTP; cfg != nil {

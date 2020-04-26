@@ -16,7 +16,7 @@ type MigrateConfig struct {
 	Database string
 	Labels   map[string]string
 
-	absoltePath string
+	absolutePath string
 }
 
 func (c *MigrateConfig) Build() error {
@@ -28,7 +28,7 @@ func (c *MigrateConfig) Build() error {
 		return fmt.Errorf("path is not directory")
 	}
 
-	c.absoltePath, err = filepath.Abs(c.Path)
+	c.absolutePath, err = filepath.Abs(c.Path)
 	if err != nil {
 		return err
 	}
@@ -52,12 +52,12 @@ func BuildContainerConfig(config MigrateConfig) (*docker.ContainerConfig, error)
 
 	return &docker.ContainerConfig{
 		Image:       image,
-		Name:        name,
+		Name:        fmt.Sprintf("%s_%s", name, config.Database),
 		NetworkName: network,
 		CapAdd:      []string{"NET_RAW", "NET_ADMIN"},
 		Mounts: docker.Mounts{
 			docker.Mount{
-				Source: config.absoltePath,
+				Source: config.absolutePath,
 				Target: "/migrations",
 			},
 		},

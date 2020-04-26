@@ -1,17 +1,26 @@
 package framework
 
 type Settings struct {
-	MySQL  *MysqlSettings
-	SUT    *SutSettings
-	PubSub *PubSubSettings
-	Redis  *RedisSettings
-	FTP    *FTPSettings
-	TLS    *TLSSettings
+	MySQL     *MysqlSettings
+	SUT       *SutSettings
+	PubSub    *PubSubSettings
+	Redis     *RedisSettings
+	FTP       *FTPSettings
+	TLS       *TLSSettings
+	Migration []*MigrationSettings
+}
+
+type MigrationSettings struct {
+	Password string
+	Port     string
+	DBName   string
+	Dir      string
 }
 
 type MysqlSettings struct {
 	// DatabaseName is name of a database that will be created
 	DatabaseName string
+	Databases    []string
 	// The source dir from migration files.
 	MigrationDir string
 	// Password for mysql user.
@@ -77,6 +86,11 @@ type TLSSettings struct {
 
 func (env *TestEnvironment) WithMySQL(settings MysqlSettings) *TestEnvironment {
 	env.settings.MySQL = &settings
+	return env
+}
+
+func (env *TestEnvironment) WithMigration(settings []*MigrationSettings) *TestEnvironment {
+	env.settings.Migration = settings
 	return env
 }
 
