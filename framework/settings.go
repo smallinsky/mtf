@@ -12,6 +12,7 @@ type Settings struct {
 type MysqlSettings struct {
 	// DatabaseName is name of a database that will be created
 	DatabaseName string
+	Databases    []string
 	// The source dir from migration files.
 	MigrationDir string
 	// Password for mysql user.
