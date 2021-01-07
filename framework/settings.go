@@ -50,6 +50,9 @@ type SutSettings struct {
 	// Ports is a collection of ports that sut binary require, those ports will be forwarded to local host with the
 	// same port mapping.
 	Ports []int
+	// Mounts allows to pass list of directories which should be mountet
+	// inside system under test container in form 'src:dst'.
+	Mounts []string
 
 	// RuntimeType Type of system under test runtime. In case of service runtime sut component will
 	// be executed once, but when runtime type is set to command (terminates after execution) sut component

@@ -279,6 +279,7 @@ func (env *TestEnvironment) Prepare(cli *docker.Docker) error {
 			Path:               conf.SUT.Dir,
 			Env:                conf.SUT.Envs,
 			ExposedPorts:       conf.SUT.Ports,
+			Mounts:             conf.SUT.Mounts,
 			RuntimeTypeCommand: conf.SUT.RuntimeType == RuntimeTypeCommand,
 		})
 		if err != nil {
