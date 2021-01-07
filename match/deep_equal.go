@@ -22,6 +22,12 @@ func (m *DeepEqualType) Match(got interface{}) error {
 		return nil
 	}
 
+	v1 := reflect.ValueOf(got)
+	v2 := reflect.ValueOf(m.exp)
+	if v1.Type() != v2.Type() {
+		return errors.Wrapf(ErrNotEq, "deep equal wrong types: \n got: '%T'\n exp: '%T'\n", got, m.exp)
+	}
+
 	gotDump, err := toJsonString(got)
 	if err != nil {
 		return err
@@ -31,7 +37,7 @@ func (m *DeepEqualType) Match(got interface{}) error {
 		return err
 	}
 
-	return errors.Wrapf(ErrNotEq, "deep equal: \n got:'%v'\n exp: '%v'\n", gotDump, expDump)
+	return errors.Wrapf(ErrNotEq, "deep equal: \n got: '%v'\n exp: '%v'\n", gotDump, expDump)
 }
 
 func toJsonString(i interface{}) (string, error) {
