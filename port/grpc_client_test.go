@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 
 	"github.com/smallinsky/mtf/match"
 )
@@ -104,6 +105,10 @@ func (m *mockConnection) Invoke(ctx context.Context, method string, args, reply 
 }
 func (m *mockConnection) Close() error {
 	return nil
+}
+
+func (m *mockConnection) GetState() connectivity.State {
+	return connectivity.Ready
 }
 
 type FirstRequest struct {

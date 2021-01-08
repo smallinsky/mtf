@@ -121,7 +121,7 @@ func (p *ClientPort) receive(opts ...PortOpt) (interface{}, error) {
 
 	select {
 	case <-time.Tick(options.timeout):
-		return nil, errors.Errorf("failed to receive  message, deadline exeeded %s")
+		return nil, errors.Errorf("failed to receive  message, deadline exeeded")
 	case result := <-p.callResultC:
 		if result.err != nil {
 			return nil, result.err
