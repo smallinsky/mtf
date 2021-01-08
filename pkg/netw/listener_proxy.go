@@ -40,6 +40,7 @@ func (l *listener) Accept() (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+	println("MYDEBUG connection accect on: ", conn.LocalAddr().String())
 	defer startSync.Done()
 	return conn, nil
 }

@@ -24,6 +24,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestEchoService(t *testing.T) {
+)
 	framework.Run(t, new(SuiteTest))
 }
 

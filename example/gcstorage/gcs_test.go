@@ -42,6 +42,7 @@ func (st *SuiteTest) TestGCStorage(t *testing.T) {
 		Content: []byte("awesomefile.txt file content"),
 	})
 
+
 	st.gcsPort.Receive(t, &port.StorageInsertRequest{
 		Bucket:  "bucket/path/bak",
 		Object:  "file.txt.bak",

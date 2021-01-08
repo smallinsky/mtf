@@ -51,5 +51,5 @@ func WithTLS() PortOpt {
 }
 
 var defaultPortOpts = portOpts{
-	timeout: time.Second * 3,
+	timeout: time.Second * 15,
 }

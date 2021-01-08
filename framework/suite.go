@@ -28,10 +28,9 @@ func Run(t *testing.T, i interface{}) {
 
 	select {
 	case <-syncC:
-	case <-time.Tick(time.Second * 5):
-		t.Fatalf("[MTF ERROR] GRPC server port wait for client connection failed")
+	case <-time.Tick(time.Second * 10):
+		t.Log("[MTF WARN] GRPC server port wait for client connection failed")
 	}
-
 	for _, test := range getInternalTests(i) {
 		if testenv.settings.SUT.RuntimeType == RuntimeTypeCommand {
 			err := testenv.StartSutInCommandMode()

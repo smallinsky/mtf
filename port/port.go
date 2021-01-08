@@ -59,6 +59,9 @@ func getPortName(i interface{}) string {
 func (p *Port) Receive(t *testing.T, i interface{}) (interface{}, error) {
 	ctx := context.Background()
 	m, err := p.impl.Receive(ctx)
+	if err != nil {
+		fmt.Printf("Receive(%T) errror: %v\n", i, err)
+	}
 
 	name := getPortName(p.impl)
 

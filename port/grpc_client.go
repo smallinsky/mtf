@@ -2,6 +2,7 @@ package port
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
 	"sync"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -58,6 +60,7 @@ func NewGRPCClientPort(i interface{}, target string, opts ...PortOpt) (*Port, er
 type connection interface {
 	Invoke(ctx context.Context, method string, args, reply interface{}, opts ...grpc.CallOption) error
 	Close() error
+	GetState() connectivity.State
 }
 
 type ClientPort struct {
@@ -88,6 +91,7 @@ func (p *ClientPort) connect(addr, certfile string) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to dial %s", addr)
 	}
+
 	p.conn = c
 	return nil
 }
@@ -117,7 +121,7 @@ func (p *ClientPort) receive(opts ...PortOpt) (interface{}, error) {
 
 	select {
 	case <-time.Tick(options.timeout):
-		return nil, errors.Errorf("failed to receive  message, deadline exeeded")
+		return nil, errors.Errorf("failed to receive  message, deadline exeeded %s")
 	case result := <-p.callResultC:
 		if result.err != nil {
 			return nil, result.err
@@ -131,9 +135,28 @@ func (p *ClientPort) send(ctx context.Context, msg interface{}) error {
 	if !ok {
 		return errors.Errorf("port doesn't support message type %T", msg)
 	}
+	stop := make(chan struct{})
 	go func() {
+		for {
+			state := p.conn.GetState()
+			fmt.Printf("PORT state: %s\n", state)
+			time.Sleep(time.Second)
+			select {
+			case <-stop:
+				return
+			default:
+				continue
+			}
+		}
+	}()
+	go func() {
+		defer func() {
+			close(stop)
+		}()
 		out := reflect.New(v.RespType.Elem()).Interface()
-		if err := p.conn.Invoke(ctx, v.Endpoint, msg, out); err != nil {
+		fmt.Printf("sending %T ... \n", msg)
+		if err := p.conn.Invoke(ctx, v.Endpoint, msg, out, grpc.WaitForReady(true)); err != nil {
+			fmt.Printf("sending %T error \n", msg)
 			go func() {
 				p.callResultC <- callResult{
 					err:  err,
@@ -142,6 +165,8 @@ func (p *ClientPort) send(ctx context.Context, msg interface{}) error {
 			}()
 			return
 		}
+
+		fmt.Printf("sending %T OK \n", msg)
 		var resp interface{}
 		rv := reflect.ValueOf(&resp)
 		rv.Elem().Set(reflect.New(v.RespType))
