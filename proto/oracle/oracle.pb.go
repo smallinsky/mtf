@@ -3,13 +3,12 @@
 
 package oracle
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-
 import (
-	context "golang.org/x/net/context"
+	context "context"
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -21,7 +20,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type AskDeepThoughtRequest struct {
 	Data                 string   `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
@@ -34,16 +33,17 @@ func (m *AskDeepThoughtRequest) Reset()         { *m = AskDeepThoughtRequest{} }
 func (m *AskDeepThoughtRequest) String() string { return proto.CompactTextString(m) }
 func (*AskDeepThoughtRequest) ProtoMessage()    {}
 func (*AskDeepThoughtRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_oracle_d776b047493fce65, []int{0}
+	return fileDescriptor_02d8b1de57bf7680, []int{0}
 }
+
 func (m *AskDeepThoughtRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AskDeepThoughtRequest.Unmarshal(m, b)
 }
 func (m *AskDeepThoughtRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_AskDeepThoughtRequest.Marshal(b, m, deterministic)
 }
-func (dst *AskDeepThoughtRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AskDeepThoughtRequest.Merge(dst, src)
+func (m *AskDeepThoughtRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AskDeepThoughtRequest.Merge(m, src)
 }
 func (m *AskDeepThoughtRequest) XXX_Size() int {
 	return xxx_messageInfo_AskDeepThoughtRequest.Size(m)
@@ -72,16 +72,17 @@ func (m *AskDeepThoughtResponse) Reset()         { *m = AskDeepThoughtResponse{}
 func (m *AskDeepThoughtResponse) String() string { return proto.CompactTextString(m) }
 func (*AskDeepThoughtResponse) ProtoMessage()    {}
 func (*AskDeepThoughtResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_oracle_d776b047493fce65, []int{1}
+	return fileDescriptor_02d8b1de57bf7680, []int{1}
 }
+
 func (m *AskDeepThoughtResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AskDeepThoughtResponse.Unmarshal(m, b)
 }
 func (m *AskDeepThoughtResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_AskDeepThoughtResponse.Marshal(b, m, deterministic)
 }
-func (dst *AskDeepThoughtResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AskDeepThoughtResponse.Merge(dst, src)
+func (m *AskDeepThoughtResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AskDeepThoughtResponse.Merge(m, src)
 }
 func (m *AskDeepThoughtResponse) XXX_Size() int {
 	return xxx_messageInfo_AskDeepThoughtResponse.Size(m)
@@ -102,6 +103,21 @@ func (m *AskDeepThoughtResponse) GetData() string {
 func init() {
 	proto.RegisterType((*AskDeepThoughtRequest)(nil), "oracle.AskDeepThoughtRequest")
 	proto.RegisterType((*AskDeepThoughtResponse)(nil), "oracle.AskDeepThoughtResponse")
+}
+
+func init() { proto.RegisterFile("proto/oracle/oracle.proto", fileDescriptor_02d8b1de57bf7680) }
+
+var fileDescriptor_02d8b1de57bf7680 = []byte{
+	// 137 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x2c, 0x28, 0xca, 0x2f,
+	0xc9, 0xd7, 0xcf, 0x2f, 0x4a, 0x4c, 0xce, 0x49, 0x85, 0x52, 0x7a, 0x60, 0x31, 0x21, 0x36, 0x08,
+	0x4f, 0x49, 0x9b, 0x4b, 0xd4, 0xb1, 0x38, 0xdb, 0x25, 0x35, 0xb5, 0x20, 0x24, 0x23, 0xbf, 0x34,
+	0x3d, 0xa3, 0x24, 0x28, 0xb5, 0xb0, 0x34, 0xb5, 0xb8, 0x44, 0x48, 0x88, 0x8b, 0x25, 0x25, 0xb1,
+	0x24, 0x51, 0x82, 0x51, 0x81, 0x51, 0x83, 0x33, 0x08, 0xcc, 0x56, 0xd2, 0xe1, 0x12, 0x43, 0x57,
+	0x5c, 0x5c, 0x90, 0x9f, 0x57, 0x9c, 0x8a, 0x4d, 0xb5, 0x51, 0x34, 0x17, 0x9b, 0x3f, 0xd8, 0x12,
+	0xa1, 0x40, 0x2e, 0x3e, 0x54, 0x7d, 0x42, 0xb2, 0x7a, 0x50, 0xd7, 0x60, 0xb5, 0x5c, 0x4a, 0x0e,
+	0x97, 0x34, 0xc4, 0x3a, 0x25, 0x86, 0x24, 0x36, 0xb0, 0x37, 0x8c, 0x01, 0x01, 0x00, 0x00, 0xff,
+	0xff, 0x2d, 0xa7, 0x9f, 0xfd, 0xe3, 0x00, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -174,19 +190,4 @@ var _Oracle_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "proto/oracle/oracle.proto",
-}
-
-func init() { proto.RegisterFile("proto/oracle/oracle.proto", fileDescriptor_oracle_d776b047493fce65) }
-
-var fileDescriptor_oracle_d776b047493fce65 = []byte{
-	// 137 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x2c, 0x28, 0xca, 0x2f,
-	0xc9, 0xd7, 0xcf, 0x2f, 0x4a, 0x4c, 0xce, 0x49, 0x85, 0x52, 0x7a, 0x60, 0x31, 0x21, 0x36, 0x08,
-	0x4f, 0x49, 0x9b, 0x4b, 0xd4, 0xb1, 0x38, 0xdb, 0x25, 0x35, 0xb5, 0x20, 0x24, 0xa3, 0x28, 0xbf,
-	0x34, 0x3d, 0x23, 0x28, 0xb5, 0xb0, 0x34, 0xb5, 0xb8, 0x44, 0x48, 0x88, 0x8b, 0x25, 0x25, 0xb1,
-	0x24, 0x51, 0x82, 0x51, 0x81, 0x51, 0x83, 0x33, 0x08, 0xcc, 0x56, 0xd2, 0xe1, 0x12, 0x43, 0x57,
-	0x5c, 0x5c, 0x90, 0x9f, 0x57, 0x9c, 0x8a, 0x4d, 0xb5, 0x51, 0x34, 0x17, 0x9b, 0x3f, 0xd8, 0x12,
-	0xa1, 0x40, 0x2e, 0x3e, 0x54, 0x7d, 0x42, 0xb2, 0x7a, 0x50, 0xd7, 0x60, 0xb5, 0x5c, 0x4a, 0x0e,
-	0x97, 0x34, 0xc4, 0x3a, 0x25, 0x86, 0x24, 0x36, 0xb0, 0x37, 0x8c, 0x01, 0x01, 0x00, 0x00, 0xff,
-	0xff, 0xa5, 0x41, 0xe2, 0x6f, 0xe3, 0x00, 0x00, 0x00,
 }
