@@ -62,8 +62,8 @@ func NewOracleClientMock(target string) OracleClient {
     }
 }
 
-func NewOracleServerMock() *OracleServiceMock {
-    ln, err := net.Listen("tcp", ":0")
+func NewOracleServerMock(addr string) *OracleServiceMock {
+    ln, err := net.Listen("tcp", addr)
     if err != nil {
         panic(err)
     }

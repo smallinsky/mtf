@@ -3,18 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
-	"net/http"
-	"strconv"
 
 	"github.com/kelseyhightower/envconfig"
 
 	pb "github.com/smallinsky/mtf/proto/weather"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
 
@@ -35,51 +31,22 @@ type server struct {
 }
 
 func (s *server) AskAboutWeather(ctx context.Context, req *pb.AskAboutWeatherRequest) (*pb.AskAboutWeatherResponse, error) {
-	r, err := http.NewRequest(http.MethodGet, weatherEndpointAPI, nil)
+
+	cresp, err := s.scaleConvClient.CelsiusToFahrenheit(ctx, &pb.CelsiusToFahrenheitRequest{Value: 133})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to build http request: %v", err)
-	}
-
-	resp, err := http.DefaultClient.Do(r.WithContext(ctx))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to reach weather api: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, status.Errorf(codes.Internal, "failed to reach weather api: invalid http status %s", resp.Status)
-	}
-
-	defer resp.Body.Close()
-	buff, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to read response body content: %v", err)
-	}
-
-	if req.GetScale() == pb.Scale_FAHRENHEIT {
-		val, err := strconv.ParseInt(string(buff), 10, 32)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to convert http response to int: %v", err)
+		if status.Code(err) == codes.FailedPrecondition {
+			return nil, status.Errorf(codes.Internal, "scale conv client failed: %v", err)
 		}
-		cresp, err := s.scaleConvClient.CelsiusToFahrenheit(ctx, &pb.CelsiusToFahrenheitRequest{Value: val})
-		if err != nil {
-			if status.Code(err) == codes.FailedPrecondition {
-				return nil, status.Errorf(codes.Internal, "scale conv client failed: %v", err)
-			}
-			return nil, err
-		}
-		return &pb.AskAboutWeatherResponse{
-			Result: fmt.Sprintf("%d Fahrenheit Degrees", cresp.GetValue()),
-		}, nil
+		return nil, err
 	}
-
 	return &pb.AskAboutWeatherResponse{
-		Result: string(buff),
+		Result: fmt.Sprintf("%v", cresp.GetValue()),
 	}, nil
+
 }
 
 func scalConvClient(cfg config) pb.ScaleConvClient {
-	creds, err := credentials.NewClientTLSFromFile(cfg.TLSCertPath, "")
-	conn, err := grpc.Dial(cfg.ScaleConvAddr, grpc.WithTransportCredentials(creds))
+	conn, err := grpc.Dial(cfg.ScaleConvAddr, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("Faield to dial oracle service: %v", err)
 	}
@@ -92,17 +59,12 @@ func main() {
 		log.Fatalf("Failed to parse env config: %v", err)
 	}
 
-	creds, err := credentials.NewServerTLSFromFile(cfg.TLSCertPath, cfg.TLSKeyPath)
-	if err != nil {
-		log.Fatalf("Failed to get creds: %v", err)
-	}
-
 	l, err := net.Listen("tcp", cfg.GrpcPort)
 	if err != nil {
 		log.Fatalf("Failed to start net listener: %v", err)
 	}
 
-	s := grpc.NewServer(grpc.Creds(creds))
+	s := grpc.NewServer()
 	pb.RegisterWeatherServer(s, &server{
 		scaleConvClient: scalConvClient(cfg),
 	})

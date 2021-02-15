@@ -62,8 +62,8 @@ func NewWeatherClientMock(target string) WeatherClient {
     }
 }
 
-func NewWeatherServerMock() *WeatherServiceMock {
-    ln, err := net.Listen("tcp", ":0")
+func NewWeatherServerMock(addr string) *WeatherServiceMock {
+    ln, err := net.Listen("tcp", addr)
     if err != nil {
         panic(err)
     }
@@ -153,8 +153,8 @@ func NewScaleConvClientMock(target string) ScaleConvClient {
     }
 }
 
-func NewScaleConvServerMock() *ScaleConvServiceMock {
-    ln, err := net.Listen("tcp", ":0")
+func NewScaleConvServerMock(addr string) *ScaleConvServiceMock {
+    ln, err := net.Listen("tcp", addr)
     if err != nil {
         panic(err)
     }

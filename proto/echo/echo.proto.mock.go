@@ -62,8 +62,8 @@ func NewEchoClientMock(target string) EchoClient {
     }
 }
 
-func NewEchoServerMock() *EchoServiceMock {
-    ln, err := net.Listen("tcp", ":0")
+func NewEchoServerMock(addr string) *EchoServiceMock {
+    ln, err := net.Listen("tcp", addr)
     if err != nil {
         panic(err)
     }

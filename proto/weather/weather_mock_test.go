@@ -6,7 +6,7 @@ import (
 )
 
 func TestHelloWorld(t *testing.T) {
-	server := NewScaleConvServerMock()
+	server := NewScaleConvServerMock(":0")
 	client := NewScaleConvClientMock(server.Addr())
 
 	server.CelsiusToFahrenheit(func(ctx context.Context, req *CelsiusToFahrenheitRequest) (*CelsiusToFahrenheitResponse, error) {
