@@ -4,10 +4,13 @@ package framework
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"testing"
+	"time"
 
 	"github.com/smallinsky/mtf/framework"
-	"github.com/smallinsky/mtf/port"
+	"github.com/smallinsky/mtf/mockhttp"
 	pb "github.com/smallinsky/mtf/proto/weather"
 )
 
@@ -37,84 +40,41 @@ func TestWeatherService(t *testing.T) {
 
 func (st *SuiteTest) Init(t *testing.T) {
 	st.scaleConvServer = pb.NewScaleConvServerMock(":8083")
-	st.scaleConvClient = pb.NewScaleConvClientMock(":8082")
+	st.weatherClient = pb.NewWeatherClientMock(":8082")
+	st.httpServer = mockhttp.New()
 }
 
 type SuiteTest struct {
-	weatherPort     *port.Port
-	convPort        *port.Port
-	httpPort        *port.Port
 	scaleConvServer *pb.ScaleConvServiceMock
-	scaleConvClient pb.ScaleConvClient
+	weatherClient   pb.WeatherClient
+	httpServer      *mockhttp.Server
 }
 
-//func (st *SuiteTest) TestWeatherCelsius(t *testing.T) {
-//	st.weatherPort.Send(t, &pb.AskAboutWeatherRequest{
-//		City: "Wroclaw",
-//	})
-//	st.httpPort.Receive(t, &port.HTTPRequest{
-//		Method: "GET",
-//		Host:   "api.weather.com",
-//		URL:    "/",
-//	})
-//	st.httpPort.Send(t, &port.HTTPResponse{
-//		Status: 200,
-//		Body:   []byte("15 Celsius Degrees"),
-//	})
-//	st.weatherPort.Receive(t, &pb.AskAboutWeatherResponse{
-//		Result: "15 Celsius Degrees",
-//	})
-//}
-
-//func (st *SuiteTest) TestFahrenheitConvErr(t *testing.T) {
-//	st.weatherPort.Send(t, &pb.AskAboutWeatherRequest{
-//		City:  "Wroclaw",
-//		Scale: pb.Scale_FAHRENHEIT,
-//	})
-//	st.httpPort.Receive(t, &port.HTTPRequest{
-//		Method: "GET",
-//		Host:   "api.weather.com",
-//		URL:    "/",
-//	})
-//	st.httpPort.Send(t, &port.HTTPResponse{
-//		Status: 200,
-//		Body:   []byte("15 Celsius Degrees"),
-//	})
-//	st.weatherPort.Receive(t, match.GRPCErr(codes.Internal, "failed to convert http response to int"))
-//}
-
 func (st *SuiteTest) TestFahrenheit(t *testing.T) {
+	if true {
+		time.Sleep(time.Millisecond * 900)
+	}
+
 	st.scaleConvServer.CelsiusToFahrenheit(func(ctx context.Context, req *pb.CelsiusToFahrenheitRequest) (*pb.CelsiusToFahrenheitResponse, error) {
-		if got, want := req.GetValue(), int64(11); got != want {
+		if got, want := req.GetValue(), int64(12); got != want {
 			t.Fatalf("invalid req.value got: %v, want: %v", want, got)
 		}
 		return &pb.CelsiusToFahrenheitResponse{Value: 10029}, nil
 	})
 
-	st.scaleConvClient.CelsiusToFahrenheit(context.Background(), &pb.CelsiusToFahrenheitRequest{
-		Value: 17,
+	st.httpServer.Handle(func(rw http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(rw, "18")
 	})
-}
 
-//func (st *SuiteTest) TestFahrenheitConvGRPCErr(t *testing.T) {
-//	st.weatherPort.Send(t, &pb.AskAboutWeatherRequest{
-//		City:  "Wroclaw",
-//		Scale: pb.Scale_FAHRENHEIT,
-//	})
-//	st.httpPort.Receive(t, &port.HTTPRequest{
-//		Method: "GET",
-//		Host:   "api.weather.com",
-//		URL:    "/",
-//	})
-//	st.httpPort.Send(t, &port.HTTPResponse{
-//		Status: 200,
-//		Body:   []byte("15"),
-//	})
-//	st.convPort.Receive(t, &pb.CelsiusToFahrenheitRequest{
-//		Value: 15,
-//	})
-//	st.convPort.Send(t, &port.GRPCErr{
-//		Err: status.Error(codes.FailedPrecondition, "not supported"),
-//	})
-//	st.weatherPort.Receive(t, match.GRPCErr(codes.Internal, "cale conv client failed"))
-//}
+	resp, err := st.weatherClient.AskAboutWeather(context.Background(), &pb.AskAboutWeatherRequest{
+		City:  "Wroclaw",
+		Scale: pb.Scale_FAHRENHEIT,
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := resp.GetResult(), "fofdoa"; got != want {
+		t.Fatalf("mismwatch got: %v, want: %v", got, want)
+	}
+}

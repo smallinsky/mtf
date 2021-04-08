@@ -24,6 +24,7 @@ type httpserver struct {
 }
 
 func startHTTP() {
+	return
 	once.Do(func() {
 		ht = &httpserver{
 			router:   mux.NewRouter(),

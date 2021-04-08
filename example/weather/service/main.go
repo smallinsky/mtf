@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
+	"strconv"
 
 	"github.com/kelseyhightower/envconfig"
 
@@ -23,7 +26,7 @@ type config struct {
 }
 
 const (
-	weatherEndpointAPI = "https://api.weather.com/"
+	weatherEndpointAPI = "http://api.weather.com/"
 )
 
 type server struct {
@@ -31,16 +34,44 @@ type server struct {
 }
 
 func (s *server) AskAboutWeather(ctx context.Context, req *pb.AskAboutWeatherRequest) (*pb.AskAboutWeatherResponse, error) {
-
-	cresp, err := s.scaleConvClient.CelsiusToFahrenheit(ctx, &pb.CelsiusToFahrenheitRequest{Value: 133})
+	r, err := http.NewRequest(http.MethodGet, weatherEndpointAPI, nil)
 	if err != nil {
-		if status.Code(err) == codes.FailedPrecondition {
-			return nil, status.Errorf(codes.Internal, "scale conv client failed: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to build http request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(r.WithContext(ctx))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to reach weather api: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, status.Errorf(codes.Internal, "failed to reach weather api: invalid http status %s", resp.Status)
+	}
+
+	defer resp.Body.Close()
+	buff, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to read response body content: %v", err)
+	}
+
+	if req.GetScale() == pb.Scale_FAHRENHEIT {
+		val, err := strconv.ParseInt(string(buff), 10, 32)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to convert http response to int: %v", err)
 		}
-		return nil, err
+		cresp, err := s.scaleConvClient.CelsiusToFahrenheit(ctx, &pb.CelsiusToFahrenheitRequest{Value: val})
+		if err != nil {
+			if status.Code(err) == codes.FailedPrecondition {
+				return nil, status.Errorf(codes.Internal, "scale conv client failed: %v", err)
+			}
+			return nil, err
+		}
+		return &pb.AskAboutWeatherResponse{
+			Result: fmt.Sprintf("%d Fahrenheit Degrees", cresp.GetValue()),
+		}, nil
 	}
 	return &pb.AskAboutWeatherResponse{
-		Result: fmt.Sprintf("%v", cresp.GetValue()),
+		Result: string(buff),
 	}, nil
 
 }
